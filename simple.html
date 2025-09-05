@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DormGlide - Working Version</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #4a90e2;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .nav button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav button:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+        }
+        
+        .nav button.active {
+            background: #2c5282;
+        }
+        
+        .content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .product-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .product-card:hover {
+            border-color: #4a90e2;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .product-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .product-price {
+            color: #4a90e2;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .product-description {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .category-badge {
+            display: inline-block;
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+        
+        @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .nav button {
+                width: 200px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🏠 DormGlide</h1>
+            <p>Student Marketplace - Buy & Sell Used Goods</p>
+            <nav class="nav">
+                <button class="active" onclick="showHome()">🏠 Home</button>
+                <button onclick="showSell()">💰 Sell</button>
+                <button onclick="showProfile()">👤 Profile</button>
+            </nav>
+        </header>
+        
+        <main class="content" id="main-content">
+            <h2>Welcome to DormGlide!</h2>
+            <input type="text" class="search-box" placeholder="🔍 Search for items..." onkeyup="searchProducts(this.value)">
+            
+            <div class="product-grid" id="product-grid">
+                <!-- Products will be loaded here -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        console.log('DormGlide script starting...');
+        
+        // Sample products data
+        const products = [
+            {
+                id: 1,
+                title: 'MacBook Air M1 13-inch',
+                price: 850,
+                description: 'Barely used MacBook Air with M1 chip. Perfect for students!',
+                category: 'Electronics'
+            },
+            {
+                id: 2,
+                title: 'Calculus Textbook (Stewart 8th Edition)',
+                price: 120,
+                description: 'Essential Calculus textbook for Math 151/152. All pages intact.',
+                category: 'Textbooks'
+            },
+            {
+                id: 3,
+                title: 'IKEA Desk Chair',
+                price: 45,
+                description: 'Comfortable desk chair, great for studying. Minor wear.',
+                category: 'Furniture'
+            },
+            {
+                id: 4,
+                title: 'Nike Running Shoes',
+                price: 60,
+                description: 'Size 9.5 Nike running shoes in good condition.',
+                category: 'Clothing'
+            },
+            {
+                id: 5,
+                title: 'Coffee Maker',
+                price: 30,
+                description: 'Single-serve coffee maker for dorm room.',
+                category: 'Kitchen'
+            }
+        ];
+        
+        let currentProducts = [...products];
+        
+        function renderProducts(productsToShow = currentProducts) {
+            console.log('Rendering products...', productsToShow.length);
+            const grid = document.getElementById('product-grid');
+            
+            if (productsToShow.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">No products found. Try a different search term.</p>';
+                return;
+            }
+            
+            grid.innerHTML = productsToShow.map(product => `
+                <div class="product-card" onclick="showProductDetail(${product.id})">
+                    <div class="product-title">${product.title}</div>
+                    <div class="product-price">$${product.price}</div>
+                    <div class="product-description">${product.description}</div>
+                    <span class="category-badge">${product.category}</span>
+                </div>
+            `).join('');
+        }
+        
+        function searchProducts(query) {
+            console.log('Searching for:', query);
+            if (!query.trim()) {
+                currentProducts = [...products];
+            } else {
+                currentProducts = products.filter(product => 
+                    product.title.toLowerCase().includes(query.toLowerCase()) ||
+                    product.description.toLowerCase().includes(query.toLowerCase()) ||
+                    product.category.toLowerCase().includes(query.toLowerCase())
+                );
+            }
+            renderProducts(currentProducts);
+        }
+        
+        function showHome() {
+            console.log('Showing home...');
+            document.getElementById('main-content').innerHTML = `
+                <h2>Welcome to DormGlide!</h2>
+                <input type="text" class="search-box" placeholder="🔍 Search for items..." onkeyup="searchProducts(this.value)">
+                <div class="product-grid" id="product-grid"></div>
+            `;
+            updateActiveButton(0);
+            renderProducts();
+        }
+        
+        function showSell() {
+            console.log('Showing sell page...');
+            document.getElementById('main-content').innerHTML = `
+                <h2>💰 Sell Your Items</h2>
+                <p style="margin: 20px 0; color: #666;">List your items for sale to other students!</p>
+                <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; text-align: center;">
+                    <h3>📝 Create New Listing</h3>
+                    <p style="margin: 15px 0;">Upload photos, set your price, and reach thousands of students!</p>
+                    <button style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 25px; font-size: 16px; cursor: pointer;">Start Selling</button>
+                </div>
+            `;
+            updateActiveButton(1);
+        }
+        
+        function showProfile() {
+            console.log('Showing profile...');
+            document.getElementById('main-content').innerHTML = `
+                <h2>👤 Your Profile</h2>
+                <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; margin-top: 20px;">
+                    <h3>Student Dashboard</h3>
+                    <p style="margin: 15px 0;">Manage your listings, purchases, and account settings.</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <div style="background: white; padding: 20px; border-radius: 8px; text-align: center;">
+                            <h4>📦 My Listings</h4>
+                            <p style="color: #4a90e2; font-size: 1.5rem; margin: 10px 0;">3</p>
+                        </div>
+                        <div style="background: white; padding: 20px; border-radius: 8px; text-align: center;">
+                            <h4>🛒 Purchases</h4>
+                            <p style="color: #28a745; font-size: 1.5rem; margin: 10px 0;">7</p>
+                        </div>
+                        <div style="background: white; padding: 20px; border-radius: 8px; text-align: center;">
+                            <h4>⭐ Rating</h4>
+                            <p style="color: #ffc107; font-size: 1.5rem; margin: 10px 0;">4.8</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            updateActiveButton(2);
+        }
+        
+        function showProductDetail(productId) {
+            console.log('Showing product detail for ID:', productId);
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            document.getElementById('main-content').innerHTML = `
+                <button onclick="showHome()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 15px; cursor: pointer; margin-bottom: 20px;">← Back to Home</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;">
+                    <div style="background: #f8f9fa; height: 300px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 4rem;">
+                        📷
+                    </div>
+                    <div>
+                        <h2>${product.title}</h2>
+                        <p style="color: #4a90e2; font-size: 2rem; font-weight: bold; margin: 15px 0;">$${product.price}</p>
+                        <span class="category-badge">${product.category}</span>
+                        <p style="margin: 20px 0; line-height: 1.6;">${product.description}</p>
+                        <div style="margin-top: 30px;">
+                            <button style="background: #4a90e2; color: white; border: none; padding: 15px 30px; border-radius: 25px; font-size: 16px; cursor: pointer; margin-right: 10px;">💬 Contact Seller</button>
+                            <button style="background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 25px; font-size: 16px; cursor: pointer;">❤️ Save Item</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateActiveButton(activeIndex) {
+            const buttons = document.querySelectorAll('.nav button');
+            buttons.forEach((button, index) => {
+                button.classList.toggle('active', index === activeIndex);
+            });
+        }
+        
+        // Initialize the app
+        console.log('Initializing DormGlide...');
+        renderProducts();
+        console.log('DormGlide loaded successfully!');
+    </script>
+</body>
+</html>

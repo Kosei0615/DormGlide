@@ -1,6 +1,7 @@
 const HomePage = ({ products, onProductClick, onNavigate }) => {
     const [filteredProducts, setFilteredProducts] = React.useState(products);
     const [searchTerm, setSearchTerm] = React.useState('');
+    const [activeCategory, setActiveCategory] = React.useState('');
 
     React.useEffect(() => {
         setFilteredProducts(products);
@@ -10,6 +11,7 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
 
     const handleSearch = (term) => {
         setSearchTerm(term);
+        setActiveCategory(''); // Clear category when searching
         
         if (!term.trim()) {
             setFilteredProducts(products);
@@ -28,6 +30,20 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
             );
         });
         setFilteredProducts(filtered);
+    };
+
+    const handleCategoryClick = (category) => {
+        setActiveCategory(category);
+        setSearchTerm(''); // Clear search when selecting category
+        
+        const filtered = products.filter(product => product.category === category);
+        setFilteredProducts(filtered);
+    };
+
+    const clearAllFilters = () => {
+        setSearchTerm('');
+        setActiveCategory('');
+        setFilteredProducts(products);
     };
 
     const handleFilter = (filters) => {
@@ -121,10 +137,8 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
                     
                     return React.createElement('div', {
                         key: category,
-                        className: 'category-card',
-                        onClick: () => {
-                            handleFilter({ category });
-                        }
+                        className: `category-card ${activeCategory === category ? 'active' : ''}`,
+                        onClick: () => handleCategoryClick(category)
                     },
                         React.createElement('i', { className: categoryIcons[category] || 'fas fa-box' }),
                         React.createElement('span', null, category)
@@ -139,7 +153,19 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
                 onSearch: handleSearch,
                 onFilter: handleFilter,
                 categories: categories
-            })
+            }),
+            
+            // Clear filters button (show when there are active filters)
+            (filters.searchTerm || activeCategory) &&
+            React.createElement('div', { className: 'clear-filters-container', style: { marginTop: '1rem' } },
+                React.createElement('button', {
+                    className: 'clear-filters-btn',
+                    onClick: clearAllFilters
+                },
+                    React.createElement('i', { className: 'fas fa-times' }),
+                    ' Clear all filters'
+                )
+            )
         ),
 
         // Featured Products

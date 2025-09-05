@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DormGlide - Student Marketplace</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4a90e2;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .nav-btn {
+            background: none;
+            border: 2px solid transparent;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #666;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-btn:hover, .nav-btn.active {
+            border-color: #4a90e2;
+            color: #4a90e2;
+            background: rgba(74, 144, 226, 0.1);
+        }
+        
+        .main-content {
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            width: 100%;
+        }
+        
+        .search-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+        
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .category-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .category-card:hover {
+            border-color: #4a90e2;
+            background: rgba(74, 144, 226, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .category-card.active {
+            border-color: #4a90e2;
+            background: rgba(74, 144, 226, 0.1);
+        }
+        
+        .category-card i {
+            font-size: 1.5rem;
+            color: #4a90e2;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #999;
+        }
+        
+        .product-info {
+            padding: 1rem;
+        }
+        
+        .product-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .product-price {
+            color: #4a90e2;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .product-description {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        
+        .category-badge {
+            background: #e9ecef;
+            color: #495057;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+        
+        .location {
+            color: #999;
+            font-size: 0.8rem;
+        }
+        
+        .footer {
+            background: rgba(255, 255, 255, 0.1);
+            text-align: center;
+            padding: 2rem;
+            color: white;
+            margin-top: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .categories-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            }
+            
+            .product-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script>
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+        
+        // Sample data
+        const sampleProducts = [
+            {
+                id: '1',
+                title: 'MacBook Air M1 13-inch',
+                description: 'Barely used MacBook Air with M1 chip. Perfect for students! Comes with original charger and box.',
+                price: 850,
+                category: 'Electronics',
+                condition: 'Like New',
+                location: 'North Campus',
+                sellerId: 'user1',
+                sellerName: 'Sarah Chen',
+                createdAt: '2025-01-15T10:30:00Z'
+            },
+            {
+                id: '2',
+                title: 'Calculus Textbook (Stewart 8th Edition)',
+                description: 'Essential Calculus textbook for Math 151/152. All pages intact, minimal highlighting.',
+                price: 120,
+                category: 'Textbooks',
+                condition: 'Good',
+                location: 'South Campus',
+                sellerId: 'user2',
+                sellerName: 'Mike Johnson',
+                createdAt: '2025-01-14T15:45:00Z'
+            },
+            {
+                id: '3',
+                title: 'IKEA Desk Chair',
+                description: 'Comfortable desk chair perfect for studying. Adjustable height, minor wear but fully functional.',
+                price: 45,
+                category: 'Furniture',
+                condition: 'Good',
+                location: 'East Campus',
+                sellerId: 'user3',
+                sellerName: 'Emma Wilson',
+                createdAt: '2025-01-13T09:20:00Z'
+            },
+            {
+                id: '4',
+                title: 'Winter Jacket - North Face',
+                description: 'Warm winter jacket, size Medium. Great for cold campus walks.',
+                price: 85,
+                category: 'Clothing',
+                condition: 'Very Good',
+                location: 'West Campus',
+                sellerId: 'user4',
+                sellerName: 'Alex Brown',
+                createdAt: '2025-01-12T18:15:00Z'
+            },
+            {
+                id: '5',
+                title: 'Coffee Maker & Accessories',
+                description: 'Single-serve coffee maker perfect for dorm room. Includes filters and cleaning supplies.',
+                price: 30,
+                category: 'Kitchen',
+                condition: 'Good',
+                location: 'North Campus',
+                sellerId: 'user5',
+                sellerName: 'Lisa Davis',
+                createdAt: '2025-01-11T12:30:00Z'
+            }
+        ];
+        
+        const categories = ['Electronics', 'Textbooks', 'Furniture', 'Clothing', 'Sports', 'Kitchen', 'Dorm Decor', 'Other'];
+        
+        // Components
+        const Header = ({ currentPage, onNavigate }) => {
+            return React.createElement('header', { className: 'header' },
+                React.createElement('div', { className: 'header-content' },
+                    React.createElement('div', { className: 'logo' }, '🏠 DormGlide'),
+                    React.createElement('nav', { className: 'nav' },
+                        React.createElement('button', {
+                            className: `nav-btn ${currentPage === 'home' ? 'active' : ''}`,
+                            onClick: () => onNavigate('home')
+                        },
+                            React.createElement('i', { className: 'fas fa-home' }),
+                            'Home'
+                        ),
+                        React.createElement('button', {
+                            className: `nav-btn ${currentPage === 'sell' ? 'active' : ''}`,
+                            onClick: () => onNavigate('sell')
+                        },
+                            React.createElement('i', { className: 'fas fa-plus' }),
+                            'Sell'
+                        ),
+                        React.createElement('button', {
+                            className: `nav-btn ${currentPage === 'profile' ? 'active' : ''}`,
+                            onClick: () => onNavigate('profile')
+                        },
+                            React.createElement('i', { className: 'fas fa-user' }),
+                            'Profile'
+                        )
+                    )
+                )
+            );
+        };
+        
+        const ProductCard = ({ product, onClick }) => {
+            return React.createElement('div', {
+                className: 'product-card',
+                onClick: () => onClick(product.id)
+            },
+                React.createElement('div', { className: 'product-image' }, '📷'),
+                React.createElement('div', { className: 'product-info' },
+                    React.createElement('div', { className: 'product-title' }, product.title),
+                    React.createElement('div', { className: 'product-price' }, `$${product.price}`),
+                    React.createElement('div', { className: 'product-description' }, product.description),
+                    React.createElement('div', { className: 'product-meta' },
+                        React.createElement('span', { className: 'category-badge' }, product.category),
+                        React.createElement('span', { className: 'location' }, product.location)
+                    )
+                )
+            );
+        };
+        
+        const HomePage = ({ products, onProductClick }) => {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [activeCategory, setActiveCategory] = useState('');
+            
+            const filteredProducts = products.filter(product => {
+                const matchesSearch = searchTerm === '' || 
+                    product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    product.description.toLowerCase().includes(searchTerm.toLowerCase());
+                
+                const matchesCategory = activeCategory === '' || product.category === activeCategory;
+                
+                return matchesSearch && matchesCategory;
+            });
+            
+            const categoryIcons = {
+                'Electronics': 'fas fa-laptop',
+                'Textbooks': 'fas fa-book', 
+                'Furniture': 'fas fa-couch',
+                'Clothing': 'fas fa-tshirt',
+                'Sports': 'fas fa-football-ball',
+                'Kitchen': 'fas fa-utensils',
+                'Dorm Decor': 'fas fa-palette',
+                'Other': 'fas fa-box'
+            };
+            
+            return React.createElement('div', null,
+                React.createElement('section', { className: 'search-section' },
+                    React.createElement('h2', null, 'Find What You Need'),
+                    React.createElement('input', {
+                        type: 'text',
+                        className: 'search-box',
+                        placeholder: '🔍 Search for items...',
+                        value: searchTerm,
+                        onChange: (e) => setSearchTerm(e.target.value)
+                    }),
+                    React.createElement('div', { className: 'categories-grid' },
+                        categories.map(category =>
+                            React.createElement('div', {
+                                key: category,
+                                className: `category-card ${activeCategory === category ? 'active' : ''}`,
+                                onClick: () => setActiveCategory(activeCategory === category ? '' : category)
+                            },
+                                React.createElement('i', { className: categoryIcons[category] || 'fas fa-box' }),
+                                React.createElement('span', null, category)
+                            )
+                        )
+                    )
+                ),
+                React.createElement('section', null,
+                    React.createElement('h2', null, `${filteredProducts.length} items available`),
+                    React.createElement('div', { className: 'product-grid' },
+                        filteredProducts.map(product =>
+                            React.createElement(ProductCard, {
+                                key: product.id,
+                                product: product,
+                                onClick: onProductClick
+                            })
+                        )
+                    )
+                )
+            );
+        };
+        
+        const SellPage = () => {
+            return React.createElement('div', { style: { textAlign: 'center', padding: '3rem' } },
+                React.createElement('h2', null, '💰 Sell Your Items'),
+                React.createElement('p', { style: { margin: '2rem 0', fontSize: '1.1rem', color: '#666' } }, 
+                    'List your items for sale to other students!'),
+                React.createElement('div', {
+                    style: {
+                        background: 'white',
+                        padding: '3rem',
+                        borderRadius: '15px',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }
+                },
+                    React.createElement('h3', null, '📝 Create New Listing'),
+                    React.createElement('p', { style: { margin: '1rem 0' } }, 
+                        'Upload photos, set your price, and reach thousands of students!'),
+                    React.createElement('button', {
+                        style: {
+                            background: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            padding: '1rem 2rem',
+                            borderRadius: '25px',
+                            fontSize: '1rem',
+                            cursor: 'pointer'
+                        }
+                    }, 'Start Selling')
+                )
+            );
+        };
+        
+        const ProfilePage = () => {
+            return React.createElement('div', null,
+                React.createElement('h2', null, '👤 Your Profile'),
+                React.createElement('div', {
+                    style: {
+                        background: 'white',
+                        padding: '2rem',
+                        borderRadius: '15px',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                        marginTop: '2rem'
+                    }
+                },
+                    React.createElement('h3', null, 'Student Dashboard'),
+                    React.createElement('p', { style: { margin: '1rem 0' } }, 
+                        'Manage your listings, purchases, and account settings.'),
+                    React.createElement('div', {
+                        style: {
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                            gap: '1rem',
+                            marginTop: '2rem'
+                        }
+                    },
+                        React.createElement('div', {
+                            style: {
+                                background: '#f8f9fa',
+                                padding: '1.5rem',
+                                borderRadius: '12px',
+                                textAlign: 'center'
+                            }
+                        },
+                            React.createElement('h4', null, '📦 My Listings'),
+                            React.createElement('p', {
+                                style: { color: '#4a90e2', fontSize: '2rem', margin: '0.5rem 0' }
+                            }, '3')
+                        ),
+                        React.createElement('div', {
+                            style: {
+                                background: '#f8f9fa',
+                                padding: '1.5rem',
+                                borderRadius: '12px',
+                                textAlign: 'center'
+                            }
+                        },
+                            React.createElement('h4', null, '🛒 Purchases'),
+                            React.createElement('p', {
+                                style: { color: '#28a745', fontSize: '2rem', margin: '0.5rem 0' }
+                            }, '7')
+                        ),
+                        React.createElement('div', {
+                            style: {
+                                background: '#f8f9fa',
+                                padding: '1.5rem',
+                                borderRadius: '12px',
+                                textAlign: 'center'
+                            }
+                        },
+                            React.createElement('h4', null, '⭐ Rating'),
+                            React.createElement('p', {
+                                style: { color: '#ffc107', fontSize: '2rem', margin: '0.5rem 0' }
+                            }, '4.8')
+                        )
+                    )
+                )
+            );
+        };
+        
+        const Footer = () => {
+            return React.createElement('footer', { className: 'footer' },
+                React.createElement('p', null, '© 2025 DormGlide - Student Marketplace'),
+                React.createElement('p', { style: { marginTop: '0.5rem', fontSize: '0.9rem' } }, 
+                    'Made with ❤️ for college students')
+            );
+        };
+        
+        // Main App Component
+        const App = () => {
+            const [currentPage, setCurrentPage] = useState('home');
+            const [products] = useState(sampleProducts);
+            
+            const navigateToPage = (page) => {
+                setCurrentPage(page);
+            };
+            
+            const handleProductClick = (productId) => {
+                alert(`Product ${productId} clicked! In a full app, this would show product details.`);
+            };
+            
+            const renderCurrentPage = () => {
+                switch (currentPage) {
+                    case 'home':
+                        return React.createElement(HomePage, {
+                            products: products,
+                            onProductClick: handleProductClick
+                        });
+                    case 'sell':
+                        return React.createElement(SellPage);
+                    case 'profile':
+                        return React.createElement(ProfilePage);
+                    default:
+                        return React.createElement(HomePage, {
+                            products: products,
+                            onProductClick: handleProductClick
+                        });
+                }
+            };
+            
+            return React.createElement('div', { className: 'app' },
+                React.createElement(Header, {
+                    currentPage: currentPage,
+                    onNavigate: navigateToPage
+                }),
+                React.createElement('main', { className: 'main-content' },
+                    renderCurrentPage()
+                ),
+                React.createElement(Footer)
+            );
+        };
+        
+        // Initialize the app
+        console.log('Initializing DormGlide React app...');
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+        console.log('DormGlide app rendered successfully!');
+    </script>
+</body>
+</html>

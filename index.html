@@ -5,26 +5,613 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DormGlide - Student Marketplace</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
-    <link rel="stylesheet" href="styles/main.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .nav-btn {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .nav-btn:hover {
+            background: #f7fafc;
+            color: #2d3748;
+        }
+        
+        .nav-btn.active {
+            background: #e6f3ff;
+            color: #4a90e2;
+        }
+        
+        .main-content {
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            width: 100%;
+        }
+        
+        .search-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s ease;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+        
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .category-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .category-card:hover {
+            border-color: #4a90e2;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .category-card.active {
+            border-color: #4a90e2;
+            background: #e6f3ff;
+        }
+        
+        .category-card i {
+            font-size: 1.5rem;
+            color: #4a90e2;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+            border-color: #cbd5e0;
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .product-image.placeholder {
+            background: linear-gradient(45deg, #f7fafc, #edf2f7);
+            font-size: 3rem;
+            color: #a0aec0;
+        }
+        
+        .product-info {
+            padding: 1rem;
+        }
+        
+        .product-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .product-price {
+            color: #4a90e2;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .product-description {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        
+        .category-badge {
+            background: #e6f3ff;
+            color: #4a90e2;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .location {
+            color: #999;
+            font-size: 0.8rem;
+        }
+        
+        .footer {
+            background: white;
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+            margin-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .page-content {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .categories-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            }
+            
+            .product-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" src="js/components/Header.js"></script>
-    <script type="text/babel" src="js/components/Footer.js"></script>
-    <script type="text/babel" src="js/components/ProductCard.js"></script>
-    <script type="text/babel" src="js/components/ProductGrid.js"></script>
-    <script type="text/babel" src="js/components/SearchFilter.js"></script>
-    <script type="text/babel" src="js/components/AdminPanel.js"></script>
-    <script type="text/babel" src="js/pages/HomePage.js"></script>
-    <script type="text/babel" src="js/pages/ProductDetailPage.js"></script>
-    <script type="text/babel" src="js/pages/SellPage.js"></script>
-    <script type="text/babel" src="js/pages/ProfilePage.js"></script>
-    <script type="text/babel" src="js/utils/storage.js"></script>
-    <script type="text/babel" src="js/utils/sampleData.js"></script>
-    <script type="text/babel" src="js/App.js"></script>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-home" style="color: #4a90e2;"></i>
+                    DormGlide
+                </div>
+                <nav class="nav">
+                    <button class="nav-btn active" onclick="showPage('home')">
+                        <i class="fas fa-home"></i> Home
+                    </button>
+                    <button class="nav-btn" onclick="showPage('sell')">
+                        <i class="fas fa-plus"></i> Sell
+                    </button>
+                    <button class="nav-btn" onclick="showPage('profile')">
+                        <i class="fas fa-user"></i> Profile
+                    </button>
+                </nav>
+            </div>
+        </header>
+        
+        <main class="main-content" id="main-content">
+            <!-- Content will be loaded here -->
+        </main>
+        
+        <footer class="footer">
+            <p>© 2025 DormGlide - Student Marketplace</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">Made with ❤️ for college students</p>
+        </footer>
+    </div>
+
+    <script>
+        console.log('DormGlide initializing...');
+        
+        // Sample data
+        const products = [
+            {
+                id: 1,
+                title: 'MacBook Air M1 13-inch',
+                description: 'Barely used MacBook Air with M1 chip. Perfect for students! Comes with original charger.',
+                price: 850,
+                category: 'Electronics',
+                location: 'North Campus',
+                image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop'
+            },
+            {
+                id: 2,
+                title: 'Calculus Textbook (Stewart 8th Edition)',
+                description: 'Essential Calculus textbook for Math 151/152. All pages intact, minimal highlighting.',
+                price: 120,
+                category: 'Textbooks',
+                location: 'South Campus',
+                image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=300&fit=crop'
+            },
+            {
+                id: 3,
+                title: 'IKEA Desk Chair',
+                description: 'Comfortable desk chair perfect for studying. Adjustable height, minor wear.',
+                price: 45,
+                category: 'Furniture',
+                location: 'East Campus',
+                image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop'
+            },
+            {
+                id: 4,
+                title: 'Winter Jacket - North Face',
+                description: 'Warm winter jacket, size Medium. Great for cold campus walks.',
+                price: 85,
+                category: 'Clothing',
+                location: 'West Campus',
+                image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=300&fit=crop'
+            },
+            {
+                id: 5,
+                title: 'Coffee Maker & Accessories',
+                description: 'Single-serve coffee maker perfect for dorm room. Includes filters.',
+                price: 30,
+                category: 'Kitchen',
+                location: 'North Campus',
+                image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop'
+            },
+            {
+                id: 6,
+                title: 'Basketball & Pump',
+                description: 'Wilson basketball with pump. Great for pickup games on campus.',
+                price: 25,
+                category: 'Sports',
+                location: 'Recreation Center',
+                image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop'
+            },
+            {
+                id: 7,
+                title: 'iPhone 13 Pro - Space Gray',
+                description: 'Excellent condition iPhone 13 Pro with case and screen protector. Battery health 92%.',
+                price: 650,
+                category: 'Electronics',
+                location: 'Central Campus',
+                image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'
+            },
+            {
+                id: 8,
+                title: 'Study Desk with Drawers',
+                description: 'Spacious wooden desk with multiple drawers. Perfect for dorm room organization.',
+                price: 120,
+                category: 'Furniture',
+                location: 'South Campus',
+                image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=300&fit=crop'
+            }
+        ];
+        
+        const categories = ['Electronics', 'Textbooks', 'Furniture', 'Clothing', 'Sports', 'Kitchen', 'Dorm Decor', 'Other'];
+        
+        let currentProducts = [...products];
+        let activeCategory = '';
+        
+        function showPage(page) {
+            // Update navigation
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const content = document.getElementById('main-content');
+            
+            switch(page) {
+                case 'home':
+                    showHomePage();
+                    break;
+                case 'sell':
+                    showSellPage();
+                    break;
+                case 'profile':
+                    showProfilePage();
+                    break;
+            }
+        }
+        
+        function showHomePage() {
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <section class="search-section">
+                    <h2>Find What You Need</h2>
+                    <input type="text" class="search-box" placeholder="🔍 Search for items..." onkeyup="searchProducts(this.value)">
+                    <div class="categories-grid" id="categories-grid">
+                        ${categories.map(category => `
+                            <div class="category-card ${activeCategory === category ? 'active' : ''}" onclick="filterByCategory('${category}')">
+                                <i class="${getCategoryIcon(category)}"></i>
+                                <span>${category}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${activeCategory ? `<button onclick="clearFilters()" style="margin-top: 1rem; background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer;">Clear Filters</button>` : ''}
+                </section>
+                
+                <section>
+                    <h2>${currentProducts.length} items available</h2>
+                    <div class="product-grid" id="product-grid">
+                        ${renderProducts()}
+                    </div>
+                </section>
+            `;
+        }
+        
+        function showSellPage() {
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="page-content">
+                    <h2>💰 Sell Your Items</h2>
+                    <p style="margin: 2rem 0; font-size: 1.1rem; color: #666;">List your items for sale to other students!</p>
+                    <div style="background: #f8f9fa; padding: 3rem; border-radius: 15px; margin-top: 2rem;">
+                        <h3>📝 Create New Listing</h3>
+                        <p style="margin: 1rem 0;">Upload photos, set your price, and reach thousands of students!</p>
+                        <button style="background: #28a745; color: white; border: none; padding: 1rem 2rem; border-radius: 25px; font-size: 1rem; cursor: pointer; margin-top: 1rem;">Start Selling</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showProfilePage() {
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="page-content">
+                    <h2>👤 Your Profile</h2>
+                    <div style="background: #f8f9fa; padding: 2rem; border-radius: 15px; margin-top: 2rem; text-align: left;">
+                        <h3>Student Dashboard</h3>
+                        <p style="margin: 1rem 0;">Manage your listings, purchases, and account settings.</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">
+                            <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+                                <h4>📦 My Listings</h4>
+                                <p style="color: #4a90e2; font-size: 2rem; margin: 0.5rem 0;">3</p>
+                            </div>
+                            <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+                                <h4>🛒 Purchases</h4>
+                                <p style="color: #28a745; font-size: 2rem; margin: 0.5rem 0;">7</p>
+                            </div>
+                            <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+                                <h4>⭐ Rating</h4>
+                                <p style="color: #ffc107; font-size: 2rem; margin: 0.5rem 0;">4.8</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getCategoryIcon(category) {
+            const icons = {
+                'Electronics': 'fas fa-laptop',
+                'Textbooks': 'fas fa-book',
+                'Furniture': 'fas fa-couch',
+                'Clothing': 'fas fa-tshirt',
+                'Sports': 'fas fa-football-ball',
+                'Kitchen': 'fas fa-utensils',
+                'Dorm Decor': 'fas fa-palette',
+                'Other': 'fas fa-box'
+            };
+            return icons[category] || 'fas fa-box';
+        }
+        
+        function renderProducts() {
+            if (currentProducts.length === 0) {
+                return '<p style="text-align: center; color: #666; grid-column: 1/-1;">No products found. Try a different search term.</p>';
+            }
+            
+            return currentProducts.map(product => `
+                <div class="product-card" onclick="showProductDetail(${product.id})">
+                    <div class="product-image" style="background-image: url('${product.image}')">
+                        ${!product.image ? '<div class="placeholder">📷</div>' : ''}
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">${product.title}</div>
+                        <div class="product-price">$${product.price}</div>
+                        <div class="product-description">${product.description}</div>
+                        <div class="product-meta">
+                            <span class="category-badge">${product.category}</span>
+                            <span class="location">${product.location}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function searchProducts(query) {
+            console.log('Searching for:', query);
+            if (!query.trim()) {
+                currentProducts = [...products];
+            } else {
+                currentProducts = products.filter(product => 
+                    product.title.toLowerCase().includes(query.toLowerCase()) ||
+                    product.description.toLowerCase().includes(query.toLowerCase()) ||
+                    product.category.toLowerCase().includes(query.toLowerCase())
+                );
+            }
+            
+            // Clear category filter when searching
+            activeCategory = '';
+            updateProductDisplay();
+        }
+        
+        function filterByCategory(category) {
+            console.log('Filtering by category:', category);
+            if (activeCategory === category) {
+                // Toggle off if already active
+                activeCategory = '';
+                currentProducts = [...products];
+            } else {
+                activeCategory = category;
+                currentProducts = products.filter(product => product.category === category);
+            }
+            updateProductDisplay();
+        }
+        
+        function clearFilters() {
+            activeCategory = '';
+            currentProducts = [...products];
+            document.querySelector('.search-box').value = '';
+            updateProductDisplay();
+        }
+        
+        function updateProductDisplay() {
+            const productGrid = document.getElementById('product-grid');
+            if (productGrid) {
+                productGrid.innerHTML = renderProducts();
+            }
+            
+            // Update category cards active state
+            const categoryGrid = document.getElementById('categories-grid');
+            if (categoryGrid) {
+                categoryGrid.innerHTML = categories.map(category => `
+                    <div class="category-card ${activeCategory === category ? 'active' : ''}" onclick="filterByCategory('${category}')">
+                        <i class="${getCategoryIcon(category)}"></i>
+                        <span>${category}</span>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        function showProductDetail(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="page-content" style="text-align: left;">
+                    <button onclick="showPage('home')" style="background: #718096; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 20px; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-arrow-left"></i> Back to Home
+                    </button>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;">
+                        <div style="background-image: url('${product.image}'); background-size: cover; background-position: center; height: 400px; border-radius: 12px; display: flex; align-items: center; justify-content: center; ${!product.image ? 'background: #f7fafc;' : ''}">
+                            ${!product.image ? '<div style="font-size: 4rem; color: #a0aec0;">📷</div>' : ''}
+                        </div>
+                        <div>
+                            <h2 style="color: #2d3748; margin-bottom: 1rem;">${product.title}</h2>
+                            <p style="color: #4a90e2; font-size: 2rem; font-weight: bold; margin: 15px 0;">$${product.price}</p>
+                            <span class="category-badge">${product.category}</span>
+                            <p style="margin: 20px 0; line-height: 1.6; color: #4a5568;">${product.description}</p>
+                            <p style="color: #718096; margin-bottom: 20px;"><i class="fas fa-map-marker-alt"></i> ${product.location}</p>
+                            <div style="margin-top: 30px;">
+                                <button style="background: #4a90e2; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; margin-right: 10px;">💬 Contact Seller</button>
+                                <button style="background: #e53e3e; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 16px; cursor: pointer;">❤️ Save Item</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Initialize the app
+        console.log('Initializing DormGlide...');
+        showHomePage();
+        console.log('DormGlide loaded successfully!');
+    </script>
 </body>
 </html>
