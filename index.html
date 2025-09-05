@@ -6,6 +6,7 @@
     <title>DormGlide - Student Marketplace</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -242,11 +243,99 @@
         
         .footer {
             background: white;
-            text-align: center;
-            padding: 2rem;
+            padding: 3rem 0 2rem;
             color: #718096;
-            margin-top: 2rem;
+            margin-top: 3rem;
             border-top: 1px solid #e2e8f0;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+        
+        .footer-section h3 {
+            color: #2d3748;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .footer-section p, .footer-section li {
+            color: #718096;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+        
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .footer-section a {
+            color: #4a90e2;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .footer-section a:hover {
+            color: #2d3748;
+            text-decoration: underline;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .social-links a {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #f7fafc;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        
+        .social-links a:hover {
+            background: #e6f3ff;
+            transform: translateY(-1px);
+        }
+        
+        .founder-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .founder-links a {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background 0.2s ease;
+        }
+        
+        .founder-links a:hover {
+            background: #f7fafc;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            color: #a0aec0;
+            font-size: 0.9rem;
         }
         
         .page-content {
@@ -309,8 +398,58 @@
         </main>
         
         <footer class="footer">
-            <p>© 2025 DormGlide - Student Marketplace</p>
-            <p style="margin-top: 0.5rem; font-size: 0.9rem;">Made with ❤️ for college students</p>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3><i class="fas fa-home" style="color: #4a90e2;"></i> About DormGlide</h3>
+                    <p>DormGlide is a modern marketplace platform designed specifically for college students to safely buy and sell used goods. Our mission is to create a trusted community where students can find affordable essentials and earn money from items they no longer need.</p>
+                    <p>Founded by students, for students - we understand the unique needs of campus life.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3><i class="fas fa-question-circle" style="color: #4a90e2;"></i> Frequently Asked Questions</h3>
+                    <ul>
+                        <li><strong>Q: Is DormGlide free to use?</strong><br>A: Yes! Creating an account and browsing items is completely free.</li>
+                        <li><strong>Q: How do I ensure safe transactions?</strong><br>A: We recommend meeting in public campus locations and using secure payment methods.</li>
+                        <li><strong>Q: Can only students use DormGlide?</strong><br>A: Currently, our platform is designed for college students with valid .edu email addresses.</li>
+                        <li><strong>Q: How do I report suspicious activity?</strong><br>A: Use our report feature or contact us directly through social media.</li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3><i class="fas fa-users" style="color: #4a90e2;"></i> Meet Our Founders</h3>
+                    <p>DormGlide was created by passionate college students who experienced firsthand the challenges of buying and selling items on campus.</p>
+                    <div class="founder-links">
+                        <a href="https://l.instagram.com/?u=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fgrace-lee-385968325%2F&e=AT2ut7mHvV9zwJcrbq6Fu04OWLEykxQ_gXXL_eLmSHrgb4TkgMGElc5nYcuqZCqMJs2mPvFVxcmNsY9hNEcHf1ho9Wj58qGgRRQs-6Cnv6gYGFcP3TyrhzznsiXs" target="_blank">
+                            <i class="fab fa-linkedin" style="color: #0077b5;"></i>
+                            Grace Lee - Co-Founder & CEO
+                        </a>
+                        <a href="https://www.linkedin.com/in/kosei-yamaguchi-b12311336?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank">
+                            <i class="fab fa-linkedin" style="color: #0077b5;"></i>
+                            Kosei Yamaguchi - Co-Founder & CTO
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3><i class="fas fa-envelope" style="color: #4a90e2;"></i> Connect With Us</h3>
+                    <p>Stay updated with the latest features and connect with our community!</p>
+                    <div class="social-links">
+                        <a href="https://www.instagram.com/dormglide?igsh=c3hiYmZuMTJod3Vn&utm_source=qr" target="_blank">
+                            <i class="fab fa-instagram" style="color: #e4405f;"></i>
+                            @dormglide
+                        </a>
+                    </div>
+                    <p style="margin-top: 1rem;"><strong>Business Inquiries:</strong><br>
+                    Follow us on Instagram for the latest updates and customer support.</p>
+                    <p><strong>Safety First:</strong><br>
+                    Always meet in public places and trust your instincts when making transactions.</p>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>© 2025 DormGlide - Student Marketplace | Made with ❤️ for college students</p>
+                <p>Empowering campus communities through safe and easy trading</p>
+            </div>
         </footer>
     </div>
 
