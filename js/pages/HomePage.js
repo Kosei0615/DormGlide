@@ -10,22 +10,42 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
 
     const handleSearch = (term) => {
         setSearchTerm(term);
-        const filtered = products.filter(product =>
-            product.title.toLowerCase().includes(term.toLowerCase()) ||
-            product.description.toLowerCase().includes(term.toLowerCase())
-        );
+        
+        if (!term.trim()) {
+            setFilteredProducts(products);
+            return;
+        }
+        
+        const searchLower = term.toLowerCase();
+        const filtered = products.filter(product => {
+            return (
+                product.title.toLowerCase().includes(searchLower) ||
+                product.description.toLowerCase().includes(searchLower) ||
+                product.category.toLowerCase().includes(searchLower) ||
+                product.condition.toLowerCase().includes(searchLower) ||
+                product.location.toLowerCase().includes(searchLower) ||
+                product.sellerName.toLowerCase().includes(searchLower)
+            );
+        });
         setFilteredProducts(filtered);
     };
 
     const handleFilter = (filters) => {
         let filtered = products;
 
-        // Apply search term
-        if (searchTerm) {
-            filtered = filtered.filter(product =>
-                product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.description.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+        // Apply search term first
+        if (searchTerm && searchTerm.trim()) {
+            const searchLower = searchTerm.toLowerCase();
+            filtered = filtered.filter(product => {
+                return (
+                    product.title.toLowerCase().includes(searchLower) ||
+                    product.description.toLowerCase().includes(searchLower) ||
+                    product.category.toLowerCase().includes(searchLower) ||
+                    product.condition.toLowerCase().includes(searchLower) ||
+                    product.location.toLowerCase().includes(searchLower) ||
+                    product.sellerName.toLowerCase().includes(searchLower)
+                );
+            });
         }
 
         // Apply category filter
@@ -62,11 +82,11 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
                 React.createElement('div', { className: 'hero-stats' },
                     React.createElement('div', { className: 'stat' },
                         React.createElement('i', { className: 'fas fa-users' }),
-                        React.createElement('span', null, '500+ Students')
+                        React.createElement('span', null, 'Trusted by Students')
                     ),
                     React.createElement('div', { className: 'stat' },
                         React.createElement('i', { className: 'fas fa-box' }),
-                        React.createElement('span', null, `${products.length} Items`)
+                        React.createElement('span', null, `${products.length} Items${products.length === 0 ? ' (Start Selling!)' : ''}`)
                     ),
                     React.createElement('div', { className: 'stat' },
                         React.createElement('i', { className: 'fas fa-handshake' }),
@@ -78,7 +98,7 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
                     onClick: () => onNavigate('sell')
                 },
                     React.createElement('i', { className: 'fas fa-plus' }),
-                    'Start Selling'
+                    products.length === 0 ? 'Be the First to Sell!' : 'Start Selling'
                 )
             )
         ),
@@ -144,10 +164,46 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
                     `${filteredProducts.length} item${filteredProducts.length !== 1 ? 's' : ''} found`
                 )
             ),
-            React.createElement(ProductGrid, {
-                products: filteredProducts,
-                onProductClick: onProductClick
-            })
+            products.length === 0 ? 
+                // Empty marketplace - encourage first listings
+                React.createElement('div', { className: 'empty-marketplace' },
+                    React.createElement('div', { className: 'empty-content' },
+                        React.createElement('i', { className: 'fas fa-store empty-icon' }),
+                        React.createElement('h3', null, 'Be the First to Start Trading!'),
+                        React.createElement('p', null, 'Your college marketplace is ready and waiting. List your first item and help build a thriving student community.'),
+                        React.createElement('div', { className: 'empty-actions' },
+                            React.createElement('button', {
+                                className: 'btn btn-primary btn-large',
+                                onClick: () => onNavigate('sell')
+                            },
+                                React.createElement('i', { className: 'fas fa-plus' }),
+                                'List Your First Item'
+                            ),
+                            React.createElement('button', {
+                                className: 'btn btn-outline btn-large',
+                                onClick: () => onNavigate('profile')
+                            },
+                                React.createElement('i', { className: 'fas fa-user' }),
+                                'Set Up Profile'
+                            )
+                        ),
+                        React.createElement('div', { className: 'getting-started-tips' },
+                            React.createElement('h4', null, 'Getting Started Tips:'),
+                            React.createElement('ul', null,
+                                React.createElement('li', null, '📱 Take clear photos of your items'),
+                                React.createElement('li', null, '💰 Price competitively for quick sales'),
+                                React.createElement('li', null, '📝 Write detailed, honest descriptions'),
+                                React.createElement('li', null, '🏫 Meet safely on campus in public areas'),
+                                React.createElement('li', null, '🤝 Build trust with good communication')
+                            )
+                        )
+                    )
+                ) :
+                React.createElement(ProductGrid, {
+                    products: filteredProducts,
+                    onProductClick: onProductClick,
+                    searchTerm: searchTerm
+                })
         )
     );
 };

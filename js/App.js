@@ -5,18 +5,29 @@ const App = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [products, setProducts] = useState([]);
+    const [showAdminPanel, setShowAdminPanel] = useState(false);
 
     useEffect(() => {
-        // Initialize empty marketplace (production mode)
-        initializeDefaultData();
+        // Initialize sample data (will check demo mode vs production)
+        initializeSampleData();
         
-        // Load existing products (if any)
-        const existingProducts = getProductsFromStorage();
-        setProducts(existingProducts);
+        // Load products from storage
+        const storedProducts = getProductsFromStorage();
+        setProducts(storedProducts);
         
         // Check for logged in user
         const user = getCurrentUser();
         setCurrentUser(user);
+
+        // Admin panel keyboard shortcut (Ctrl+Shift+A)
+        const handleKeyDown = (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+                setShowAdminPanel(true);
+            }
+        };
+        
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
     }, []);
 
     const navigateToPage = (page, productId = null) => {
@@ -78,7 +89,12 @@ const App = () => {
         React.createElement('main', { className: 'main-content' },
             renderCurrentPage()
         ),
-        React.createElement(Footer, null)
+        React.createElement(Footer, null),
+        
+        // Admin Panel (hidden by default, activated with Ctrl+Shift+A)
+        showAdminPanel && React.createElement(AdminPanel, {
+            onClose: () => setShowAdminPanel(false)
+        })
     );
 };
 

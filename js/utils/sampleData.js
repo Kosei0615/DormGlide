@@ -342,19 +342,45 @@ const getSampleNotifications = () => {
     ];
 };
 
-// Initialize data helper function
+// Initialize data helper function - PRODUCTION VERSION
 const initializeSampleData = () => {
-    console.log('Initializing DormGlide sample data...');
+    console.log('Initializing DormGlide for DEMO...');
+    // Always load sample data for demo/pitch
+    const products = getSampleProducts();
+    localStorage.setItem('dormglide_products', JSON.stringify(products));
+    localStorage.setItem('dormglide_demo_mode', 'true');
+    console.log(`Demo mode: Initialized ${products.length} sample products`);
+    console.log('DormGlide initialization complete!');
+};
+
+// Function to toggle demo mode (for testing purposes)
+const toggleDemoMode = () => {
+    const currentMode = localStorage.getItem('dormglide_demo_mode') === 'true';
+    localStorage.setItem('dormglide_demo_mode', (!currentMode).toString());
     
-    // Initialize products if none exist
-    const existingProducts = localStorage.getItem('dormglide_products');
-    if (!existingProducts) {
+    if (!currentMode) {
+        // Switching to demo mode - load sample data
         const products = getSampleProducts();
         localStorage.setItem('dormglide_products', JSON.stringify(products));
-        console.log(`Initialized ${products.length} sample products`);
+        console.log('Demo mode enabled - sample products loaded');
+    } else {
+        // Switching to production mode - clear fake data
+        localStorage.setItem('dormglide_products', JSON.stringify([]));
+        console.log('Production mode enabled - sample products cleared');
     }
     
-    console.log('Sample data initialization complete!');
+    // Reload page to reflect changes
+    window.location.reload();
+};
+
+// Function to clear all demo data for production launch
+const prepareForProduction = () => {
+    localStorage.setItem('dormglide_demo_mode', 'false');
+    localStorage.setItem('dormglide_products', JSON.stringify([]));
+    localStorage.removeItem('dormglide_current_user');
+    localStorage.removeItem('dormglide_preferences');
+    console.log('App prepared for production - all demo data cleared');
+    window.location.reload();
 };
 
 // Export for global access
@@ -365,3 +391,5 @@ window.getSafetyTips = getSafetyTips;
 window.getPopularSearches = getPopularSearches;
 window.getSampleNotifications = getSampleNotifications;
 window.initializeSampleData = initializeSampleData;
+window.toggleDemoMode = toggleDemoMode;
+window.prepareForProduction = prepareForProduction;

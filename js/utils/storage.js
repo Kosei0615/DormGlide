@@ -127,21 +127,14 @@ const clearAllData = () => {
     }
 };
 
-// Initialize default data if storage is empty (production mode - no sample data)
+// Initialize default data if storage is empty
 const initializeDefaultData = () => {
     const existingProducts = getProductsFromStorage();
     if (existingProducts.length === 0) {
-        // Production mode: Start with empty marketplace
-        saveProductsToStorage([]);
-        console.log('Empty marketplace initialized - ready for real student listings');
+        const sampleProducts = getSampleProducts();
+        saveProductsToStorage(sampleProducts);
+        console.log('Sample products initialized');
     }
-};
-
-// Demo mode function (only for testing/development)
-const initializeDemoData = () => {
-    const sampleProducts = getSampleProducts();
-    saveProductsToStorage(sampleProducts);
-    console.log('Demo data loaded - for testing purposes only');
 };
 
 // Export functions for use in other files
@@ -159,6 +152,5 @@ window.DormGlideStorage = {
     addToSearchHistory,
     getSearchHistory,
     clearAllData,
-    initializeDefaultData,
-    initializeDemoData
+    initializeDefaultData
 };
