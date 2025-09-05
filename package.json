@@ -1,0 +1,16 @@
+{
+  "name": "dormglide",
+  "version": "1.0.0",
+  "description": "A marketplace platform for students to buy and sell used goods",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx http-server -p 3000",
+    "dev": "npx http-server -p 3000"
+  },
+  "keywords": ["marketplace", "students", "secondhand", "trading"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

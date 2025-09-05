@@ -1,0 +1,274 @@
+const SellPage = ({ onNavigate, onProductAdd, currentUser }) => {
+    const [formData, setFormData] = React.useState({
+        title: '',
+        description: '',
+        price: '',
+        category: '',
+        condition: '',
+        location: '',
+        images: []
+    });
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+    const categories = [
+        'Electronics', 'Textbooks', 'Furniture', 'Clothing', 'Sports', 
+        'Kitchen', 'Dorm Decor', 'Other'
+    ];
+
+    const conditions = ['New', 'Like New', 'Good', 'Fair'];
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleImageUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const imageUrls = files.map(file => {
+            // In a real app, you would upload to a server and get URLs
+            // For demo purposes, we'll use placeholder URLs
+            return `https://via.placeholder.com/300x200?text=${encodeURIComponent(file.name)}`;
+        });
+        
+        setFormData(prev => ({
+            ...prev,
+            images: [...prev.images, ...imageUrls].slice(0, 5) // Max 5 images
+        }));
+    };
+
+    const removeImage = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        
+        if (!currentUser) {
+            alert('Please set up your profile first!');
+            onNavigate('profile');
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        // Validate form
+        if (!formData.title || !formData.description || !formData.price || !formData.category || !formData.condition) {
+            alert('Please fill in all required fields.');
+            setIsSubmitting(false);
+            return;
+        }
+
+        const newProduct = {
+            id: Date.now().toString(),
+            title: formData.title,
+            description: formData.description,
+            price: parseFloat(formData.price),
+            category: formData.category,
+            condition: formData.condition,
+            location: formData.location || 'Campus',
+            images: formData.images,
+            image: formData.images[0] || 'https://via.placeholder.com/300x200?text=No+Image',
+            sellerId: currentUser.id,
+            sellerName: currentUser.name,
+            sellerEmail: currentUser.email,
+            createdAt: new Date().toISOString(),
+            views: 0
+        };
+
+        // Simulate upload delay
+        setTimeout(() => {
+            onProductAdd(newProduct);
+            setIsSubmitting(false);
+            alert('Your item has been listed successfully!');
+            onNavigate('home');
+        }, 1000);
+    };
+
+    if (!currentUser) {
+        return React.createElement('div', { className: 'sell-page' },
+            React.createElement('div', { className: 'auth-required' },
+                React.createElement('i', { className: 'fas fa-user-plus' }),
+                React.createElement('h2', null, 'Profile Required'),
+                React.createElement('p', null, 'Please set up your profile before selling items.'),
+                React.createElement('button', {
+                    className: 'btn btn-primary',
+                    onClick: () => onNavigate('profile')
+                }, 'Set Up Profile')
+            )
+        );
+    }
+
+    return React.createElement('div', { className: 'sell-page' },
+        React.createElement('div', { className: 'sell-container' },
+            React.createElement('div', { className: 'page-header' },
+                React.createElement('h1', null, 'Sell Your Item'),
+                React.createElement('p', null, 'List your item and reach hundreds of students on campus')
+            ),
+
+            React.createElement('form', { className: 'sell-form', onSubmit: handleSubmit },
+                // Images Section
+                React.createElement('div', { className: 'form-section' },
+                    React.createElement('h3', null, 'Photos'),
+                    React.createElement('p', { className: 'section-description' }, 
+                        'Add up to 5 photos to show your item (first photo will be the main image)'
+                    ),
+                    
+                    React.createElement('div', { className: 'image-upload-area' },
+                        formData.images.length > 0 && React.createElement('div', { className: 'uploaded-images' },
+                            formData.images.map((image, index) =>
+                                React.createElement('div', { key: index, className: 'uploaded-image' },
+                                    React.createElement('img', { src: image, alt: `Upload ${index + 1}` }),
+                                    React.createElement('button', {
+                                        type: 'button',
+                                        className: 'remove-image',
+                                        onClick: () => removeImage(index)
+                                    },
+                                        React.createElement('i', { className: 'fas fa-times' })
+                                    ),
+                                    index === 0 && React.createElement('span', { className: 'main-image-badge' }, 'Main')
+                                )
+                            )
+                        ),
+                        
+                        formData.images.length < 5 && React.createElement('label', { className: 'image-upload-btn' },
+                            React.createElement('i', { className: 'fas fa-camera' }),
+                            React.createElement('span', null, 'Add Photos'),
+                            React.createElement('input', {
+                                type: 'file',
+                                accept: 'image/*',
+                                multiple: true,
+                                onChange: handleImageUpload,
+                                style: { display: 'none' }
+                            })
+                        )
+                    )
+                ),
+
+                // Basic Info Section
+                React.createElement('div', { className: 'form-section' },
+                    React.createElement('h3', null, 'Basic Information'),
+                    
+                    React.createElement('div', { className: 'form-group' },
+                        React.createElement('label', null, 'Title *'),
+                        React.createElement('input', {
+                            type: 'text',
+                            name: 'title',
+                            value: formData.title,
+                            onChange: handleInputChange,
+                            placeholder: 'What are you selling?',
+                            required: true
+                        })
+                    ),
+
+                    React.createElement('div', { className: 'form-group' },
+                        React.createElement('label', null, 'Description *'),
+                        React.createElement('textarea', {
+                            name: 'description',
+                            value: formData.description,
+                            onChange: handleInputChange,
+                            placeholder: 'Describe your item, its condition, and any important details...',
+                            rows: 4,
+                            required: true
+                        })
+                    ),
+
+                    React.createElement('div', { className: 'form-row' },
+                        React.createElement('div', { className: 'form-group' },
+                            React.createElement('label', null, 'Price *'),
+                            React.createElement('div', { className: 'price-input' },
+                                React.createElement('span', { className: 'currency' }, '$'),
+                                React.createElement('input', {
+                                    type: 'number',
+                                    name: 'price',
+                                    value: formData.price,
+                                    onChange: handleInputChange,
+                                    placeholder: '0.00',
+                                    min: '0',
+                                    step: '0.01',
+                                    required: true
+                                })
+                            )
+                        ),
+
+                        React.createElement('div', { className: 'form-group' },
+                            React.createElement('label', null, 'Location'),
+                            React.createElement('input', {
+                                type: 'text',
+                                name: 'location',
+                                value: formData.location,
+                                onChange: handleInputChange,
+                                placeholder: 'e.g., North Campus, Dorm Building A'
+                            })
+                        )
+                    ),
+
+                    React.createElement('div', { className: 'form-row' },
+                        React.createElement('div', { className: 'form-group' },
+                            React.createElement('label', null, 'Category *'),
+                            React.createElement('select', {
+                                name: 'category',
+                                value: formData.category,
+                                onChange: handleInputChange,
+                                required: true
+                            },
+                                React.createElement('option', { value: '' }, 'Select a category'),
+                                categories.map(category =>
+                                    React.createElement('option', { key: category, value: category }, category)
+                                )
+                            )
+                        ),
+
+                        React.createElement('div', { className: 'form-group' },
+                            React.createElement('label', null, 'Condition *'),
+                            React.createElement('select', {
+                                name: 'condition',
+                                value: formData.condition,
+                                onChange: handleInputChange,
+                                required: true
+                            },
+                                React.createElement('option', { value: '' }, 'Select condition'),
+                                conditions.map(condition =>
+                                    React.createElement('option', { key: condition, value: condition }, condition)
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                // Safety Tips
+                React.createElement('div', { className: 'safety-tips' },
+                    React.createElement('h4', null, 'Safety Tips'),
+                    React.createElement('ul', null,
+                        React.createElement('li', null, 'Meet in public places on campus'),
+                        React.createElement('li', null, 'Bring a friend when meeting buyers'),
+                        React.createElement('li', null, 'Use secure payment methods'),
+                        React.createElement('li', null, 'Trust your instincts')
+                    )
+                ),
+
+                // Submit Button
+                React.createElement('div', { className: 'form-actions' },
+                    React.createElement('button', {
+                        type: 'button',
+                        className: 'btn btn-secondary',
+                        onClick: () => onNavigate('home')
+                    }, 'Cancel'),
+                    React.createElement('button', {
+                        type: 'submit',
+                        className: 'btn btn-primary',
+                        disabled: isSubmitting
+                    },
+                        isSubmitting && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
+                        isSubmitting ? 'Listing...' : 'List Item'
+                    )
+                )
+            )
+        )
+    );
+};
