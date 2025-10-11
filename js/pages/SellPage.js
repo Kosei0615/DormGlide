@@ -27,16 +27,42 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
 
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files);
-        const imageUrls = files.map(file => {
-            // In a real app, you would upload to a server and get URLs
-            // For demo purposes, we'll use placeholder URLs
-            return `https://via.placeholder.com/300x200?text=${encodeURIComponent(file.name)}`;
+        
+        if (files.length + formData.images.length > 5) {
+            alert('You can upload maximum 5 images');
+            return;
+        }
+        
+        // Convert images to base64 for demo (in production, upload to server)
+        const promises = files.map(file => {
+            return new Promise((resolve, reject) => {
+                if (!file.type.startsWith('image/')) {
+                    reject('Only image files are allowed');
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    reject('Image size should be less than 5MB');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
         });
         
-        setFormData(prev => ({
-            ...prev,
-            images: [...prev.images, ...imageUrls].slice(0, 5) // Max 5 images
-        }));
+        Promise.all(promises)
+            .then(imageUrls => {
+                setFormData(prev => ({
+                    ...prev,
+                    images: [...prev.images, ...imageUrls].slice(0, 5)
+                }));
+            })
+            .catch(error => {
+                alert(error);
+            });
     };
 
     const removeImage = (index) => {

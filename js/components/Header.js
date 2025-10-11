@@ -20,6 +20,17 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
         }
     };
 
+    // Close user menu when clicking outside
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showUserMenu && !event.target.closest('.user-menu-container')) {
+                setShowUserMenu(false);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [showUserMenu]);
+
     return React.createElement('header', { className: 'header' },
         React.createElement('div', { className: 'header-container' },
             // Logo and brand
@@ -52,18 +63,34 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     // User menu dropdown
                     React.createElement('div', { className: 'user-menu-container' },
                         React.createElement('button', {
-                            className: 'nav-btn user-menu-btn',
-                            onClick: () => setShowUserMenu(!showUserMenu)
+                            className: 'nav-btn user-menu-btn active',
+                            onClick: (e) => {
+                                e.stopPropagation();
+                                setShowUserMenu(!showUserMenu);
+                            }
                         },
-                            React.createElement('i', { className: 'fas fa-user-circle' }),
-                            React.createElement('span', null, currentUser.name),
-                            React.createElement('i', { className: 'fas fa-chevron-down' })
+                            React.createElement('div', { className: 'user-avatar' },
+                                React.createElement('i', { className: 'fas fa-user-circle' })
+                            ),
+                            React.createElement('div', { className: 'user-info-compact' },
+                                React.createElement('span', { className: 'user-name' }, currentUser.name),
+                                React.createElement('span', { className: 'user-status' }, 
+                                    React.createElement('span', { className: 'status-dot' }),
+                                    'Online'
+                                )
+                            ),
+                            React.createElement('i', { className: `fas fa-chevron-down ${showUserMenu ? 'rotated' : ''}` })
                         ),
                         
                         showUserMenu && React.createElement('div', { className: 'user-dropdown' },
                             React.createElement('div', { className: 'user-dropdown-header' },
-                                React.createElement('p', null, currentUser.name),
-                                React.createElement('small', null, currentUser.email)
+                                React.createElement('div', { className: 'user-avatar-large' },
+                                    React.createElement('i', { className: 'fas fa-user-circle' })
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('p', null, currentUser.name),
+                                    React.createElement('small', null, currentUser.email)
+                                )
                             ),
                             React.createElement('button', {
                                 onClick: () => handleNavigation('dashboard')
@@ -97,11 +124,11 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     )
                 ) : (
                     React.createElement('button', {
-                        className: 'nav-btn btn-primary',
+                        className: 'nav-btn btn-primary login-btn',
                         onClick: onShowAuth
                     }, 
                         React.createElement('i', { className: 'fas fa-sign-in-alt' }),
-                        React.createElement('span', null, 'Login / Sign Up')
+                        React.createElement('span', null, 'Login')
                     )
                 )
             ),

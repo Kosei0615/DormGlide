@@ -1,0 +1,186 @@
+/* Enhanced Header User Menu Styles */
+.user-menu-btn {
+    display: flex !important;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem !important;
+    background: white !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.user-menu-btn:hover {
+    border-color: #4a90e2 !important;
+    background: #f7fafc !important;
+}
+
+.user-menu-btn.active {
+    border-color: #4a90e2 !important;
+    background: #e6f3ff !important;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+}
+
+.user-info-compact {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.125rem;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.9rem;
+}
+
+.user-status {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #48bb78;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #48bb78;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.fa-chevron-down.rotated {
+    transform: rotate(180deg);
+}
+
+.user-avatar-large {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.75rem;
+    flex-shrink: 0;
+}
+
+.login-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+/* Enhanced image upload */
+.uploaded-image {
+    position: relative;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f7fafc;
+}
+
+.uploaded-image:hover {
+    border-color: #4a90e2;
+}
+
+.uploaded-image img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.remove-image {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-image:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+.main-image-badge {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    background: rgba(74, 144, 226, 0.95);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.image-upload-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 2rem;
+    border: 2px dashed #cbd5e0;
+    border-radius: 12px;
+    background: #f7fafc;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.image-upload-btn:hover {
+    border-color: #4a90e2;
+    background: #e6f3ff;
+    color: #4a90e2;
+}
+
+.image-upload-btn i {
+    font-size: 2rem;
+}
+
+.uploaded-images {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.image-upload-area {
+    margin-top: 1rem;
+}
