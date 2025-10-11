@@ -1,4 +1,4 @@
-const SellPage = ({ onNavigate, onProductAdd, currentUser }) => {
+const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
     const [formData, setFormData] = React.useState({
         title: '',
         description: '',
@@ -50,8 +50,12 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser }) => {
         e.preventDefault();
         
         if (!currentUser) {
-            alert('Please set up your profile first!');
-            onNavigate('profile');
+            alert('Please login or create an account first!');
+            if (onShowAuth) {
+                onShowAuth();
+            } else {
+                onNavigate('profile');
+            }
             return;
         }
 
@@ -94,12 +98,12 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser }) => {
         return React.createElement('div', { className: 'sell-page' },
             React.createElement('div', { className: 'auth-required' },
                 React.createElement('i', { className: 'fas fa-user-plus' }),
-                React.createElement('h2', null, 'Profile Required'),
-                React.createElement('p', null, 'Please set up your profile before selling items.'),
+                React.createElement('h2', null, 'Login Required'),
+                React.createElement('p', null, 'Please login or create an account before selling items.'),
                 React.createElement('button', {
                     className: 'btn btn-primary',
-                    onClick: () => onNavigate('profile')
-                }, 'Set Up Profile')
+                    onClick: onShowAuth || (() => onNavigate('profile'))
+                }, 'Login / Sign Up')
             )
         );
     }

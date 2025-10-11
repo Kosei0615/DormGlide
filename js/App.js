@@ -10,6 +10,7 @@ const App = () => {
     const [currentUser, setCurrentUser] = useState(null);
     const [products, setProducts] = useState([]);
     const [showAdminPanel, setShowAdminPanel] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(false);
 
     useEffect(() => {
         console.log('App useEffect running...');
@@ -44,10 +45,11 @@ const App = () => {
                 ]);
             }
             
-            // Check for logged in user
-            if (typeof getCurrentUser !== 'undefined') {
-                const user = getCurrentUser();
+            // Check for logged in user using Auth system
+            if (window.DormGlideAuth) {
+                const user = window.DormGlideAuth.getCurrentUser();
                 setCurrentUser(user);
+                console.log('Current user:', user);
             }
 
             // Admin panel keyboard shortcut (Ctrl+Shift+A)
@@ -69,6 +71,15 @@ const App = () => {
         if (productId) {
             const product = products.find(p => p.id === productId);
             setSelectedProduct(product);
+            
+            // Track product view
+            if (currentUser && window.DormGlideAuth) {
+                window.DormGlideAuth.trackProductView(
+                    currentUser.id, 
+                    productId, 
+                    product?.title || 'Unknown Product'
+                );
+            }
         }
     };
 
@@ -76,6 +87,31 @@ const App = () => {
         const updatedProducts = [...products, newProduct];
         setProducts(updatedProducts);
         saveProductsToStorage(updatedProducts);
+        
+        // Track sale for seller
+        if (currentUser && window.DormGlideAuth) {
+            window.DormGlideAuth.trackSale(
+                currentUser.id,
+                newProduct.id,
+                newProduct.title,
+                newProduct.price,
+                null // No buyer yet
+            );
+        }
+    };
+
+    const handleAuthSuccess = (user) => {
+        setCurrentUser(user);
+        console.log('User logged in:', user);
+    };
+
+    const handleLogout = () => {
+        if (window.DormGlideAuth) {
+            window.DormGlideAuth.logoutUser();
+        }
+        setCurrentUser(null);
+        setCurrentPage('home');
+        console.log('User logged out');
     };
 
     const renderCurrentPage = () => {
@@ -84,7 +120,8 @@ const App = () => {
                 return React.createElement(HomePage, {
                     products: products,
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
-                    onNavigate: navigateToPage
+                    onNavigate: navigateToPage,
+                    currentUser: currentUser
                 });
             case 'product-detail':
                 return React.createElement(ProductDetailPage, {
@@ -96,20 +133,33 @@ const App = () => {
                 return React.createElement(SellPage, {
                     onNavigate: navigateToPage,
                     onProductAdd: addProduct,
-                    currentUser: currentUser
+                    currentUser: currentUser,
+                    onShowAuth: () => setShowAuthModal(true)
                 });
             case 'profile':
                 return React.createElement(ProfilePage, {
                     onNavigate: navigateToPage,
                     currentUser: currentUser,
                     setCurrentUser: setCurrentUser,
-                    userProducts: products.filter(p => p.sellerId === currentUser?.id)
+                    userProducts: products.filter(p => p.sellerId === currentUser?.id),
+                    onShowAuth: () => setShowAuthModal(true)
+                });
+            case 'dashboard':
+                return React.createElement(UserDashboard, {
+                    currentUser: currentUser,
+                    onNavigate: navigateToPage
+                });
+            case 'admin':
+                return React.createElement(AdminDashboard, {
+                    currentUser: currentUser,
+                    onNavigate: navigateToPage
                 });
             default:
                 return React.createElement(HomePage, {
                     products: products,
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
-                    onNavigate: navigateToPage
+                    onNavigate: navigateToPage,
+                    currentUser: currentUser
                 });
         }
     };
@@ -118,12 +168,20 @@ const App = () => {
         React.createElement(Header, {
             currentPage: currentPage,
             onNavigate: navigateToPage,
-            currentUser: currentUser
+            currentUser: currentUser,
+            onShowAuth: () => setShowAuthModal(true),
+            onLogout: handleLogout
         }),
         React.createElement('main', { className: 'main-content' },
             renderCurrentPage()
         ),
         React.createElement(Footer, null),
+        
+        // Auth Modal
+        showAuthModal && React.createElement(AuthModal, {
+            onClose: () => setShowAuthModal(false),
+            onAuthSuccess: handleAuthSuccess
+        }),
         
         // Admin Panel (hidden by default, activated with Ctrl+Shift+A)
         showAdminPanel && React.createElement(AdminPanel, {

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DormGlide - Student Marketplace</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+    
+    <!-- React and Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Main Styles -->
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Load utility scripts first -->
+    <script src="js/utils/storage.js"></script>
+    <script src="js/utils/auth.js"></script>
+    <script src="js/utils/sampleData.js"></script>
+    
+    <!-- Load components -->
+    <script type="text/babel" src="js/components/Header.js"></script>
+    <script type="text/babel" src="js/components/Footer.js"></script>
+    <script type="text/babel" src="js/components/SearchFilter.js"></script>
+    <script type="text/babel" src="js/components/ProductCard.js"></script>
+    <script type="text/babel" src="js/components/ProductGrid.js"></script>
+    <script type="text/babel" src="js/components/AdminPanel.js"></script>
+    <script type="text/babel" src="js/components/AuthModal.js"></script>
+    
+    <!-- Load pages -->
+    <script type="text/babel" src="js/pages/HomePage.js"></script>
+    <script type="text/babel" src="js/pages/ProductDetailPage.js"></script>
+    <script type="text/babel" src="js/pages/SellPage.js"></script>
+    <script type="text/babel" src="js/pages/ProfilePage.js"></script>
+    <script type="text/babel" src="js/pages/UserDashboard.js"></script>
+    <script type="text/babel" src="js/pages/AdminDashboard.js"></script>
+    
+    <!-- Load main app -->
+    <script type="text/babel" src="js/App.js"></script>
+    
+    <script>
+        console.log('DormGlide loaded successfully!');
+        
+        // Create a demo admin account on first load
+        if (window.DormGlideAuth && !localStorage.getItem('dormglide_demo_admin_created')) {
+            const demoAdmin = {
+                email: 'admin@dormglide.com',
+                password: 'admin123',
+                name: 'Admin User',
+                phone: '(555) 000-0000',
+                university: 'DormGlide University',
+                role: 'admin',
+                bio: 'Platform Administrator'
+            };
+            
+            const result = window.DormGlideAuth.registerUser(demoAdmin);
+            if (result.success) {
+                console.log('Demo admin account created: admin@dormglide.com / admin123');
+                localStorage.setItem('dormglide_demo_admin_created', 'true');
+            }
+        }
+        
+        // Create demo test account
+        if (window.DormGlideAuth && !localStorage.getItem('dormglide_demo_user_created')) {
+            const demoUser = {
+                email: 'test@demo.com',
+                password: 'password',
+                name: 'Demo User',
+                phone: '(555) 123-4567',
+                university: 'Demo University',
+                role: 'seller',
+                bio: 'Demo seller account for testing'
+            };
+            
+            const result = window.DormGlideAuth.registerUser(demoUser);
+            if (result.success) {
+                console.log('Demo user account created: test@demo.com / password');
+                localStorage.setItem('dormglide_demo_user_created', 'true');
+            }
+        }
+    </script>
+</body>
+</html>

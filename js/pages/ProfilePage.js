@@ -1,4 +1,4 @@
-const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts }) => {
+const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, onShowAuth }) => {
     const [isEditing, setIsEditing] = React.useState(!currentUser);
     const [formData, setFormData] = React.useState({
         name: currentUser?.name || '',
@@ -34,7 +34,11 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts }) 
         };
 
         setCurrentUser(userData);
-        saveUserToStorage(userData);
+        if (window.DormGlideAuth) {
+            window.DormGlideAuth.updateUserProfile(userData.id, userData);
+        } else {
+            saveUserToStorage(userData);
+        }
         setIsEditing(false);
         alert('Profile saved successfully!');
     };
@@ -303,7 +307,7 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts }) 
                 React.createElement('p', null, 'Create your profile to start buying and selling with other students.'),
                 React.createElement('button', {
                     className: 'btn btn-primary btn-large',
-                    onClick: () => setIsEditing(true)
+                    onClick: onShowAuth || (() => setIsEditing(true))
                 }, 'Create Profile')
             )
         );
