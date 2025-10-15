@@ -1,4 +1,4 @@
-const HomePage = ({ products, onProductClick, onNavigate }) => {
+const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAuth }) => {
     const [filteredProducts, setFilteredProducts] = React.useState(products);
     const [searchTerm, setSearchTerm] = React.useState('');
     const [activeCategory, setActiveCategory] = React.useState('');
@@ -44,6 +44,16 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
         
         const filtered = products.filter(product => product.category === category);
         setFilteredProducts(filtered);
+    };
+
+    const handleStartSelling = () => {
+        if (currentUser) {
+            onNavigate('sell');
+        } else if (onShowAuth) {
+            onShowAuth();
+        } else {
+            onNavigate('profile');
+        }
     };
 
     const handleFilter = (filters = {}) => {
@@ -138,7 +148,7 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
                 ),
                 React.createElement('button', {
                     className: 'cta-button',
-                    onClick: () => onNavigate('sell')
+                    onClick: handleStartSelling
                 },
                     React.createElement('i', { className: 'fas fa-plus' }),
                     products.length === 0 ? 'Be the First to Sell!' : 'Start Selling'
@@ -228,7 +238,7 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
                         React.createElement('div', { className: 'empty-actions' },
                             React.createElement('button', {
                                 className: 'btn btn-primary btn-large',
-                                onClick: () => onNavigate('sell')
+                                onClick: handleStartSelling
                             },
                                 React.createElement('i', { className: 'fas fa-plus' }),
                                 'List Your First Item'

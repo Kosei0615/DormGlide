@@ -98,6 +98,34 @@
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
 }
 
+.btn-outline.saved {
+    border-color: #f56565;
+    color: #f56565;
+    background: rgba(245, 101, 101, 0.12);
+}
+
+.btn-outline.saved:hover {
+    border-color: #e53e3e;
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.16);
+}
+
+.form-hint {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    color: #4a5568;
+}
+
+.seller-contact {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: #2b6cb0;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
 /* Enhanced image upload */
 .uploaded-image {
     position: relative;

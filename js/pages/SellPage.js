@@ -6,6 +6,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
         category: '',
         condition: '',
         location: '',
+        contactInfo: '',
         images: []
     });
     const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -16,6 +17,16 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
     ];
 
     const conditions = ['New', 'Like New', 'Good', 'Fair'];
+
+    React.useEffect(() => {
+        if (currentUser) {
+            const preferredContact = currentUser.phone || currentUser.email || '';
+            setFormData(prev => ({
+                ...prev,
+                contactInfo: prev.contactInfo || preferredContact
+            }));
+        }
+    }, [currentUser]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -94,6 +105,12 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             return;
         }
 
+        if (!formData.contactInfo || !formData.contactInfo.trim()) {
+            alert('Please provide contact information so buyers can reach you.');
+            setIsSubmitting(false);
+            return;
+        }
+
         const newProduct = {
             id: Date.now().toString(),
             title: formData.title,
@@ -102,6 +119,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             category: formData.category,
             condition: formData.condition,
             location: formData.location || 'Campus',
+            contactInfo: formData.contactInfo.trim(),
             images: formData.images,
             image: formData.images[0] || 'https://via.placeholder.com/300x200?text=No+Image',
             sellerId: currentUser.id,
@@ -111,13 +129,26 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             views: 0
         };
 
-        // Simulate upload delay
-        setTimeout(() => {
-            onProductAdd(newProduct);
-            setIsSubmitting(false);
+        try {
+            const persisted = await onProductAdd(newProduct);
             alert('Your item has been listed successfully!');
-            onNavigate('home');
-        }, 1000);
+            setFormData({
+                title: '',
+                description: '',
+                price: '',
+                category: '',
+                condition: '',
+                location: '',
+                contactInfo: currentUser.phone || currentUser.email || '',
+                images: []
+            });
+            onNavigate('home', persisted?.id);
+        } catch (error) {
+            console.error('Failed to save product:', error);
+            alert('Something went wrong while listing your item. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (!currentUser) {
@@ -236,6 +267,19 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                                 placeholder: 'e.g., North Campus, Dorm Building A'
                             })
                         )
+                    ),
+
+                    React.createElement('div', { className: 'form-group' },
+                        React.createElement('label', null, 'Contact Information *'),
+                        React.createElement('input', {
+                            type: 'text',
+                            name: 'contactInfo',
+                            value: formData.contactInfo,
+                            onChange: handleInputChange,
+                            placeholder: 'Phone, email, LINE, KakaoTalk, etc.',
+                            required: true
+                        }),
+                        React.createElement('small', { className: 'form-hint' }, 'Buyers will see this after they tap “Chat with Seller”.')
                     ),
 
                     React.createElement('div', { className: 'form-row' },

@@ -1,6 +1,7 @@
-const ProductDetailPage = ({ product, onNavigate, currentUser }) => {
+const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => {
     const [isImageModalOpen, setIsImageModalOpen] = React.useState(false);
     const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+    const [isSaved, setIsSaved] = React.useState(false);
 
     if (!product) {
         return React.createElement('div', { className: 'product-detail-page' },
@@ -35,22 +36,79 @@ const ProductDetailPage = ({ product, onNavigate, currentUser }) => {
         return `${Math.floor(days / 30)} months ago`;
     };
 
-    const handleContactSeller = () => {
-        if (!currentUser) {
-            alert('Please set up your profile first to contact sellers!');
+    React.useEffect(() => {
+        if (currentUser && product && window.DormGlideAuth) {
+            const favorited = window.DormGlideAuth.isProductFavorited
+                ? window.DormGlideAuth.isProductFavorited(currentUser.id, product.id)
+                : window.DormGlideAuth.getUserActivity(currentUser.id).favorites.some(f => f.productId === product.id);
+            setIsSaved(favorited);
+        } else {
+            setIsSaved(false);
+        }
+    }, [currentUser, product ? product.id : null]);
+
+    const ensureAuthenticated = (message) => {
+        if (currentUser) {
+            return true;
+        }
+        alert(message || 'Please log in or create an account to continue.');
+        if (onShowAuth) {
+            onShowAuth();
+        } else {
             onNavigate('profile');
+        }
+        return false;
+    };
+
+    const handleChatWithSeller = () => {
+    if (!ensureAuthenticated('Please log in to chat with the seller.')) return;
+        if (!product.sellerId) {
+            alert('Seller information is missing for this listing.');
             return;
         }
-        alert(`Contact feature would connect you with ${product.sellerName}. In a real app, this would open a messaging system or provide contact details.`);
+        if (currentUser.id === product.sellerId) {
+            alert('This is your own listing.');
+            return;
+        }
+
+        if (window.DormGlideAuth && window.DormGlideAuth.sendMessage) {
+            const message = `Hi ${product.sellerName}, I am interested in "${product.title}". Is it still available?`;
+            const result = window.DormGlideAuth.sendMessage(currentUser.id, product.sellerId, product.id, message, product.title);
+            if (result.success) {
+                alert(`Message sent to ${product.sellerName}! Check your dashboard for updates.`);
+            } else {
+                alert(result.message || 'Unable to send message right now.');
+            }
+        } else {
+            alert('Messaging is not available in this demo build.');
+        }
     };
 
     const handleBuyNow = () => {
-        if (!currentUser) {
-            alert('Please set up your profile first to make purchases!');
-            onNavigate('profile');
+        if (!ensureAuthenticated('Log in to start the purchase flow.')) return;
+        alert(`Purchase feature would initiate buying process for "${product.title}". In a real app, this would handle payment and delivery.`);
+    };
+
+    const handleToggleSave = () => {
+        if (!ensureAuthenticated('Log in to mark this item as a favorite.')) return;
+        if (!window.DormGlideAuth) {
+            alert('Favorites are not available at the moment.');
             return;
         }
-        alert(`Purchase feature would initiate buying process for "${product.title}". In a real app, this would handle payment and delivery.`);
+
+        if (isSaved) {
+            window.DormGlideAuth.removeFromFavorites(currentUser.id, product.id);
+            setIsSaved(false);
+            alert('Removed from your saved items.');
+        } else {
+            const result = window.DormGlideAuth.addToFavorites(currentUser.id, product.id, product.title);
+            if (result.success) {
+                setIsSaved(true);
+                alert('Saved to your favorites! You can view it from your dashboard.');
+            } else {
+                alert(result.message || 'Unable to save this item right now.');
+            }
+        }
     };
 
     const images = product.images && product.images.length > 0 ? product.images : [product.image || 'https://via.placeholder.com/600x400?text=No+Image'];
@@ -139,6 +197,10 @@ const ProductDetailPage = ({ product, onNavigate, currentUser }) => {
                             React.createElement('div', { className: 'detail-item' },
                                 React.createElement('i', { className: 'fas fa-eye' }),
                                 React.createElement('span', null, 'Views: ', product.views || 0)
+                            ),
+                            product.contactInfo && React.createElement('div', { className: 'detail-item' },
+                                React.createElement('i', { className: 'fas fa-phone' }),
+                                React.createElement('span', null, 'Contact: ', product.contactInfo)
                             )
                         )
                     ),
@@ -156,6 +218,10 @@ const ProductDetailPage = ({ product, onNavigate, currentUser }) => {
                                 React.createElement('div', { className: 'seller-rating' },
                                     React.createElement('i', { className: 'fas fa-star' }),
                                     React.createElement('span', null, '4.8 (23 reviews)')
+                                ),
+                                product.contactInfo && React.createElement('p', { className: 'seller-contact' },
+                                    React.createElement('i', { className: 'fas fa-comment-dots' }),
+                                    ' Preferred contact: ', product.contactInfo
                                 )
                             )
                         )
@@ -172,17 +238,17 @@ const ProductDetailPage = ({ product, onNavigate, currentUser }) => {
                         ),
                         React.createElement('button', {
                             className: 'btn btn-secondary btn-large',
-                            onClick: handleContactSeller
+                            onClick: handleChatWithSeller
                         },
-                            React.createElement('i', { className: 'fas fa-comment' }),
-                            'Contact Seller'
+                            React.createElement('i', { className: 'fas fa-comments' }),
+                            'Chat with Seller'
                         ),
                         React.createElement('button', {
-                            className: 'btn btn-outline',
-                            onClick: () => alert('Wishlist feature coming soon!')
+                            className: `btn btn-outline ${isSaved ? 'saved' : ''}`,
+                            onClick: handleToggleSave
                         },
-                            React.createElement('i', { className: 'fas fa-heart' }),
-                            'Save'
+                            React.createElement('i', { className: isSaved ? 'fas fa-heart' : 'far fa-heart' }),
+                            isSaved ? 'Saved' : 'Save'
                         )
                     )
                 )

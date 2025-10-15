@@ -253,6 +253,12 @@ const removeFromFavorites = (userId, productId) => {
     return { success: true };
 };
 
+const isProductFavorited = (userId, productId) => {
+    if (!userId || !productId) return false;
+    const activity = getUserActivity(userId);
+    return activity.favorites.some(favorite => favorite.productId === productId);
+};
+
 // Track search
 const trackSearch = (userId, searchTerm, resultsCount) => {
     if (!userId) return;
@@ -267,6 +273,38 @@ const trackSearch = (userId, searchTerm, resultsCount) => {
     // Keep only last 30 searches
     activity.searches = activity.searches.slice(0, 30);
     saveUserActivity(userId, activity);
+};
+
+const sendMessage = (senderId, receiverId, productId, message, productTitle = '') => {
+    if (!senderId || !receiverId || !productId || !message) {
+        return { success: false, message: 'Missing message data' };
+    }
+
+    const timestamp = new Date().toISOString();
+    const baseMessage = {
+        productId,
+        productTitle,
+        message,
+        senderId,
+        receiverId,
+        timestamp
+    };
+
+    const senderActivity = getUserActivity(senderId);
+    senderActivity.messages.unshift({
+        ...baseMessage,
+        direction: 'outgoing'
+    });
+    saveUserActivity(senderId, senderActivity);
+
+    const receiverActivity = getUserActivity(receiverId);
+    receiverActivity.messages.unshift({
+        ...baseMessage,
+        direction: 'incoming'
+    });
+    saveUserActivity(receiverId, receiverActivity);
+
+    return { success: true };
 };
 
 // Admin functions
@@ -340,7 +378,9 @@ window.DormGlideAuth = {
     trackSale,
     addToFavorites,
     removeFromFavorites,
+    isProductFavorited,
     trackSearch,
+    sendMessage,
     isAdmin,
     getAllUsersForAdmin,
     suspendUser,

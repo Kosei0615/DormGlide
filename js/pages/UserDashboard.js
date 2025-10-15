@@ -5,17 +5,42 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
     const [products, setProducts] = React.useState([]);
 
     React.useEffect(() => {
-        if (currentUser) {
-            const userActivity = window.DormGlideAuth.getUserActivity(currentUser.id);
-            setActivity(userActivity);
-            
-            // Load user's products
-            if (typeof getProductsFromStorage !== 'undefined') {
-                const allProducts = getProductsFromStorage();
-                const userProds = allProducts.filter(p => p.sellerId === currentUser.id);
-                setProducts(userProds);
+        let isMounted = true;
+
+        const loadDashboardData = async () => {
+            if (!currentUser) {
+                if (isMounted) {
+                    setActivity(null);
+                    setProducts([]);
+                }
+                return;
             }
-        }
+
+            try {
+                if (window.DormGlideAuth && typeof window.DormGlideAuth.getUserActivity === 'function') {
+                    const userActivity = await window.DormGlideAuth.getUserActivity(currentUser.id);
+                    if (isMounted) {
+                        setActivity(userActivity);
+                    }
+                }
+
+                if (typeof getProductsFromStorage !== 'undefined') {
+                    const allProducts = await getProductsFromStorage();
+                    const userProds = allProducts.filter(p => p.sellerId === currentUser.id);
+                    if (isMounted) {
+                        setProducts(userProds);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        };
+
+        loadDashboardData();
+
+        return () => {
+            isMounted = false;
+        };
     }, [currentUser]);
 
     const formatDate = (dateString) => {
@@ -59,6 +84,16 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
                     React.createElement('div', { className: 'stat-info' },
                         React.createElement('h3', null, activity?.favorites?.length || 0),
                         React.createElement('p', null, 'Favorites')
+                    )
+                ),
+
+                React.createElement('div', { className: 'stat-card' },
+                    React.createElement('div', { className: 'stat-icon', style: { background: '#e3f2fd' } },
+                        React.createElement('i', { className: 'fas fa-comments', style: { color: '#1976d2' } })
+                    ),
+                    React.createElement('div', { className: 'stat-info' },
+                        React.createElement('h3', null, activity?.messages?.length || 0),
+                        React.createElement('p', null, 'Conversations')
                     )
                 ),
 

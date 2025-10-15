@@ -7,18 +7,49 @@ const AdminDashboard = ({ onNavigate, currentUser }) => {
     const [filterStatus, setFilterStatus] = React.useState('all');
 
     React.useEffect(() => {
-        loadData();
-    }, []);
+        let isMounted = true;
 
-    const loadData = () => {
-        if (window.DormGlideAuth && window.DormGlideAuth.isAdmin(currentUser)) {
-            const allUsers = window.DormGlideAuth.getAllUsersForAdmin();
-            setUsers(allUsers);
-            
-            if (typeof getProductsFromStorage !== 'undefined') {
-                const allProducts = getProductsFromStorage();
-                setProducts(allProducts);
+        const loadData = async () => {
+            if (!window.DormGlideAuth || !window.DormGlideAuth.isAdmin(currentUser)) {
+                return;
             }
+
+            try {
+                if (typeof window.DormGlideAuth.getAllUsersForAdmin === 'function') {
+                    const allUsers = await window.DormGlideAuth.getAllUsersForAdmin();
+                    if (isMounted) {
+                        setUsers(allUsers);
+                    }
+                }
+
+                if (typeof getProductsFromStorage !== 'undefined') {
+                    const allProducts = await getProductsFromStorage();
+                    if (isMounted) {
+                        setProducts(allProducts);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load admin data:', error);
+            }
+        };
+
+        loadData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [currentUser]);
+
+    const reloadData = async () => {
+        if (window.DormGlideAuth && window.DormGlideAuth.isAdmin(currentUser)) {
+            await Promise.all([
+                typeof window.DormGlideAuth.getAllUsersForAdmin === 'function'
+                    ? Promise.resolve(window.DormGlideAuth.getAllUsersForAdmin()).then((data) => setUsers(data))
+                    : Promise.resolve(),
+                typeof getProductsFromStorage !== 'undefined'
+                    ? Promise.resolve(getProductsFromStorage()).then((data) => setProducts(data))
+                    : Promise.resolve()
+            ]);
         }
     };
 
@@ -30,28 +61,28 @@ const AdminDashboard = ({ onNavigate, currentUser }) => {
         });
     };
 
-    const handleSuspendUser = (userId) => {
+    const handleSuspendUser = async (userId) => {
         if (confirm('Are you sure you want to suspend this user?')) {
-            const result = window.DormGlideAuth.suspendUser(currentUser.id, userId);
+            const result = await window.DormGlideAuth.suspendUser(currentUser.id, userId);
             if (result.success) {
                 alert('User suspended successfully');
-                loadData();
+                reloadData();
             }
         }
     };
 
-    const handleActivateUser = (userId) => {
-        const result = window.DormGlideAuth.activateUser(currentUser.id, userId);
+    const handleActivateUser = async (userId) => {
+        const result = await window.DormGlideAuth.activateUser(currentUser.id, userId);
         if (result.success) {
             alert('User activated successfully');
-            loadData();
+            reloadData();
         }
     };
 
-    const handleDeleteProduct = (productId) => {
+    const handleDeleteProduct = async (productId) => {
         if (confirm('Are you sure you want to delete this product?')) {
-            deleteProductFromStorage(productId);
-            loadData();
+            await deleteProductFromStorage(productId);
+            await reloadData();
             alert('Product deleted successfully');
         }
     };

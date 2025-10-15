@@ -13,57 +13,66 @@ const App = () => {
     const [showAuthModal, setShowAuthModal] = useState(false);
 
     useEffect(() => {
-        console.log('App useEffect running...');
-        try {
-            // Initialize sample data (will check demo mode vs production)
-            if (typeof initializeSampleData !== 'undefined') {
-                initializeSampleData();
-            } else {
-                console.warn('initializeSampleData not available');
-            }
-            
-            // Load products from storage
-            if (typeof getProductsFromStorage !== 'undefined') {
-                const storedProducts = getProductsFromStorage();
-                setProducts(storedProducts);
-                console.log('Loaded products:', storedProducts.length);
-            } else {
-                console.warn('getProductsFromStorage not available, using sample data');
-                // Fallback sample data
-                setProducts([
-                    {
-                        id: '1',
-                        title: 'MacBook Air M1',
-                        description: 'Barely used MacBook Air with M1 chip.',
-                        price: 850,
-                        category: 'Electronics',
-                        condition: 'Like New',
-                        location: 'North Campus',
-                        sellerId: 'user1',
-                        sellerName: 'Sarah Chen'
-                    }
-                ]);
-            }
-            
-            // Check for logged in user using Auth system
-            if (window.DormGlideAuth) {
-                const user = window.DormGlideAuth.getCurrentUser();
-                setCurrentUser(user);
-                console.log('Current user:', user);
-            }
+        let isMounted = true;
 
-            // Admin panel keyboard shortcut (Ctrl+Shift+A)
-            const handleKeyDown = (e) => {
-                if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-                    setShowAdminPanel(true);
+        const bootstrapApp = async () => {
+            console.log('App bootstrap starting...');
+            try {
+                if (window.DormGlideStorage?.initializeDefaultData) {
+                    await window.DormGlideStorage.initializeDefaultData();
+                } else if (typeof initializeSampleData !== 'undefined') {
+                    await initializeSampleData();
                 }
-            };
-            
-            document.addEventListener('keydown', handleKeyDown);
-            return () => document.removeEventListener('keydown', handleKeyDown);
-        } catch (error) {
-            console.error('Error in App useEffect:', error);
-        }
+
+                if (typeof getProductsFromStorage !== 'undefined') {
+                    const storedProducts = await getProductsFromStorage();
+                    if (isMounted) {
+                        setProducts(storedProducts);
+                        console.log('Loaded products:', storedProducts.length);
+                    }
+                } else if (isMounted) {
+                    console.warn('getProductsFromStorage not available; using fallback data.');
+                    setProducts([
+                        {
+                            id: '1',
+                            title: 'MacBook Air M1',
+                            description: 'Barely used MacBook Air with M1 chip.',
+                            price: 850,
+                            category: 'Electronics',
+                            condition: 'Like New',
+                            location: 'North Campus',
+                            sellerId: 'user1',
+                            sellerName: 'Sarah Chen'
+                        }
+                    ]);
+                }
+
+                if (window.DormGlideAuth && typeof window.DormGlideAuth.getCurrentUser === 'function') {
+                    const user = await window.DormGlideAuth.getCurrentUser();
+                    if (isMounted) {
+                        setCurrentUser(user);
+                        console.log('Current user:', user);
+                    }
+                }
+            } catch (error) {
+                console.error('Error during App bootstrap:', error);
+            }
+        };
+
+        bootstrapApp();
+
+        const handleKeyDown = (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+                setShowAdminPanel(true);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            isMounted = false;
+            document.removeEventListener('keydown', handleKeyDown);
+        };
     }, []);
 
     const navigateToPage = (page, productId = null) => {
@@ -83,20 +92,25 @@ const App = () => {
         }
     };
 
-    const addProduct = (newProduct) => {
-        const updatedProducts = [...products, newProduct];
-        setProducts(updatedProducts);
-        saveProductsToStorage(updatedProducts);
-        
-        // Track sale for seller
-        if (currentUser && window.DormGlideAuth) {
-            window.DormGlideAuth.trackSale(
-                currentUser.id,
-                newProduct.id,
-                newProduct.title,
-                newProduct.price,
-                null // No buyer yet
-            );
+    const addProduct = async (newProduct) => {
+        try {
+            const persistedProduct = await (window.DormGlideStorage?.createProduct?.(newProduct) || Promise.resolve(newProduct));
+            setProducts(prev => [...prev, persistedProduct]);
+
+            if (currentUser && window.DormGlideAuth && typeof window.DormGlideAuth.trackSale === 'function') {
+                await window.DormGlideAuth.trackSale(
+                    currentUser.id,
+                    persistedProduct.id,
+                    persistedProduct.title,
+                    persistedProduct.price,
+                    null
+                );
+            }
+
+            return persistedProduct;
+        } catch (error) {
+            console.error('Failed to add product:', error);
+            throw error;
         }
     };
 
@@ -105,9 +119,9 @@ const App = () => {
         console.log('User logged in:', user);
     };
 
-    const handleLogout = () => {
-        if (window.DormGlideAuth) {
-            window.DormGlideAuth.logoutUser();
+    const handleLogout = async () => {
+        if (window.DormGlideAuth && typeof window.DormGlideAuth.logoutUser === 'function') {
+            await window.DormGlideAuth.logoutUser();
         }
         setCurrentUser(null);
         setCurrentPage('home');
@@ -121,13 +135,15 @@ const App = () => {
                     products: products,
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
                     onNavigate: navigateToPage,
-                    currentUser: currentUser
+                    currentUser: currentUser,
+                    onShowAuth: () => setShowAuthModal(true)
                 });
             case 'product-detail':
                 return React.createElement(ProductDetailPage, {
                     product: selectedProduct,
                     onNavigate: navigateToPage,
-                    currentUser: currentUser
+                    currentUser: currentUser,
+                    onShowAuth: () => setShowAuthModal(true)
                 });
             case 'sell':
                 return React.createElement(SellPage, {
@@ -159,7 +175,8 @@ const App = () => {
                     products: products,
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
                     onNavigate: navigateToPage,
-                    currentUser: currentUser
+                    currentUser: currentUser,
+                    onShowAuth: () => setShowAuthModal(true)
                 });
         }
     };
