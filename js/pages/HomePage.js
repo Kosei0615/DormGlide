@@ -2,6 +2,12 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
     const [filteredProducts, setFilteredProducts] = React.useState(products);
     const [searchTerm, setSearchTerm] = React.useState('');
     const [activeCategory, setActiveCategory] = React.useState('');
+    const [appliedFilters, setAppliedFilters] = React.useState({
+        category: '',
+        priceRange: {},
+        condition: ''
+    });
+    const [searchFilterVersion, setSearchFilterVersion] = React.useState(0);
 
     React.useEffect(() => {
         setFilteredProducts(products);
@@ -40,14 +46,15 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
         setFilteredProducts(filtered);
     };
 
-    const clearAllFilters = () => {
-        setSearchTerm('');
-        setActiveCategory('');
-        setFilteredProducts(products);
-    };
-
-    const handleFilter = (filters) => {
+    const handleFilter = (filters = {}) => {
         let filtered = products;
+
+        const nextFilters = {
+            category: filters.category || '',
+            condition: filters.condition || '',
+            priceRange: filters.priceRange || {}
+        };
+        setAppliedFilters(nextFilters);
 
         // Apply search term first
         if (searchTerm && searchTerm.trim()) {
@@ -65,27 +72,47 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
         }
 
         // Apply category filter
-        if (filters.category) {
-            filtered = filtered.filter(product => product.category === filters.category);
+        if (nextFilters.category) {
+            filtered = filtered.filter(product => product.category === nextFilters.category);
         }
 
         // Apply price range filter
-        if (filters.priceRange && (filters.priceRange.min || filters.priceRange.max)) {
+        if (nextFilters.priceRange && (nextFilters.priceRange.min || nextFilters.priceRange.max)) {
             filtered = filtered.filter(product => {
                 const price = product.price;
-                const min = filters.priceRange.min ? parseFloat(filters.priceRange.min) : 0;
-                const max = filters.priceRange.max ? parseFloat(filters.priceRange.max) : Infinity;
+                const min = nextFilters.priceRange.min ? parseFloat(nextFilters.priceRange.min) : 0;
+                const max = nextFilters.priceRange.max ? parseFloat(nextFilters.priceRange.max) : Infinity;
                 return price >= min && price <= max;
             });
         }
 
         // Apply condition filter
-        if (filters.condition) {
-            filtered = filtered.filter(product => product.condition === filters.condition);
+        if (nextFilters.condition) {
+            filtered = filtered.filter(product => product.condition === nextFilters.condition);
         }
 
         setFilteredProducts(filtered);
     };
+
+    const clearAllFilters = () => {
+        setSearchTerm('');
+        setActiveCategory('');
+        setAppliedFilters({ category: '', priceRange: {}, condition: '' });
+        setFilteredProducts(products);
+        setSearchFilterVersion(prev => prev + 1); // remount SearchFilter to reset its internal state
+    };
+
+    const filtersAreActive = Boolean(
+        appliedFilters.category ||
+        appliedFilters.condition ||
+        (appliedFilters.priceRange && (appliedFilters.priceRange.min || appliedFilters.priceRange.max))
+    );
+
+    const hasActiveFilters = Boolean(
+        (searchTerm && searchTerm.trim()) ||
+        activeCategory ||
+        filtersAreActive
+    );
 
     const featuredProducts = products.slice(0, 6);
 
@@ -150,13 +177,14 @@ const HomePage = ({ products, onProductClick, onNavigate }) => {
         // Search and Filter
         React.createElement('section', { className: 'search-section' },
             React.createElement(SearchFilter, {
+                key: searchFilterVersion,
                 onSearch: handleSearch,
                 onFilter: handleFilter,
                 categories: categories
             }),
             
             // Clear filters button (show when there are active filters)
-            (filters.searchTerm || activeCategory) &&
+            hasActiveFilters &&
             React.createElement('div', { className: 'clear-filters-container', style: { marginTop: '1rem' } },
                 React.createElement('button', {
                     className: 'clear-filters-btn',

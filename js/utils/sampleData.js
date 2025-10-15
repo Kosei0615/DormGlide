@@ -345,11 +345,27 @@ const getSampleNotifications = () => {
 // Initialize data helper function - PRODUCTION VERSION
 const initializeSampleData = () => {
     console.log('Initializing DormGlide for DEMO...');
-    // Always load sample data for demo/pitch
-    const products = getSampleProducts();
-    localStorage.setItem('dormglide_products', JSON.stringify(products));
+    const existing = localStorage.getItem('dormglide_products');
+    let hasExistingProducts = false;
+
+    if (existing) {
+        try {
+            const parsed = JSON.parse(existing);
+            hasExistingProducts = Array.isArray(parsed) && parsed.length > 0;
+        } catch (error) {
+            console.warn('DormGlide demo init: Unable to parse existing products, re-seeding sample data.', error);
+        }
+    }
+
+    if (hasExistingProducts) {
+        console.log('Demo mode: Existing products detected, preserving current listings.');
+    } else {
+        const products = getSampleProducts();
+        localStorage.setItem('dormglide_products', JSON.stringify(products));
+        console.log(`Demo mode: Initialized ${products.length} sample products`);
+    }
+
     localStorage.setItem('dormglide_demo_mode', 'true');
-    console.log(`Demo mode: Initialized ${products.length} sample products`);
     console.log('DormGlide initialization complete!');
 };
 

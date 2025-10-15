@@ -34,10 +34,13 @@ const registerUser = (userData) => {
         return { success: false, message: 'Email already registered' };
     }
     
+    const validRoles = ['user', 'seller', 'admin'];
+    const resolvedRole = validRoles.includes(userData.role) ? userData.role : 'user';
+
     const newUser = {
         id: `user_${Date.now()}`,
         ...userData,
-        role: 'user', // 'user', 'seller', 'admin'
+        role: resolvedRole, // respect explicit role when provided
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
         status: 'active', // 'active', 'suspended', 'deleted'
