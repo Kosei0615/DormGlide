@@ -43,6 +43,7 @@ const registerUser = (userData) => {
         role: resolvedRole, // respect explicit role when provided
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
+        campusLocation: userData.campusLocation || '',
         status: 'active', // 'active', 'suspended', 'deleted'
         rating: 0,
         totalSales: 0,

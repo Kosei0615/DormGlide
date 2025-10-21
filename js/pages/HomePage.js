@@ -1,49 +1,166 @@
 const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAuth }) => {
-    const [filteredProducts, setFilteredProducts] = React.useState(products);
     const [searchTerm, setSearchTerm] = React.useState('');
-    const [activeCategory, setActiveCategory] = React.useState('');
-    const [appliedFilters, setAppliedFilters] = React.useState({
+    const [filters, setFilters] = React.useState({
         category: '',
         priceRange: {},
         condition: ''
     });
     const [searchFilterVersion, setSearchFilterVersion] = React.useState(0);
 
-    React.useEffect(() => {
-        setFilteredProducts(products);
-    }, [products]);
+    const CATEGORY_ICON_MAP = React.useMemo(() => ({
+        'Electronics': 'fas fa-laptop',
+        'Textbooks': 'fas fa-book',
+        'Furniture': 'fas fa-couch',
+        'Clothing': 'fas fa-tshirt',
+        'Sports': 'fas fa-football-ball',
+        'Kitchen': 'fas fa-utensils',
+        'Dorm Decor': 'fas fa-palette',
+        'Other': 'fas fa-box'
+    }), []);
 
-    const categories = [...new Set(products.map(product => product.category))];
+    const normalizedUserCampus = React.useMemo(() => (
+        (currentUser?.campusLocation || currentUser?.university || '').trim().toLowerCase()
+    ), [currentUser]);
+
+    const determineNearby = React.useCallback((product) => {
+        if (!normalizedUserCampus) return false;
+        const location = (product.location || '').toLowerCase();
+        const sellerCampus = (product.sellerCampus || '').toLowerCase();
+
+        const normalizedLocation = location.replace(' campus', '').trim();
+        const normalizedSeller = sellerCampus.replace(' campus', '').trim();
+
+        return (
+            normalizedLocation && (
+                normalizedUserCampus.includes(normalizedLocation) ||
+                normalizedLocation.includes(normalizedUserCampus)
+            )
+        ) || (
+            normalizedSeller && (
+                normalizedUserCampus.includes(normalizedSeller) ||
+                normalizedSeller.includes(normalizedUserCampus)
+            )
+        );
+    }, [normalizedUserCampus]);
+
+    const decoratedProducts = React.useMemo(() => {
+        if (!Array.isArray(products)) return [];
+        return products.map((product) => {
+            const base = {
+                ...product,
+                isDemo: Boolean(product.isDemo),
+                sellerCampus: product.sellerCampus || product.location || ''
+            };
+            return {
+                ...base,
+                isNearby: determineNearby(base)
+            };
+        });
+    }, [products, determineNearby]);
+
+    const categoryMeta = React.useMemo(() => {
+        const uniqueProductCategories = Array.from(
+            new Set(decoratedProducts.map((product) => product?.category).filter(Boolean))
+        );
+
+        if (uniqueProductCategories.length > 0) {
+            return uniqueProductCategories.map((name) => ({
+                name,
+                icon: CATEGORY_ICON_MAP[name] || CATEGORY_ICON_MAP['Other']
+            }));
+        }
+
+        if (typeof getCategories === 'function') {
+            return getCategories().map((category) => ({
+                name: category.name,
+                icon: category.icon || CATEGORY_ICON_MAP['Other']
+            }));
+        }
+
+        return [];
+    }, [decoratedProducts, CATEGORY_ICON_MAP]);
+
+    const quickCategories = React.useMemo(() => categoryMeta.slice(0, 8), [categoryMeta]);
+
+    const filteredProducts = React.useMemo(() => {
+        let results = [...decoratedProducts];
+        const normalizedSearch = searchTerm.trim().toLowerCase();
+
+        if (normalizedSearch) {
+            results = results.filter((product) => {
+                const candidateFields = [
+                    product.title,
+                    product.description,
+                    product.category,
+                    product.condition,
+                    product.location,
+                    product.sellerName
+                ].filter(Boolean);
+
+                return candidateFields.some((field) => String(field).toLowerCase().includes(normalizedSearch));
+            });
+        }
+
+        if (filters.category) {
+            const categoryLower = filters.category.toLowerCase();
+            results = results.filter(
+                (product) => (product.category || '').toLowerCase() === categoryLower
+            );
+        }
+
+        if (filters.priceRange && (filters.priceRange.min || filters.priceRange.max)) {
+            const min = filters.priceRange.min ? parseFloat(filters.priceRange.min) : 0;
+            const max = filters.priceRange.max ? parseFloat(filters.priceRange.max) : Number.POSITIVE_INFINITY;
+            results = results.filter((product) => {
+                const price = typeof product.price === 'number' ? product.price : parseFloat(product.price || 0);
+                return price >= min && price <= max;
+            });
+        }
+
+        if (filters.condition) {
+            results = results.filter((product) => (product.condition || '').toLowerCase() === filters.condition.toLowerCase());
+        }
+
+        return results;
+    }, [decoratedProducts, searchTerm, filters]);
+
+    const sortedProducts = React.useMemo(() => {
+        return [...filteredProducts].sort((a, b) => {
+            if (a.isNearby !== b.isNearby) {
+                return a.isNearby ? -1 : 1;
+            }
+            if (Boolean(a.isDemo) !== Boolean(b.isDemo)) {
+                return a.isDemo ? 1 : -1;
+            }
+            const aDate = new Date(a.createdAt || 0).getTime();
+            const bDate = new Date(b.createdAt || 0).getTime();
+            return bDate - aDate;
+        });
+    }, [filteredProducts]);
+
+    const nearbyProducts = React.useMemo(() => (
+        sortedProducts.filter((product) => product.isNearby && !product.isDemo)
+    ), [sortedProducts]);
+
+    const studentCount = React.useMemo(() => (
+        sortedProducts.filter((product) => !product.isDemo).length
+    ), [sortedProducts]);
+
+    const demoCount = Math.max(sortedProducts.length - studentCount, 0);
 
     const handleSearch = (term) => {
         setSearchTerm(term);
-        setActiveCategory(''); // Clear category when searching
-        
-        if (!term.trim()) {
-            setFilteredProducts(products);
-            return;
+        if (term && term.trim().length >= 3) {
+            window.DormGlideStorage?.addToSearchHistory?.(term.trim());
         }
-        
-        const searchLower = term.toLowerCase();
-        const filtered = products.filter(product => {
-            return (
-                product.title.toLowerCase().includes(searchLower) ||
-                product.description.toLowerCase().includes(searchLower) ||
-                product.category.toLowerCase().includes(searchLower) ||
-                product.condition.toLowerCase().includes(searchLower) ||
-                product.location.toLowerCase().includes(searchLower) ||
-                product.sellerName.toLowerCase().includes(searchLower)
-            );
-        });
-        setFilteredProducts(filtered);
     };
 
-    const handleCategoryClick = (category) => {
-        setActiveCategory(category);
-        setSearchTerm(''); // Clear search when selecting category
-        
-        const filtered = products.filter(product => product.category === category);
-        setFilteredProducts(filtered);
+    const handleCategoryClick = (categoryName) => {
+        setSearchTerm('');
+        setFilters((prev) => ({
+            ...prev,
+            category: prev.category === categoryName ? '' : categoryName
+        }));
     };
 
     const handleStartSelling = () => {
@@ -56,75 +173,28 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         }
     };
 
-    const handleFilter = (filters = {}) => {
-        let filtered = products;
-
-        const nextFilters = {
-            category: filters.category || '',
-            condition: filters.condition || '',
-            priceRange: filters.priceRange || {}
-        };
-        setAppliedFilters(nextFilters);
-
-        // Apply search term first
-        if (searchTerm && searchTerm.trim()) {
-            const searchLower = searchTerm.toLowerCase();
-            filtered = filtered.filter(product => {
-                return (
-                    product.title.toLowerCase().includes(searchLower) ||
-                    product.description.toLowerCase().includes(searchLower) ||
-                    product.category.toLowerCase().includes(searchLower) ||
-                    product.condition.toLowerCase().includes(searchLower) ||
-                    product.location.toLowerCase().includes(searchLower) ||
-                    product.sellerName.toLowerCase().includes(searchLower)
-                );
-            });
-        }
-
-        // Apply category filter
-        if (nextFilters.category) {
-            filtered = filtered.filter(product => product.category === nextFilters.category);
-        }
-
-        // Apply price range filter
-        if (nextFilters.priceRange && (nextFilters.priceRange.min || nextFilters.priceRange.max)) {
-            filtered = filtered.filter(product => {
-                const price = product.price;
-                const min = nextFilters.priceRange.min ? parseFloat(nextFilters.priceRange.min) : 0;
-                const max = nextFilters.priceRange.max ? parseFloat(nextFilters.priceRange.max) : Infinity;
-                return price >= min && price <= max;
-            });
-        }
-
-        // Apply condition filter
-        if (nextFilters.condition) {
-            filtered = filtered.filter(product => product.condition === nextFilters.condition);
-        }
-
-        setFilteredProducts(filtered);
+    const handleFilter = (nextFilters = {}) => {
+        setFilters((prev) => ({
+            category: nextFilters.category !== undefined ? nextFilters.category : prev.category,
+            priceRange: nextFilters.hasOwnProperty('priceRange') ? nextFilters.priceRange : prev.priceRange,
+            condition: nextFilters.condition !== undefined ? nextFilters.condition : prev.condition
+        }));
     };
 
     const clearAllFilters = () => {
         setSearchTerm('');
-        setActiveCategory('');
-        setAppliedFilters({ category: '', priceRange: {}, condition: '' });
-        setFilteredProducts(products);
-        setSearchFilterVersion(prev => prev + 1); // remount SearchFilter to reset its internal state
+        setFilters({ category: '', priceRange: {}, condition: '' });
+        setSearchFilterVersion((prev) => prev + 1);
     };
 
-    const filtersAreActive = Boolean(
-        appliedFilters.category ||
-        appliedFilters.condition ||
-        (appliedFilters.priceRange && (appliedFilters.priceRange.min || appliedFilters.priceRange.max))
-    );
-
     const hasActiveFilters = Boolean(
-        (searchTerm && searchTerm.trim()) ||
-        activeCategory ||
-        filtersAreActive
+        searchTerm.trim() ||
+        filters.category ||
+        filters.condition ||
+        (filters.priceRange && (filters.priceRange.min || filters.priceRange.max))
     );
 
-    const featuredProducts = products.slice(0, 6);
+    const featuredProducts = decoratedProducts.slice(0, 6);
 
     return React.createElement('div', { className: 'home-page' },
         // Hero Section
@@ -139,7 +209,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                     ),
                     React.createElement('div', { className: 'stat' },
                         React.createElement('i', { className: 'fas fa-box' }),
-                        React.createElement('span', null, `${products.length} Items${products.length === 0 ? ' (Start Selling!)' : ''}`)
+                        React.createElement('span', null, `${decoratedProducts.length} Items${decoratedProducts.length === 0 ? ' (Start Selling!)' : ''}`)
                     ),
                     React.createElement('div', { className: 'stat' },
                         React.createElement('i', { className: 'fas fa-handshake' }),
@@ -151,7 +221,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                     onClick: handleStartSelling
                 },
                     React.createElement('i', { className: 'fas fa-plus' }),
-                    products.length === 0 ? 'Be the First to Sell!' : 'Start Selling'
+                    decoratedProducts.length === 0 ? 'Be the First to Sell!' : 'Start Selling'
                 )
             )
         ),
@@ -160,27 +230,16 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         React.createElement('section', { className: 'quick-categories' },
             React.createElement('h2', null, 'Shop by Category'),
             React.createElement('div', { className: 'category-grid' },
-                categories.slice(0, 8).map(category => {
-                    const categoryIcons = {
-                        'Electronics': 'fas fa-laptop',
-                        'Textbooks': 'fas fa-book',
-                        'Furniture': 'fas fa-couch',
-                        'Clothing': 'fas fa-tshirt',
-                        'Sports': 'fas fa-football-ball',
-                        'Kitchen': 'fas fa-utensils',
-                        'Dorm Decor': 'fas fa-palette',
-                        'Other': 'fas fa-box'
-                    };
-                    
-                    return React.createElement('div', {
-                        key: category,
-                        className: `category-card ${activeCategory === category ? 'active' : ''}`,
-                        onClick: () => handleCategoryClick(category)
+                quickCategories.map((category) =>
+                    React.createElement('div', {
+                        key: category.name,
+                        className: `category-card ${filters.category === category.name ? 'active' : ''}`,
+                        onClick: () => handleCategoryClick(category.name)
                     },
-                        React.createElement('i', { className: categoryIcons[category] || 'fas fa-box' }),
-                        React.createElement('span', null, category)
-                    );
-                })
+                        React.createElement('i', { className: category.icon || CATEGORY_ICON_MAP['Other'] }),
+                        React.createElement('span', null, category.name)
+                    )
+                )
             )
         ),
 
@@ -190,7 +249,8 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                 key: searchFilterVersion,
                 onSearch: handleSearch,
                 onFilter: handleFilter,
-                categories: categories
+                categories: categoryMeta.map((category) => category.name),
+                activeCategory: filters.category
             }),
             
             // Clear filters button (show when there are active filters)
@@ -225,10 +285,10 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
             React.createElement('div', { className: 'section-header' },
                 React.createElement('h2', null, 'All Items'),
                 React.createElement('span', { className: 'product-count' }, 
-                    `${filteredProducts.length} item${filteredProducts.length !== 1 ? 's' : ''} found`
+                    `${sortedProducts.length} item${sortedProducts.length !== 1 ? 's' : ''} found`
                 )
             ),
-            products.length === 0 ? 
+            decoratedProducts.length === 0 ? 
                 // Empty marketplace - encourage first listings
                 React.createElement('div', { className: 'empty-marketplace' },
                     React.createElement('div', { className: 'empty-content' },
@@ -264,7 +324,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                     )
                 ) :
                 React.createElement(ProductGrid, {
-                    products: filteredProducts,
+                    products: sortedProducts,
                     onProductClick: onProductClick,
                     searchTerm: searchTerm
                 })

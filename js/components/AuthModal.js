@@ -7,6 +7,7 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
         name: '',
         phone: '',
         university: '',
+        campusLocation: '',
         userType: 'buyer' // 'buyer' or 'seller'
     });
     const [error, setError] = React.useState('');
@@ -65,6 +66,7 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                 name: formData.name,
                 phone: formData.phone,
                 university: formData.university,
+                campusLocation: formData.campusLocation,
                 role: formData.userType === 'seller' ? 'seller' : 'user',
                 bio: `${formData.userType === 'seller' ? 'Seller' : 'Student'} at ${formData.university || 'University'}`
             });
@@ -242,6 +244,17 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                             value: formData.university,
                             onChange: handleInputChange,
                             placeholder: 'Your University Name'
+                        })
+                    ),
+
+                    React.createElement('div', { className: 'form-group' },
+                        React.createElement('label', null, 'Primary Campus Location'),
+                        React.createElement('input', {
+                            type: 'text',
+                            name: 'campusLocation',
+                            value: formData.campusLocation,
+                            onChange: handleInputChange,
+                            placeholder: 'e.g., North Campus, Dorm A'
                         })
                     ),
 

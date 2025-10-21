@@ -1,12 +1,14 @@
 const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
+    const preferredContact = currentUser?.phone || currentUser?.email || '';
+    const preferredLocation = currentUser?.campusLocation || currentUser?.university || '';
     const [formData, setFormData] = React.useState({
         title: '',
         description: '',
         price: '',
         category: '',
         condition: '',
-        location: '',
-        contactInfo: '',
+        location: preferredLocation,
+        contactInfo: preferredContact,
         images: []
     });
     const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -20,10 +22,10 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
 
     React.useEffect(() => {
         if (currentUser) {
-            const preferredContact = currentUser.phone || currentUser.email || '';
             setFormData(prev => ({
                 ...prev,
-                contactInfo: prev.contactInfo || preferredContact
+                contactInfo: prev.contactInfo || currentUser.phone || currentUser.email || '',
+                location: prev.location || currentUser.campusLocation || currentUser.university || ''
             }));
         }
     }, [currentUser]);
@@ -125,6 +127,8 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             sellerId: currentUser.id,
             sellerName: currentUser.name,
             sellerEmail: currentUser.email,
+            sellerCampus: currentUser.campusLocation || currentUser.university || formData.location || '',
+            isDemo: false,
             createdAt: new Date().toISOString(),
             views: 0
         };
@@ -138,7 +142,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                 price: '',
                 category: '',
                 condition: '',
-                location: '',
+                location: currentUser.campusLocation || currentUser.university || '',
                 contactInfo: currentUser.phone || currentUser.email || '',
                 images: []
             });

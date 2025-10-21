@@ -5,6 +5,7 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
         email: currentUser?.email || '',
         phone: currentUser?.phone || '',
         university: currentUser?.university || '',
+        campusLocation: currentUser?.campusLocation || '',
         major: currentUser?.major || '',
         graduationYear: currentUser?.graduationYear || '',
         bio: currentUser?.bio || ''
@@ -120,6 +121,19 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
                             })
                         ),
                         React.createElement('div', { className: 'form-group' },
+                            React.createElement('label', null, 'Primary Campus Location'),
+                            React.createElement('input', {
+                                type: 'text',
+                                name: 'campusLocation',
+                                value: formData.campusLocation,
+                                onChange: handleInputChange,
+                                placeholder: 'e.g., North Campus, Dorm A'
+                            })
+                        )
+                    ),
+
+                    React.createElement('div', { className: 'form-row' },
+                        React.createElement('div', { className: 'form-group' },
                             React.createElement('label', null, 'Major'),
                             React.createElement('input', {
                                 type: 'text',
@@ -188,6 +202,10 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
                         currentUser.university && React.createElement('span', null,
                             React.createElement('i', { className: 'fas fa-graduation-cap' }),
                             currentUser.university
+                        ),
+                        currentUser.campusLocation && React.createElement('span', null,
+                            React.createElement('i', { className: 'fas fa-map-marker-alt' }),
+                            currentUser.campusLocation
                         )
                     )
                 ),

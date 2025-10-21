@@ -1,7 +1,7 @@
 // Sample data for DormGlide marketplace
 
 const getSampleProducts = () => {
-    return [
+    const products = [
         {
             id: '1',
             title: 'MacBook Air M1 13-inch',
@@ -221,6 +221,12 @@ const getSampleProducts = () => {
             views: 52
         }
     ];
+
+    return products.map((product) => ({
+        ...product,
+        isDemo: true,
+        sellerCampus: product.sellerCampus || product.location || ''
+    }));
 };
 
 // Sample user data for demo

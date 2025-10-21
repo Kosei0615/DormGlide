@@ -18,11 +18,25 @@ const ProductCard = ({ product, onProductClick }) => {
         return `${Math.floor(days / 30)} months ago`;
     };
 
+    const isDemo = Boolean(product.isDemo);
+    const isNearby = Boolean(product.isNearby);
+    const sellerCampus = product.sellerCampus || product.location || '';
+
     return React.createElement('div', {
         className: 'product-card',
         onClick: () => onProductClick(product.id)
     },
         React.createElement('div', { className: 'product-image' },
+            (isDemo || isNearby) && React.createElement('div', { className: 'product-tags' },
+                isNearby && React.createElement('span', { className: 'product-tag nearby' },
+                    React.createElement('i', { className: 'fas fa-location-dot' }),
+                    'Near you'
+                ),
+                isDemo && React.createElement('span', { className: 'product-tag demo' },
+                    React.createElement('i', { className: 'fas fa-graduation-cap' }),
+                    'DormGlide demo'
+                )
+            ),
             React.createElement('img', {
                 src: product.image || 'https://via.placeholder.com/300x200?text=No+Image',
                 alt: product.title,
@@ -42,7 +56,7 @@ const ProductCard = ({ product, onProductClick }) => {
                 ),
                 React.createElement('span', { className: 'product-location' },
                     React.createElement('i', { className: 'fas fa-map-marker-alt' }),
-                    product.location
+                    product.location || sellerCampus || 'On campus'
                 )
             ),
             React.createElement('div', { className: 'product-footer' },

@@ -34,6 +34,8 @@ const normalizeProductRecord = (record) => {
         sellerId: record.seller_id || record.sellerId,
         sellerName: record.seller_name || record.sellerName,
         sellerEmail: record.seller_email || record.sellerEmail,
+        sellerCampus: record.seller_campus || record.sellerCampus || record.location || '',
+        isDemo: Boolean(record.isDemo ?? record.is_demo ?? false),
         createdAt: record.created_at || record.createdAt || new Date().toISOString(),
         views: record.views || 0
     };
@@ -52,6 +54,8 @@ const productToSupabasePayload = (product) => ({
     seller_id: product.sellerId,
     seller_name: product.sellerName,
     seller_email: product.sellerEmail,
+    seller_campus: product.sellerCampus || product.location || null,
+    is_demo: Boolean(product.isDemo),
     created_at: product.createdAt || new Date().toISOString(),
     views: product.views || 0
 });
@@ -80,7 +84,8 @@ const writeLocal = (key, value) => {
 
 const localProductAdapter = {
     async fetchAll() {
-        return readLocal(LOCAL_PRODUCT_KEY, []);
+        const raw = readLocal(LOCAL_PRODUCT_KEY, []);
+        return Array.isArray(raw) ? raw.map((item) => normalizeProductRecord(item)).filter(Boolean) : [];
     },
     async create(product) {
         const products = readLocal(LOCAL_PRODUCT_KEY, []);
@@ -88,11 +93,13 @@ const localProductAdapter = {
             id: product.id || Date.now().toString(),
             ...product,
             image: product.image || product.images?.[0] || PLACEHOLDER_IMAGE,
+            sellerCampus: product.sellerCampus || product.location || '',
+            isDemo: Boolean(product.isDemo),
             createdAt: product.createdAt || new Date().toISOString()
         };
         products.push(record);
         writeLocal(LOCAL_PRODUCT_KEY, products);
-        return record;
+        return normalizeProductRecord(record);
     },
     async update(productId, updates) {
         const products = readLocal(LOCAL_PRODUCT_KEY, []);
@@ -100,7 +107,7 @@ const localProductAdapter = {
         if (idx === -1) return null;
         products[idx] = { ...products[idx], ...updates };
         writeLocal(LOCAL_PRODUCT_KEY, products);
-        return products[idx];
+        return normalizeProductRecord(products[idx]);
     },
     async remove(productId) {
         const products = readLocal(LOCAL_PRODUCT_KEY, []);
@@ -173,6 +180,7 @@ const fetchProducts = async () => {
         if (usingSupabase) {
             markSupabaseUnavailable(error.message || error);
             try {
+                await initializeDefaultData();
                 return await localProductAdapter.fetchAll();
             } catch (localError) {
                 console.error('[DormGlide] Local fallback fetch failed:', localError);

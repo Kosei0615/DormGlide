@@ -1,6 +1,6 @@
-const SearchFilter = ({ onSearch, onFilter, categories }) => {
+const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '' }) => {
     const [searchTerm, setSearchTerm] = React.useState('');
-    const [selectedCategory, setSelectedCategory] = React.useState('');
+    const [selectedCategory, setSelectedCategory] = React.useState(activeCategory || '');
     const [priceRange, setPriceRange] = React.useState({ min: '', max: '' });
     const [condition, setCondition] = React.useState('');
     const [isFilterOpen, setIsFilterOpen] = React.useState(false);
@@ -47,6 +47,10 @@ const SearchFilter = ({ onSearch, onFilter, categories }) => {
         handleFilterChange();
     }, [selectedCategory, priceRange, condition]);
 
+    React.useEffect(() => {
+        setSelectedCategory(activeCategory || '');
+    }, [activeCategory]);
+
     const toggleFilter = () => {
         setIsFilterOpen(!isFilterOpen);
     };
@@ -56,8 +60,9 @@ const SearchFilter = ({ onSearch, onFilter, categories }) => {
         setPriceRange({ min: '', max: '' });
         setCondition('');
         setSearchTerm('');
+        setShowSuggestions(false);
         onSearch('');
-        onFilter({});
+        onFilter({ category: '', priceRange: {}, condition: '' });
     };
 
     return React.createElement('div', { className: 'search-filter' },
