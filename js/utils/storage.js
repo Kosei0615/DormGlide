@@ -6,6 +6,13 @@ const LOCAL_PREFS_KEY = 'dormglide_preferences';
 
 const getSupabaseClient = () => window.SupabaseClient || null;
 const isSupabaseConfigured = () => Boolean(getSupabaseClient());
+let supabaseAvailable = true;
+
+const isSupabaseActive = () => isSupabaseConfigured() && supabaseAvailable;
+const markSupabaseUnavailable = (error) => {
+    supabaseAvailable = false;
+    console.warn('[DormGlide] Supabase disabled for this session, falling back to local storage.', error);
+};
 
 // -----------------------------
 // Helper mappers
@@ -152,43 +159,80 @@ const supabaseProductAdapter = {
     }
 };
 
-const productAdapter = () => (isSupabaseConfigured() ? supabaseProductAdapter : localProductAdapter);
+const productAdapter = () => (isSupabaseActive() ? supabaseProductAdapter : localProductAdapter);
 
 // -----------------------------
 // Public API (returns promises)
 // -----------------------------
 const fetchProducts = async () => {
+    const usingSupabase = isSupabaseActive();
     try {
         return await productAdapter().fetchAll();
     } catch (error) {
         console.error('[DormGlide] Failed to fetch products:', error);
+        if (usingSupabase) {
+            markSupabaseUnavailable(error.message || error);
+            try {
+                return await localProductAdapter.fetchAll();
+            } catch (localError) {
+                console.error('[DormGlide] Local fallback fetch failed:', localError);
+                return [];
+            }
+        }
         return [];
     }
 };
 
 const createProduct = async (product) => {
+    const usingSupabase = isSupabaseActive();
     try {
         return await productAdapter().create(product);
     } catch (error) {
         console.error('[DormGlide] Failed to create product:', error);
+        if (usingSupabase) {
+            markSupabaseUnavailable(error.message || error);
+            try {
+                return await localProductAdapter.create(product);
+            } catch (localError) {
+                console.error('[DormGlide] Local fallback create failed:', localError);
+            }
+        }
         throw error;
     }
 };
 
 const updateProduct = async (productId, updates) => {
+    const usingSupabase = isSupabaseActive();
     try {
         return await productAdapter().update(productId, updates);
     } catch (error) {
         console.error('[DormGlide] Failed to update product:', error);
+        if (usingSupabase) {
+            markSupabaseUnavailable(error.message || error);
+            try {
+                return await localProductAdapter.update(productId, updates);
+            } catch (localError) {
+                console.error('[DormGlide] Local fallback update failed:', localError);
+            }
+        }
         throw error;
     }
 };
 
 const deleteProduct = async (productId) => {
+    const usingSupabase = isSupabaseActive();
     try {
         return await productAdapter().remove(productId);
     } catch (error) {
         console.error('[DormGlide] Failed to delete product:', error);
+        if (usingSupabase) {
+            markSupabaseUnavailable(error.message || error);
+            try {
+                return await localProductAdapter.remove(productId);
+            } catch (localError) {
+                console.error('[DormGlide] Local fallback delete failed:', localError);
+            }
+        }
         throw error;
     }
 };
@@ -209,7 +253,7 @@ const getSearchHistory = async () => {
 };
 
 const clearAllData = async () => {
-    if (isSupabaseConfigured()) {
+    if (isSupabaseActive()) {
         console.warn('[DormGlide] clearAllData skipped because Supabase is enabled.');
         return;
     }
@@ -220,7 +264,7 @@ const clearAllData = async () => {
 };
 
 const initializeDefaultData = async () => {
-    if (isSupabaseConfigured()) {
+    if (isSupabaseActive()) {
         console.log('[DormGlide] Supabase enabled; skipping demo data seeding.');
         return;
     }
@@ -256,6 +300,7 @@ window.DormGlideStorage = {
     clearAllData,
     initializeDefaultData,
     isSupabaseConfigured,
+    isSupabaseActive,
     // legacy aliases
     saveProductsToStorage,
     getProductsFromStorage,
