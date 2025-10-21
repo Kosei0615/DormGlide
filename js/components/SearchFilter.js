@@ -1,5 +1,5 @@
-const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '' }) => {
-    const [searchTerm, setSearchTerm] = React.useState('');
+const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', searchValue = '' }) => {
+    const [searchTerm, setSearchTerm] = React.useState(searchValue);
     const [selectedCategory, setSelectedCategory] = React.useState(activeCategory || '');
     const [priceRange, setPriceRange] = React.useState({ min: '', max: '' });
     const [condition, setCondition] = React.useState('');
@@ -14,8 +14,14 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '' }) =
     const handleSearch = (e) => {
         const value = e.target.value;
         setSearchTerm(value);
-        onSearch(value);
         setShowSuggestions(value.length > 0 && value.length < 3);
+    };
+
+    const handleSearchSubmit = () => {
+        const trimmed = searchTerm.trim();
+        setSearchTerm(trimmed);
+        onSearch(trimmed);
+        setShowSuggestions(false);
     };
 
     const handleSuggestionClick = (suggestion) => {
@@ -51,6 +57,13 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '' }) =
         setSelectedCategory(activeCategory || '');
     }, [activeCategory]);
 
+    React.useEffect(() => {
+        setSearchTerm(searchValue || '');
+        if (!searchValue) {
+            setShowSuggestions(false);
+        }
+    }, [searchValue]);
+
     const toggleFilter = () => {
         setIsFilterOpen(!isFilterOpen);
     };
@@ -76,9 +89,15 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '' }) =
                     onChange: handleSearch,
                     onFocus: handleSearchFocus,
                     onBlur: handleSearchBlur,
+                    onKeyDown: (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSearchSubmit();
+                        }
+                    },
                     className: 'search-input'
                 }),
-                
+
                 // Clear search button
                 searchTerm && React.createElement('button', {
                     className: 'clear-search-btn',
@@ -87,11 +106,12 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '' }) =
                         onSearch('');
                         setShowSuggestions(false);
                     },
-                    type: 'button'
+                    type: 'button',
+                    'aria-label': 'Clear search'
                 },
                     React.createElement('i', { className: 'fas fa-times' })
                 ),
-                
+
                 // Search suggestions dropdown
                 showSuggestions && React.createElement('div', { className: 'search-suggestions' },
                     React.createElement('div', { className: 'suggestions-header' }, 
@@ -109,12 +129,25 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '' }) =
                     )
                 )
             ),
-            React.createElement('button', {
-                className: `filter-toggle ${isFilterOpen ? 'active' : ''}`,
-                onClick: toggleFilter
-            },
-                React.createElement('i', { className: 'fas fa-filter' }),
-                React.createElement('span', null, 'Filters')
+            React.createElement('div', { className: 'search-actions' },
+                React.createElement('button', {
+                    className: 'search-submit-btn',
+                    onClick: handleSearchSubmit,
+                    type: 'button',
+                    'aria-label': 'Search DormGlide listings'
+                },
+                    React.createElement('i', { className: 'fas fa-search' }),
+                    React.createElement('span', null, 'Search')
+                ),
+                React.createElement('button', {
+                    className: `filter-toggle ${isFilterOpen ? 'active' : ''}`,
+                    onClick: toggleFilter,
+                    type: 'button',
+                    'aria-label': 'Open filters'
+                },
+                    React.createElement('i', { className: 'fas fa-sliders-h' }),
+                    React.createElement('span', null, 'Filters')
+                )
             )
         ),
 

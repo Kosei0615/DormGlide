@@ -102,10 +102,11 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         }
 
         if (filters.category) {
-            const categoryLower = filters.category.toLowerCase();
-            results = results.filter(
-                (product) => (product.category || '').toLowerCase() === categoryLower
-            );
+            const categoryLower = filters.category.trim().toLowerCase();
+            results = results.filter((product) => {
+                const productCategory = (product.category || '').trim().toLowerCase();
+                return productCategory === categoryLower;
+            });
         }
 
         if (filters.priceRange && (filters.priceRange.min || filters.priceRange.max)) {
@@ -195,6 +196,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
     );
 
     const featuredProducts = decoratedProducts.slice(0, 6);
+    const showFeaturedSection = featuredProducts.length > 0 && !hasActiveFilters;
 
     return React.createElement('div', { className: 'home-page' },
         // Hero Section
@@ -250,7 +252,8 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                 onSearch: handleSearch,
                 onFilter: handleFilter,
                 categories: categoryMeta.map((category) => category.name),
-                activeCategory: filters.category
+                activeCategory: filters.category,
+                searchValue: searchTerm
             }),
             
             // Clear filters button (show when there are active filters)
@@ -266,24 +269,10 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
             )
         ),
 
-        // Featured Products
-        featuredProducts.length > 0 && React.createElement('section', { className: 'featured-section' },
-            React.createElement('h2', null, 'Featured Items'),
-            React.createElement('div', { className: 'featured-grid' },
-                featuredProducts.map(product =>
-                    React.createElement(ProductCard, {
-                        key: product.id,
-                        product: product,
-                        onProductClick: onProductClick
-                    })
-                )
-            )
-        ),
-
         // All Products
         React.createElement('section', { className: 'products-section' },
             React.createElement('div', { className: 'section-header' },
-                React.createElement('h2', null, 'All Items'),
+                React.createElement('h2', null, hasActiveFilters ? 'Search Results' : 'All Items'),
                 React.createElement('span', { className: 'product-count' }, 
                     `${sortedProducts.length} item${sortedProducts.length !== 1 ? 's' : ''} found`
                 )
@@ -328,6 +317,23 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                     onProductClick: onProductClick,
                     searchTerm: searchTerm
                 })
+        ),
+
+        // Featured Products (shown when no active filters/search)
+        showFeaturedSection && React.createElement('section', { className: 'featured-section' },
+            React.createElement('div', { className: 'section-header featured-header' },
+                React.createElement('h2', null, 'Featured Items'),
+                React.createElement('span', { className: 'featured-hint' }, 'Curated picks to explore')
+            ),
+            React.createElement('div', { className: 'featured-grid' },
+                featuredProducts.map(product =>
+                    React.createElement(ProductCard, {
+                        key: product.id,
+                        product: product,
+                        onProductClick: onProductClick
+                    })
+                )
+            )
         )
     );
 };
