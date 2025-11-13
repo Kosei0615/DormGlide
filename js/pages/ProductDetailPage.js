@@ -2,6 +2,8 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
     const [isImageModalOpen, setIsImageModalOpen] = React.useState(false);
     const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
     const [isSaved, setIsSaved] = React.useState(false);
+    const [isChatOpen, setIsChatOpen] = React.useState(false);
+    const [sellerProfile, setSellerProfile] = React.useState(null);
 
     if (!product) {
         return React.createElement('div', { className: 'product-detail-page' },
@@ -47,6 +49,30 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
         }
     }, [currentUser, product ? product.id : null]);
 
+    React.useEffect(() => {
+        if (!product?.sellerId || !window.DormGlideAuth?.getUserById) {
+            setSellerProfile(null);
+            return;
+        }
+        const seller = window.DormGlideAuth.getUserById(product.sellerId);
+        setSellerProfile(seller);
+    }, [product?.sellerId]);
+
+    const chatParticipant = React.useMemo(() => {
+        if (sellerProfile) {
+            return {
+                id: sellerProfile.id,
+                name: sellerProfile.name || product?.sellerName,
+                phone: sellerProfile.phone || product?.contactInfo
+            };
+        }
+        return {
+            id: product?.sellerId,
+            name: product?.sellerName,
+            phone: product?.contactInfo
+        };
+    }, [sellerProfile, product]);
+
     const ensureAuthenticated = (message) => {
         if (currentUser) {
             return true;
@@ -61,7 +87,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
     };
 
     const handleChatWithSeller = () => {
-    if (!ensureAuthenticated('Please log in to chat with the seller.')) return;
+        if (!ensureAuthenticated('Please log in to chat with the seller.')) return;
         if (!product.sellerId) {
             alert('Seller information is missing for this listing.');
             return;
@@ -70,18 +96,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
             alert('This is your own listing.');
             return;
         }
-
-        if (window.DormGlideAuth && window.DormGlideAuth.sendMessage) {
-            const message = `Hi ${product.sellerName}, I am interested in "${product.title}". Is it still available?`;
-            const result = window.DormGlideAuth.sendMessage(currentUser.id, product.sellerId, product.id, message, product.title);
-            if (result.success) {
-                alert(`Message sent to ${product.sellerName}! Check your dashboard for updates.`);
-            } else {
-                alert(result.message || 'Unable to send message right now.');
-            }
-        } else {
-            alert('Messaging is not available in this demo build.');
-        }
+        setIsChatOpen(true);
     };
 
     const handleBuyNow = () => {
@@ -222,6 +237,10 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
                                 product.contactInfo && React.createElement('p', { className: 'seller-contact' },
                                     React.createElement('i', { className: 'fas fa-comment-dots' }),
                                     ' Preferred contact: ', product.contactInfo
+                                ),
+                                chatParticipant?.phone && React.createElement('p', { className: 'seller-contact' },
+                                    React.createElement('i', { className: 'fas fa-phone' }),
+                                    ' Phone: ', window.DormGlideAuth?.formatPhoneNumberReadable?.(chatParticipant.phone) || chatParticipant.phone
                                 )
                             )
                         )
@@ -272,6 +291,13 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
                     alt: product.title
                 })
             )
-        )
+        ),
+
+        isChatOpen && chatParticipant?.id && React.createElement(ChatModal, {
+            product,
+            currentUser,
+            participant: chatParticipant,
+            onClose: () => setIsChatOpen(false)
+        })
     );
 };

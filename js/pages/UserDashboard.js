@@ -3,6 +3,8 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
     const [activeTab, setActiveTab] = React.useState('overview');
     const [activity, setActivity] = React.useState(null);
     const [products, setProducts] = React.useState([]);
+    const [allProducts, setAllProducts] = React.useState([]);
+    const [chatContext, setChatContext] = React.useState(null);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -25,10 +27,11 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
                 }
 
                 if (typeof getProductsFromStorage !== 'undefined') {
-                    const allProducts = await getProductsFromStorage();
-                    const userProds = allProducts.filter(p => p.sellerId === currentUser.id);
+                    const productsFromStorage = await getProductsFromStorage();
+                    const userProds = (productsFromStorage || []).filter(p => p.sellerId === currentUser.id);
                     if (isMounted) {
                         setProducts(userProds);
+                        setAllProducts(productsFromStorage || []);
                     }
                 }
             } catch (error) {
@@ -309,6 +312,91 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
         );
     };
 
+    const renderMessagesTab = () => {
+        if (!activity?.messages || activity.messages.length === 0) {
+            return React.createElement('div', { className: 'empty-state' },
+                React.createElement('i', { className: 'fas fa-comments' }),
+                React.createElement('h3', null, 'No conversations yet'),
+                React.createElement('p', null, 'Start chatting with buyers and sellers from product pages'),
+                React.createElement('button', {
+                    className: 'btn btn-primary',
+                    onClick: () => onNavigate('home')
+                }, 'Browse Listings')
+            );
+        }
+
+        const conversationMap = new Map();
+        activity.messages.forEach((entry) => {
+            const otherUserId = entry.senderId === currentUser.id ? entry.receiverId : entry.senderId;
+            if (!otherUserId) return;
+            const key = `${otherUserId}_${entry.productId}`;
+            const existing = conversationMap.get(key);
+            if (!existing || new Date(entry.timestamp) > new Date(existing.timestamp)) {
+                conversationMap.set(key, { ...entry, otherUserId });
+            }
+        });
+
+        const conversations = Array.from(conversationMap.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        const handleOpenChat = (conversation) => {
+            const productData = allProducts.find((prod) => prod.id === conversation.productId) || {
+                id: conversation.productId,
+                title: conversation.productTitle,
+                price: null
+            };
+            const participant = window.DormGlideAuth?.getUserById
+                ? window.DormGlideAuth.getUserById(conversation.otherUserId)
+                : null;
+            setActiveTab('messages');
+            setChatContext({
+                product: {
+                    id: productData.id,
+                    title: productData.title || conversation.productTitle || 'Listing',
+                    price: productData.price
+                },
+                participant: {
+                    id: conversation.otherUserId,
+                    name: participant?.name || 'DormGlide user',
+                    phone: participant?.phone || ''
+                }
+            });
+        };
+
+        return React.createElement('div', { className: 'messages-tab' },
+            React.createElement('h3', null, 'Conversations'),
+            React.createElement('div', { className: 'message-thread-list' },
+                conversations.map((conversation, index) => {
+                    const otherUser = window.DormGlideAuth?.getUserById
+                        ? window.DormGlideAuth.getUserById(conversation.otherUserId)
+                        : null;
+                    const displayName = otherUser?.name || 'DormGlide user';
+                    const productData = allProducts.find((prod) => prod.id === conversation.productId);
+                    const title = productData?.title || conversation.productTitle || 'Listing';
+                    return React.createElement('div', { key: `${conversation.otherUserId}_${conversation.productId}_${index}`, className: 'message-thread' },
+                        React.createElement('div', { className: 'message-thread-avatar' },
+                            React.createElement('i', { className: 'fas fa-user-circle' })
+                        ),
+                        React.createElement('div', { className: 'message-thread-content' },
+                            React.createElement('h4', null, displayName),
+                            React.createElement('p', { className: 'message-thread-product' }, title),
+                            React.createElement('p', { className: 'message-thread-snippet' }, conversation.message)
+                        ),
+                        React.createElement('div', { className: 'message-thread-meta' },
+                            React.createElement('span', { className: 'message-thread-time' }, formatDate(conversation.timestamp)),
+                            React.createElement('button', {
+                                className: 'btn btn-secondary btn-sm',
+                                onClick: () => handleOpenChat(conversation)
+                            },
+                                React.createElement('i', { className: 'fas fa-comments' }),
+                                ' Open Chat'
+                            )
+                        )
+                    );
+                })
+            )
+        );
+    };
+
     if (!currentUser) {
         return React.createElement('div', { className: 'dashboard-page' },
             React.createElement('div', { className: 'auth-required' },
@@ -362,6 +450,13 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
             },
                 React.createElement('i', { className: 'fas fa-heart' }),
                 'Favorites'
+            ),
+            React.createElement('button', {
+                className: `tab ${activeTab === 'messages' ? 'active' : ''}`,
+                onClick: () => setActiveTab('messages')
+            },
+                React.createElement('i', { className: 'fas fa-comments' }),
+                'Messages'
             )
         ),
 
@@ -369,7 +464,15 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
             activeTab === 'overview' && renderOverviewTab(),
             activeTab === 'purchases' && renderPurchasesTab(),
             activeTab === 'sales' && renderSalesTab(),
-            activeTab === 'favorites' && renderFavoritesTab()
-        )
+            activeTab === 'favorites' && renderFavoritesTab(),
+            activeTab === 'messages' && renderMessagesTab()
+        ),
+
+        chatContext && React.createElement(ChatModal, {
+            product: chatContext.product,
+            currentUser,
+            participant: chatContext.participant,
+            onClose: () => setChatContext(null)
+        })
     );
 };

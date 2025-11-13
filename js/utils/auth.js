@@ -5,6 +5,31 @@ const USERS_STORAGE_KEY = 'dormglide_users';
 const CURRENT_USER_KEY = 'dormglide_current_user';
 const USER_ACTIVITY_KEY = 'dormglide_user_activity';
 
+const sanitizePhoneNumber = (raw) => {
+    if (!raw) return '';
+    const digits = String(raw).replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.length === 11 && digits.startsWith('1')) {
+        return `+1${digits.slice(1)}`;
+    }
+    if (digits.length === 10) {
+        return `+1${digits}`;
+    }
+    return `+${digits}`;
+};
+
+const formatPhoneNumberReadable = (raw) => {
+    if (!raw) return '';
+    const digits = String(raw).replace(/\D/g, '');
+    if (digits.length === 11 && digits.startsWith('1')) {
+        return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+    if (digits.length === 10) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return raw;
+};
+
 // Get all users from storage
 const getAllUsers = () => {
     try {
@@ -37,6 +62,8 @@ const registerUser = (userData) => {
     const validRoles = ['user', 'seller', 'admin'];
     const resolvedRole = validRoles.includes(userData.role) ? userData.role : 'user';
 
+    const sanitizedPhone = sanitizePhoneNumber(userData.phone);
+
     const newUser = {
         id: `user_${Date.now()}`,
         ...userData,
@@ -44,6 +71,7 @@ const registerUser = (userData) => {
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
         campusLocation: userData.campusLocation || '',
+        phone: sanitizedPhone,
         status: 'active', // 'active', 'suspended', 'deleted'
         rating: 0,
         totalSales: 0,
@@ -104,7 +132,11 @@ const updateUserProfile = (userId, updates) => {
     const userIndex = users.findIndex(u => u.id === userId);
     
     if (userIndex !== -1) {
-        users[userIndex] = { ...users[userIndex], ...updates };
+        const nextUpdates = { ...updates };
+        if (Object.prototype.hasOwnProperty.call(nextUpdates, 'phone')) {
+            nextUpdates.phone = sanitizePhoneNumber(nextUpdates.phone);
+        }
+        users[userIndex] = { ...users[userIndex], ...nextUpdates };
         saveAllUsers(users);
         
         // Update current session if this is the logged-in user
@@ -119,6 +151,25 @@ const updateUserProfile = (userId, updates) => {
     }
     
     return { success: false, message: 'User not found' };
+};
+
+const getUserById = (userId) => {
+    if (!userId) return null;
+    const users = getAllUsers();
+    return users.find((user) => user.id === userId) || null;
+};
+
+const getConversationMessages = (userId, otherUserId, productId) => {
+    if (!userId || !otherUserId) return [];
+    const activity = getUserActivity(userId);
+    const messages = (activity.messages || []).filter((message) => {
+        if (productId && message.productId !== productId) return false;
+        return (
+            message.senderId === otherUserId ||
+            message.receiverId === otherUserId
+        );
+    });
+    return messages.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 };
 
 // User Activity Tracking
@@ -373,6 +424,7 @@ window.DormGlideAuth = {
     getCurrentUser,
     updateUserProfile,
     getAllUsers,
+    getUserById,
     getUserActivity,
     trackProductView,
     trackPurchase,
@@ -382,6 +434,9 @@ window.DormGlideAuth = {
     isProductFavorited,
     trackSearch,
     sendMessage,
+    getConversationMessages,
+    sanitizePhoneNumber,
+    formatPhoneNumberReadable,
     isAdmin,
     getAllUsersForAdmin,
     suspendUser,

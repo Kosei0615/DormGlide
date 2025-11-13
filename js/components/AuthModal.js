@@ -58,13 +58,20 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
             return;
         }
 
+        const sanitizedPhone = window.DormGlideAuth?.sanitizePhoneNumber?.(formData.phone);
+        if (!sanitizedPhone) {
+            setError('Please enter a valid phone number so buyers can reach you.');
+            setLoading(false);
+            return;
+        }
+
         // Simulate network delay
         setTimeout(() => {
             const result = window.DormGlideAuth.registerUser({
                 email: formData.email,
                 password: formData.password,
                 name: formData.name,
-                phone: formData.phone,
+                phone: sanitizedPhone,
                 university: formData.university,
                 campusLocation: formData.campusLocation,
                 role: formData.userType === 'seller' ? 'seller' : 'user',
@@ -226,13 +233,14 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                     ),
 
                     React.createElement('div', { className: 'form-group' },
-                        React.createElement('label', null, 'Phone Number'),
+                        React.createElement('label', null, 'Phone Number *'),
                         React.createElement('input', {
                             type: 'tel',
                             name: 'phone',
                             value: formData.phone,
                             onChange: handleInputChange,
-                            placeholder: '(555) 123-4567'
+                            placeholder: '(555) 123-4567',
+                            required: true
                         })
                     ),
 
