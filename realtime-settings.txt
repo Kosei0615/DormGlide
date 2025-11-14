@@ -1,0 +1,75 @@
+Realtime
+
+TOOLS
+
+Inspector
+
+CONFIGURATION
+
+Policies
+
+Settings
+
+Realtime Settings
+
+Configure your project's Realtime settings
+
+Enable Realtime service
+
+Channel restrictions
+
+Database connection pool size
+
+Realtime Authorization uses this database pool to check client
+access
+
+Max concurrent clients
+
+Sets maximum number of concurrent clients that can connect to
+your Realtime service
+
+Max events per second
+
+Sets maximum number of events per second that can be sent to your
+Realtime service
+
+Max presence events per second
+
+Sets maximum number of presence events per second that can be
+sent to your Realtime service
+
+Max payload size in KB
+
+Sets maximum number of payload size in KB that can be sent to your
+Realtime service
+
+«> Enable Realtime service
+
+{ Docs
+
+If enabled, all clients will be able to connect and new connections will be allowed
+
+(Allow public access
+If disabled, only private channels will be allowed
+
+200
+
+Spend cap needs to be disabled to configure this value
+
+Upgrade to the Pro plan first to disable spend cap
+
+Spend cap needs to be disabled to configure this value
+
+Upgrade to the Pro plan first to disable spend cap
+
+Spend cap needs to be disabled to configure this value
+
+Upgrade to the Pro plan first to disable spend cap
+
+Upgrade to Pro
+
+Upgrade to Pro
+
+Upgrade to Pro
+
+Save changes
