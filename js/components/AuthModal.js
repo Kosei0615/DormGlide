@@ -27,6 +27,12 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
         setLoading(true);
         setError('');
 
+        if (!window.DormGlideAuth?.loginUser) {
+            setError('Authentication service is unavailable. Please refresh the page.');
+            setLoading(false);
+            return;
+        }
+
         try {
             const result = await window.DormGlideAuth.loginUser(formData.email, formData.password);
             if (result.success) {
@@ -56,6 +62,12 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
 
         if (formData.password.length < 6) {
             setError('Password must be at least 6 characters');
+            setLoading(false);
+            return;
+        }
+
+        if (!window.DormGlideAuth?.registerUser) {
+            setError('Authentication service is unavailable. Please refresh and try again.');
             setLoading(false);
             return;
         }

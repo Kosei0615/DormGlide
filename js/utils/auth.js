@@ -1,3 +1,4 @@
+(() => {
 // Authentication and User Management System for DormGlide
 
 // Local persistence keys (used for Supabase metadata caching and offline fallback)
@@ -658,3 +659,4 @@ window.DormGlideAuth = {
 };
 
 console.log('DormGlide Auth system loaded');
+})();

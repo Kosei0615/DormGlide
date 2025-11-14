@@ -4,8 +4,8 @@ const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/300x200?text=No+Image';
 const LOCAL_PRODUCT_KEY = 'dormglide_products';
 const LOCAL_PREFS_KEY = 'dormglide_preferences';
 
-const getSupabaseClient = () => window.SupabaseClient || null;
-const isSupabaseConfigured = () => Boolean(getSupabaseClient());
+const getStorageSupabaseClient = () => window.SupabaseClient || null;
+const isSupabaseConfigured = () => Boolean(getStorageSupabaseClient());
 let supabaseAvailable = true;
 
 const isSupabaseActive = () => isSupabaseConfigured() && supabaseAvailable;
@@ -135,14 +135,14 @@ const localPreferencesAdapter = {
 // -----------------------------
 const supabaseProductAdapter = {
     async fetchAll() {
-        const client = getSupabaseClient();
+        const client = getStorageSupabaseClient();
         if (!client) throw new Error('Supabase client not available');
         const { data, error } = await client.from('products').select('*').order('created_at', { ascending: false });
         if (error) throw error;
         return (data || []).map(normalizeProductRecord);
     },
     async create(product) {
-        const client = getSupabaseClient();
+        const client = getStorageSupabaseClient();
         if (!client) throw new Error('Supabase client not available');
         const payload = productToSupabasePayload(product);
         const { data, error } = await client.from('products').insert(payload).select('*').single();
@@ -150,7 +150,7 @@ const supabaseProductAdapter = {
         return normalizeProductRecord(data);
     },
     async update(productId, updates) {
-        const client = getSupabaseClient();
+        const client = getStorageSupabaseClient();
         if (!client) throw new Error('Supabase client not available');
         const payload = productToSupabasePayload({ ...updates, id: productId });
         const { data, error } = await client.from('products').update(payload).eq('id', productId).select('*').maybeSingle();
@@ -158,7 +158,7 @@ const supabaseProductAdapter = {
         return normalizeProductRecord(data || { id: productId, ...updates });
     },
     async remove(productId) {
-        const client = getSupabaseClient();
+        const client = getStorageSupabaseClient();
         if (!client) throw new Error('Supabase client not available');
         const { error } = await client.from('products').delete().eq('id', productId);
         if (error) throw error;
@@ -314,5 +314,7 @@ window.DormGlideStorage = {
     getProductsFromStorage,
     addProductToStorage,
     updateProductInStorage,
-    deleteProductFromStorage
+    deleteProductFromStorage,
+    getSupabaseClient: getStorageSupabaseClient,
+    markSupabaseUnavailable
 };
