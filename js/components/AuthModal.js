@@ -27,18 +27,20 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
         setLoading(true);
         setError('');
 
-        // Simulate network delay
-        setTimeout(() => {
-            const result = window.DormGlideAuth.loginUser(formData.email, formData.password);
-            
+        try {
+            const result = await window.DormGlideAuth.loginUser(formData.email, formData.password);
             if (result.success) {
                 onAuthSuccess(result.user);
                 onClose();
             } else {
-                setError(result.message);
+                setError(result.message || 'Unable to log in');
             }
+        } catch (error) {
+            console.error('[DormGlide] Login failed', error);
+            setError('Unexpected error logging in. Please try again.');
+        } finally {
             setLoading(false);
-        }, 500);
+        }
     };
 
     const handleSignup = async (e) => {
@@ -58,16 +60,17 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
             return;
         }
 
-        const sanitizedPhone = window.DormGlideAuth?.sanitizePhoneNumber?.(formData.phone);
-        if (!sanitizedPhone) {
-            setError('Please enter a valid phone number so buyers can reach you.');
+        const digitsOnly = (formData.phone || '').replace(/\D/g, '');
+        if (digitsOnly.length < 7) {
+            setError('Please enter a phone number with at least 7 digits so buyers can reach you.');
             setLoading(false);
             return;
         }
 
-        // Simulate network delay
-        setTimeout(() => {
-            const result = window.DormGlideAuth.registerUser({
+        const sanitizedPhone = window.DormGlideAuth?.sanitizePhoneNumber?.(formData.phone) || `+${digitsOnly}`;
+
+        try {
+            const result = await window.DormGlideAuth.registerUser({
                 email: formData.email,
                 password: formData.password,
                 name: formData.name,
@@ -77,19 +80,34 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                 role: formData.userType === 'seller' ? 'seller' : 'user',
                 bio: `${formData.userType === 'seller' ? 'Seller' : 'Student'} at ${formData.university || 'University'}`
             });
-            
+
             if (result.success) {
-                // Auto-login after signup
-                const loginResult = window.DormGlideAuth.loginUser(formData.email, formData.password);
-                if (loginResult.success) {
-                    onAuthSuccess(loginResult.user);
+                if (result.requiresEmailConfirmation) {
+                    setMode('login');
+                    setError('Account created! Check your email to confirm before logging in.');
+                } else if (result.user) {
+                    onAuthSuccess(result.user);
                     onClose();
+                } else {
+                    // Fallback: attempt explicit login
+                    const loginResult = await window.DormGlideAuth.loginUser(formData.email, formData.password);
+                    if (loginResult.success) {
+                        onAuthSuccess(loginResult.user);
+                        onClose();
+                    } else {
+                        setMode('login');
+                        setError(loginResult.message || 'Account created. Please log in.');
+                    }
                 }
             } else {
-                setError(result.message);
+                setError(result.message || 'Unable to create account');
             }
+        } catch (error) {
+            console.error('[DormGlide] Signup failed', error);
+            setError('Unexpected error creating account. Please try again.');
+        } finally {
             setLoading(false);
-        }, 500);
+        }
     };
 
     const handleOverlayClick = (e) => {

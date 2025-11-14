@@ -59,45 +59,59 @@
     <script>
         console.log('DormGlide loaded successfully!');
         
-        // Create a demo admin account on first load
-        if (window.DormGlideAuth && !localStorage.getItem('dormglide_demo_admin_created')) {
-            const demoAdmin = {
-                email: 'admin@dormglide.com',
-                password: 'admin123',
-                name: 'Admin User',
-                phone: '(555) 000-0000',
-                university: 'DormGlide University',
-                campusLocation: 'Founders Hall',
-                role: 'admin',
-                bio: 'Platform Administrator'
-            };
-            
-            const result = window.DormGlideAuth.registerUser(demoAdmin);
-            if (result.success) {
-                console.log('Demo admin account created: admin@dormglide.com / admin123');
-                localStorage.setItem('dormglide_demo_admin_created', 'true');
+        (async () => {
+            if (!window.DormGlideAuth || window.SupabaseClient) {
+                return;
             }
-        }
-        
-        // Create demo test account
-        if (window.DormGlideAuth && !localStorage.getItem('dormglide_demo_user_created')) {
-            const demoUser = {
-                email: 'test@demo.com',
-                password: 'password',
-                name: 'Demo User',
-                phone: '(555) 123-4567',
-                university: 'Demo University',
-                campusLocation: 'North Campus',
-                role: 'seller',
-                bio: 'Demo seller account for testing'
-            };
-            
-            const result = window.DormGlideAuth.registerUser(demoUser);
-            if (result.success) {
-                console.log('Demo user account created: test@demo.com / password');
-                localStorage.setItem('dormglide_demo_user_created', 'true');
+
+            // Create a demo admin account on first load
+            if (!localStorage.getItem('dormglide_demo_admin_created')) {
+                const demoAdmin = {
+                    email: 'admin@dormglide.com',
+                    password: 'admin123',
+                    name: 'Admin User',
+                    phone: '(555) 000-0000',
+                    university: 'DormGlide University',
+                    campusLocation: 'Founders Hall',
+                    role: 'admin',
+                    bio: 'Platform Administrator'
+                };
+
+                try {
+                    const result = await window.DormGlideAuth.registerUser(demoAdmin);
+                    if (result.success) {
+                        console.log('Demo admin account created: admin@dormglide.com / admin123');
+                        localStorage.setItem('dormglide_demo_admin_created', 'true');
+                    }
+                } catch (error) {
+                    console.warn('[DormGlide] Failed to seed demo admin account:', error);
+                }
             }
-        }
+
+            // Create demo test account
+            if (!localStorage.getItem('dormglide_demo_user_created')) {
+                const demoUser = {
+                    email: 'test@demo.com',
+                    password: 'password',
+                    name: 'Demo User',
+                    phone: '(555) 123-4567',
+                    university: 'Demo University',
+                    campusLocation: 'North Campus',
+                    role: 'seller',
+                    bio: 'Demo seller account for testing'
+                };
+
+                try {
+                    const result = await window.DormGlideAuth.registerUser(demoUser);
+                    if (result.success) {
+                        console.log('Demo user account created: test@demo.com / password');
+                        localStorage.setItem('dormglide_demo_user_created', 'true');
+                    }
+                } catch (error) {
+                    console.warn('[DormGlide] Failed to seed demo user account:', error);
+                }
+            }
+        })();
     </script>
 </body>
 </html>

@@ -1,9 +1,12 @@
 // Authentication and User Management System for DormGlide
 
-// User database (stored in localStorage)
+// Local persistence keys (used for Supabase metadata caching and offline fallback)
 const USERS_STORAGE_KEY = 'dormglide_users';
 const CURRENT_USER_KEY = 'dormglide_current_user';
 const USER_ACTIVITY_KEY = 'dormglide_user_activity';
+
+const getSupabaseClient = () => window.SupabaseClient || null;
+const isSupabaseEnabled = () => Boolean(getSupabaseClient());
 
 const sanitizePhoneNumber = (raw) => {
     if (!raw) return '';
@@ -30,7 +33,7 @@ const formatPhoneNumberReadable = (raw) => {
     return raw;
 };
 
-// Get all users from storage
+// Get all cached users from storage
 const getAllUsers = () => {
     try {
         const users = localStorage.getItem(USERS_STORAGE_KEY);
@@ -41,7 +44,7 @@ const getAllUsers = () => {
     }
 };
 
-// Save all users to storage
+// Save all cached users to storage
 const saveAllUsers = (users) => {
     try {
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
@@ -50,73 +53,226 @@ const saveAllUsers = (users) => {
     }
 };
 
-// Register new user
-const registerUser = (userData) => {
+const upsertCachedUser = (user) => {
+    if (!user?.id) return;
     const users = getAllUsers();
-    
-    // Check if email already exists
+    const index = users.findIndex((existing) => existing.id === user.id);
+    const payload = { ...users[index], ...user };
+    if (index === -1) {
+        users.push(payload);
+    } else {
+        users[index] = payload;
+    }
+    saveAllUsers(users);
+};
+
+const cacheSessionUser = (user) => {
+    if (!user) {
+        localStorage.removeItem(CURRENT_USER_KEY);
+        return null;
+    }
+    const sessionUser = { ...user };
+    delete sessionUser.password;
+    if (!sessionUser.joinedAt) {
+        sessionUser.joinedAt = sessionUser.createdAt || new Date().toISOString();
+    }
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(sessionUser));
+    return sessionUser;
+};
+
+const normalizeSupabaseUser = (supabaseUser, fallback = {}) => {
+    if (!supabaseUser) return null;
+    const metadata = supabaseUser.user_metadata || {};
+    const resolvedRole = metadata.role || fallback.role || 'user';
+    const sanitizedPhone = sanitizePhoneNumber(metadata.phone || fallback.phone || '');
+    const joinedAt = metadata.joinedAt || fallback.joinedAt || supabaseUser.created_at || new Date().toISOString();
+
+    const normalized = {
+        id: supabaseUser.id,
+        email: supabaseUser.email || fallback.email || '',
+        name: metadata.name || fallback.name || supabaseUser.email || 'DormGlide user',
+        phone: sanitizedPhone,
+        university: metadata.university ?? fallback.university ?? '',
+        campusLocation: metadata.campusLocation ?? fallback.campusLocation ?? '',
+        role: resolvedRole,
+        bio: metadata.bio ?? fallback.bio ?? '',
+        createdAt: supabaseUser.created_at || new Date().toISOString(),
+        lastLogin: supabaseUser.last_sign_in_at || new Date().toISOString(),
+        joinedAt,
+        status: metadata.status || 'active',
+        rating: metadata.rating ?? fallback.rating ?? 0,
+        totalSales: metadata.totalSales ?? fallback.totalSales ?? 0,
+        totalPurchases: metadata.totalPurchases ?? fallback.totalPurchases ?? 0,
+        verified: Boolean(supabaseUser.email_confirmed_at || metadata.verified)
+    };
+
+    return normalized;
+};
+
+// Register new user
+const registerUser = async (userData) => {
+    const client = getSupabaseClient();
+    const validRoles = ['user', 'seller', 'admin'];
+    const resolvedRole = validRoles.includes(userData.role) ? userData.role : 'user';
+    const sanitizedPhone = sanitizePhoneNumber(userData.phone);
+
+    if (client) {
+        try {
+            const joinedAt = new Date().toISOString();
+
+            const { data, error } = await client.auth.signUp({
+                email: userData.email,
+                password: userData.password,
+                options: {
+                    data: {
+                        name: userData.name,
+                        phone: sanitizedPhone,
+                        university: userData.university || '',
+                        campusLocation: userData.campusLocation || '',
+                        role: resolvedRole,
+                        bio: userData.bio || `${resolvedRole === 'seller' ? 'Seller' : 'Student'} at ${userData.university || 'DormGlide University'}`,
+                        status: 'active',
+                        joinedAt
+                    }
+                }
+            });
+
+            if (error) {
+                return { success: false, message: error.message || 'Unable to create account' };
+            }
+
+            const supabaseUser = data.user || data.session?.user;
+            const normalized = normalizeSupabaseUser(supabaseUser, {
+                ...userData,
+                phone: sanitizedPhone,
+                role: resolvedRole,
+                joinedAt
+            });
+
+            if (normalized) {
+                upsertCachedUser({ ...normalized, password: undefined });
+                cacheSessionUser(data.session ? normalized : null);
+            }
+
+            return {
+                success: true,
+                user: normalized,
+                requiresEmailConfirmation: !data.session
+            };
+        } catch (error) {
+            return { success: false, message: error.message || 'Unexpected error creating account' };
+        }
+    }
+
+    // Local fallback
+    const users = getAllUsers();
     if (users.some(u => u.email.toLowerCase() === userData.email.toLowerCase())) {
         return { success: false, message: 'Email already registered' };
     }
-    
-    const validRoles = ['user', 'seller', 'admin'];
-    const resolvedRole = validRoles.includes(userData.role) ? userData.role : 'user';
-
-    const sanitizedPhone = sanitizePhoneNumber(userData.phone);
 
     const newUser = {
         id: `user_${Date.now()}`,
         ...userData,
-        role: resolvedRole, // respect explicit role when provided
+        role: resolvedRole,
         createdAt: new Date().toISOString(),
+        joinedAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
         campusLocation: userData.campusLocation || '',
         phone: sanitizedPhone,
-        status: 'active', // 'active', 'suspended', 'deleted'
+        status: 'active',
         rating: 0,
         totalSales: 0,
         totalPurchases: 0,
         verified: false
     };
-    
+
     users.push(newUser);
     saveAllUsers(users);
-    
+
     return { success: true, user: newUser };
 };
 
 // Login user
-const loginUser = (email, password) => {
+const loginUser = async (email, password) => {
+    const client = getSupabaseClient();
+
+    if (client) {
+        try {
+            const { data, error } = await client.auth.signInWithPassword({ email, password });
+            if (error) {
+                return { success: false, message: error.message || 'Invalid email or password' };
+            }
+
+            const supabaseUser = data.user || data.session?.user;
+            const normalized = normalizeSupabaseUser(supabaseUser, { email });
+            if (normalized) {
+                upsertCachedUser(normalized);
+                cacheSessionUser(normalized);
+            }
+
+            return { success: true, user: normalized };
+        } catch (error) {
+            return { success: false, message: error.message || 'Unexpected error signing in' };
+        }
+    }
+
     const users = getAllUsers();
-    const user = users.find(u => 
-        u.email.toLowerCase() === email.toLowerCase() && 
-        u.password === password && 
+    const user = users.find(u =>
+        u.email.toLowerCase() === email.toLowerCase() &&
+        u.password === password &&
         u.status === 'active'
     );
-    
+
     if (user) {
-        // Update last login
         user.lastLogin = new Date().toISOString();
         saveAllUsers(users);
-        
-        // Set current user (don't store password in session)
-        const sessionUser = { ...user };
-        delete sessionUser.password;
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(sessionUser));
-        
+        const sessionUser = cacheSessionUser(user);
         return { success: true, user: sessionUser };
     }
-    
+
     return { success: false, message: 'Invalid email or password' };
 };
 
 // Logout user
-const logoutUser = () => {
-    localStorage.removeItem(CURRENT_USER_KEY);
+const logoutUser = async () => {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            await client.auth.signOut();
+        } catch (error) {
+            console.warn('[DormGlide] Supabase sign out failed:', error);
+        }
+    }
+    cacheSessionUser(null);
 };
 
 // Get current logged-in user
-const getCurrentUser = () => {
+const getCurrentUser = async () => {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client.auth.getSession();
+            if (error) {
+                console.warn('[DormGlide] Failed to fetch Supabase session:', error);
+            }
+            const supabaseUser = data?.session?.user;
+            if (!supabaseUser) {
+                const cached = localStorage.getItem(CURRENT_USER_KEY);
+                return cached ? JSON.parse(cached) : null;
+            }
+
+            const cachedProfile = getAllUsers().find((user) => user.id === supabaseUser.id) || {};
+            const normalized = normalizeSupabaseUser(supabaseUser, cachedProfile);
+            if (normalized) {
+                upsertCachedUser(normalized);
+                cacheSessionUser(normalized);
+            }
+            return normalized;
+        } catch (error) {
+            console.error('[DormGlide] Error resolving current Supabase user:', error);
+        }
+    }
+
     try {
         const user = localStorage.getItem(CURRENT_USER_KEY);
         return user ? JSON.parse(user) : null;
@@ -127,29 +283,63 @@ const getCurrentUser = () => {
 };
 
 // Update user profile
-const updateUserProfile = (userId, updates) => {
+const updateUserProfile = async (userId, updates) => {
+    const nextUpdates = { ...updates };
+    if (Object.prototype.hasOwnProperty.call(nextUpdates, 'phone')) {
+        nextUpdates.phone = sanitizePhoneNumber(nextUpdates.phone);
+    }
+
+    const client = getSupabaseClient();
+    if (client && userId) {
+        try {
+            const metadataUpdates = {
+                name: nextUpdates.name,
+                phone: nextUpdates.phone,
+                university: nextUpdates.university,
+                campusLocation: nextUpdates.campusLocation,
+                bio: nextUpdates.bio,
+                role: nextUpdates.role
+            };
+
+            const { data, error } = await client.auth.updateUser({
+                data: Object.fromEntries(
+                    Object.entries(metadataUpdates).filter(([_, value]) => value !== undefined)
+                )
+            });
+
+            if (error) {
+                return { success: false, message: error.message || 'Unable to update profile' };
+            }
+
+            const supabaseUser = data.user;
+            const cachedProfile = getAllUsers().find((user) => user.id === supabaseUser.id) || {};
+            const normalized = normalizeSupabaseUser(supabaseUser, { ...cachedProfile, ...nextUpdates });
+            if (normalized) {
+                upsertCachedUser(normalized);
+                cacheSessionUser(normalized);
+            }
+
+            return { success: true, user: normalized };
+        } catch (error) {
+            return { success: false, message: error.message || 'Unexpected error updating profile' };
+        }
+    }
+
     const users = getAllUsers();
     const userIndex = users.findIndex(u => u.id === userId);
-    
+
     if (userIndex !== -1) {
-        const nextUpdates = { ...updates };
-        if (Object.prototype.hasOwnProperty.call(nextUpdates, 'phone')) {
-            nextUpdates.phone = sanitizePhoneNumber(nextUpdates.phone);
-        }
         users[userIndex] = { ...users[userIndex], ...nextUpdates };
         saveAllUsers(users);
-        
-        // Update current session if this is the logged-in user
-        const currentUser = getCurrentUser();
+
+        const currentUser = cacheSessionUser(users[userIndex]);
         if (currentUser && currentUser.id === userId) {
-            const sessionUser = { ...users[userIndex] };
-            delete sessionUser.password;
-            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(sessionUser));
+            cacheSessionUser(users[userIndex]);
         }
-        
+
         return { success: true, user: users[userIndex] };
     }
-    
+
     return { success: false, message: 'User not found' };
 };
 
@@ -359,6 +549,29 @@ const sendMessage = (senderId, receiverId, productId, message, productTitle = ''
     return { success: true };
 };
 
+const recordMessageActivity = ({ senderId, receiverId, productId, productTitle, body, timestamp, conversationId }) => {
+    if (!senderId || !receiverId) return;
+    const baseMessage = {
+        productId,
+        productTitle,
+        message: body,
+        senderId,
+        receiverId,
+        timestamp,
+        conversationId
+    };
+
+    const senderActivity = getUserActivity(senderId);
+    senderActivity.messages.unshift({ ...baseMessage, direction: 'outgoing' });
+    senderActivity.messages = senderActivity.messages.slice(0, 200);
+    saveUserActivity(senderId, senderActivity);
+
+    const receiverActivity = getUserActivity(receiverId);
+    receiverActivity.messages.unshift({ ...baseMessage, direction: 'incoming' });
+    receiverActivity.messages = receiverActivity.messages.slice(0, 200);
+    saveUserActivity(receiverId, receiverActivity);
+};
+
 // Admin functions
 const isAdmin = (user) => {
     return user && user.role === 'admin';
@@ -380,39 +593,39 @@ const getAllUsersForAdmin = () => {
     });
 };
 
-const suspendUser = (adminId, userId) => {
-    const admin = getCurrentUser();
+const suspendUser = async (adminId, userId) => {
+    const admin = await getCurrentUser();
     if (!isAdmin(admin)) {
         return { success: false, message: 'Unauthorized' };
     }
-    
+
     const users = getAllUsers();
     const userIndex = users.findIndex(u => u.id === userId);
-    
+
     if (userIndex !== -1) {
         users[userIndex].status = 'suspended';
         saveAllUsers(users);
         return { success: true };
     }
-    
+
     return { success: false, message: 'User not found' };
 };
 
-const activateUser = (adminId, userId) => {
-    const admin = getCurrentUser();
+const activateUser = async (adminId, userId) => {
+    const admin = await getCurrentUser();
     if (!isAdmin(admin)) {
         return { success: false, message: 'Unauthorized' };
     }
-    
+
     const users = getAllUsers();
     const userIndex = users.findIndex(u => u.id === userId);
-    
+
     if (userIndex !== -1) {
         users[userIndex].status = 'active';
         saveAllUsers(users);
         return { success: true };
     }
-    
+
     return { success: false, message: 'User not found' };
 };
 
@@ -440,7 +653,8 @@ window.DormGlideAuth = {
     isAdmin,
     getAllUsersForAdmin,
     suspendUser,
-    activateUser
+    activateUser,
+    recordMessageActivity
 };
 
 console.log('DormGlide Auth system loaded');

@@ -20,9 +20,9 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
         }));
     };
 
-    const handleSaveProfile = (e) => {
+    const handleSaveProfile = async (e) => {
         e.preventDefault();
-        
+
         if (!formData.name || !formData.email) {
             alert('Please fill in required fields (Name and Email).');
             return;
@@ -34,12 +34,23 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
             joinedAt: currentUser?.joinedAt || new Date().toISOString()
         };
 
-        setCurrentUser(userData);
-        if (window.DormGlideAuth) {
-            window.DormGlideAuth.updateUserProfile(userData.id, userData);
+        let resolvedUser = { ...userData };
+        if (window.DormGlideAuth?.updateUserProfile) {
+            try {
+                const result = await window.DormGlideAuth.updateUserProfile(userData.id, userData);
+                if (result?.success && result.user) {
+                    resolvedUser = { ...resolvedUser, ...result.user };
+                }
+            } catch (error) {
+                console.error('[DormGlide] Failed to update profile', error);
+                alert('Unable to save profile right now. Please try again.');
+                return;
+            }
         } else {
             saveUserToStorage(userData);
         }
+
+        setCurrentUser(resolvedUser);
         setIsEditing(false);
         alert('Profile saved successfully!');
     };
