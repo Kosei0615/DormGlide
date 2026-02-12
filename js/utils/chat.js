@@ -10,8 +10,14 @@
     let realtimeChannel = null;
     let realtimeSubscriberCount = 0;
 
+    let supabaseChatAvailable = true;
+
     const getSupabaseClient = () => window.SupabaseClient || null;
-    const isSupabaseEnabled = () => Boolean(getSupabaseClient());
+    const markSupabaseUnavailable = (error) => {
+        supabaseChatAvailable = false;
+        console.warn('[DormGlide] Supabase chat disabled for this session, falling back to local storage.', error);
+    };
+    const isSupabaseEnabled = () => Boolean(getSupabaseClient()) && supabaseChatAvailable;
 
     const readLocal = (key, fallback) => {
         try {
@@ -339,14 +345,13 @@
         }
     };
 
-    const ensureAdapter = () => (isSupabaseEnabled() ? supabaseAdapter : localAdapter);
-
     const fetchWithFallback = async (supabaseFn, localFn) => {
         if (isSupabaseEnabled()) {
             try {
                 return await supabaseFn();
             } catch (error) {
                 console.warn('[DormGlide] Supabase chat operation failed, using local fallback:', error);
+                markSupabaseUnavailable(error);
             }
         }
         return localFn();
@@ -383,15 +388,59 @@
             }
             const timestamp = new Date().toISOString();
 
-            const conversation = conversationId
-                ? await fetchWithFallback(
-                    () => supabaseAdapter.getConversationById(conversationId),
-                    () => localAdapter.getConversationById(conversationId)
-                )
-                : await ChatService.getOrCreateConversation({ productId, participantA: senderId, participantB: receiverId });
+            // Prefer Supabase when available, but fully fall back to local if any Supabase step fails.
+            if (isSupabaseEnabled()) {
+                try {
+                    const conversation = conversationId
+                        ? await supabaseAdapter.getConversationById(conversationId)
+                        : await supabaseAdapter.getOrCreateConversation({ productId, participantA: senderId, participantB: receiverId });
 
-            const activeAdapter = ensureAdapter();
-            const message = await activeAdapter.sendMessage({
+                    if (!conversation) {
+                        throw new Error('Unable to resolve conversation');
+                    }
+
+                    const message = await supabaseAdapter.sendMessage({
+                        conversation,
+                        senderId,
+                        receiverId,
+                        productId,
+                        body,
+                        timestamp
+                    });
+
+                    emitMessage(conversation.id, message);
+                    emitConversationUpdate({
+                        conversationId: conversation.id,
+                        conversation,
+                        participants: conversation.participants
+                    });
+
+                    if (typeof window.DormGlideAuth?.recordMessageActivity === 'function') {
+                        window.DormGlideAuth.recordMessageActivity({
+                            senderId,
+                            receiverId,
+                            productId,
+                            productTitle,
+                            body,
+                            timestamp,
+                            conversationId: conversation.id
+                        });
+                    }
+
+                    return { conversation, message };
+                } catch (error) {
+                    console.warn('[DormGlide] Supabase sendMessage failed, falling back to local chat:', error);
+                    markSupabaseUnavailable(error);
+                }
+            }
+
+            const conversation = await localAdapter.getOrCreateConversation({
+                productId,
+                participantA: senderId,
+                participantB: receiverId
+            });
+
+            const message = await localAdapter.sendMessage({
                 conversation,
                 senderId,
                 receiverId,

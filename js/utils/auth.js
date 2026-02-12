@@ -7,7 +7,40 @@ const CURRENT_USER_KEY = 'dormglide_current_user';
 const USER_ACTIVITY_KEY = 'dormglide_user_activity';
 
 const getSupabaseClient = () => window.SupabaseClient || null;
-const isSupabaseEnabled = () => Boolean(getSupabaseClient());
+let supabaseAuthAvailable = true;
+const markSupabaseUnavailable = (error) => {
+    supabaseAuthAvailable = false;
+    console.warn('[DormGlide] Supabase auth disabled for this session, falling back to local auth.', error);
+};
+
+const shouldDisableSupabaseAuth = (error) => {
+    if (!error) return false;
+    const status = Number(error.status || error.statusCode || 0);
+    const message = String(error.message || error.error_description || error || '').toLowerCase();
+
+    // Network/config/misconfiguration signals → fall back to local.
+    if (
+        message.includes('failed to fetch') ||
+        message.includes('network') ||
+        message.includes('load failed') ||
+        message.includes('fetcherror') ||
+        message.includes('invalid api key') ||
+        message.includes('jwt') ||
+        message.includes('not found')
+    ) {
+        return true;
+    }
+
+    // Server-side outages / invalid project configuration
+    if (status >= 500 || status === 401 || status === 403) {
+        // Avoid disabling on expected credential errors (usually 400)
+        return true;
+    }
+
+    return false;
+};
+
+const isSupabaseEnabled = () => Boolean(getSupabaseClient()) && supabaseAuthAvailable;
 
 const sanitizePhoneNumber = (raw) => {
     if (!raw) return '';
@@ -117,7 +150,7 @@ const registerUser = async (userData) => {
     const resolvedRole = validRoles.includes(userData.role) ? userData.role : 'user';
     const sanitizedPhone = sanitizePhoneNumber(userData.phone);
 
-    if (client) {
+    if (client && isSupabaseEnabled()) {
         try {
             const joinedAt = new Date().toISOString();
 
@@ -139,7 +172,11 @@ const registerUser = async (userData) => {
             });
 
             if (error) {
-                return { success: false, message: error.message || 'Unable to create account' };
+                if (shouldDisableSupabaseAuth(error)) {
+                    markSupabaseUnavailable(error);
+                } else {
+                    return { success: false, message: error.message || 'Unable to create account' };
+                }
             }
 
             const supabaseUser = data.user || data.session?.user;
@@ -161,7 +198,11 @@ const registerUser = async (userData) => {
                 requiresEmailConfirmation: !data.session
             };
         } catch (error) {
-            return { success: false, message: error.message || 'Unexpected error creating account' };
+            if (shouldDisableSupabaseAuth(error)) {
+                markSupabaseUnavailable(error);
+            } else {
+                return { success: false, message: error.message || 'Unexpected error creating account' };
+            }
         }
     }
 
@@ -197,11 +238,15 @@ const registerUser = async (userData) => {
 const loginUser = async (email, password) => {
     const client = getSupabaseClient();
 
-    if (client) {
+    if (client && isSupabaseEnabled()) {
         try {
             const { data, error } = await client.auth.signInWithPassword({ email, password });
             if (error) {
-                return { success: false, message: error.message || 'Invalid email or password' };
+                if (shouldDisableSupabaseAuth(error)) {
+                    markSupabaseUnavailable(error);
+                } else {
+                    return { success: false, message: error.message || 'Invalid email or password' };
+                }
             }
 
             const supabaseUser = data.user || data.session?.user;
@@ -213,7 +258,11 @@ const loginUser = async (email, password) => {
 
             return { success: true, user: normalized };
         } catch (error) {
-            return { success: false, message: error.message || 'Unexpected error signing in' };
+            if (shouldDisableSupabaseAuth(error)) {
+                markSupabaseUnavailable(error);
+            } else {
+                return { success: false, message: error.message || 'Unexpected error signing in' };
+            }
         }
     }
 
@@ -237,11 +286,14 @@ const loginUser = async (email, password) => {
 // Logout user
 const logoutUser = async () => {
     const client = getSupabaseClient();
-    if (client) {
+    if (client && isSupabaseEnabled()) {
         try {
             await client.auth.signOut();
         } catch (error) {
             console.warn('[DormGlide] Supabase sign out failed:', error);
+            if (shouldDisableSupabaseAuth(error)) {
+                markSupabaseUnavailable(error);
+            }
         }
     }
     cacheSessionUser(null);
@@ -250,11 +302,14 @@ const logoutUser = async () => {
 // Get current logged-in user
 const getCurrentUser = async () => {
     const client = getSupabaseClient();
-    if (client) {
+    if (client && isSupabaseEnabled()) {
         try {
             const { data, error } = await client.auth.getSession();
             if (error) {
                 console.warn('[DormGlide] Failed to fetch Supabase session:', error);
+                if (shouldDisableSupabaseAuth(error)) {
+                    markSupabaseUnavailable(error);
+                }
             }
             const supabaseUser = data?.session?.user;
             if (!supabaseUser) {
@@ -271,6 +326,9 @@ const getCurrentUser = async () => {
             return normalized;
         } catch (error) {
             console.error('[DormGlide] Error resolving current Supabase user:', error);
+            if (shouldDisableSupabaseAuth(error)) {
+                markSupabaseUnavailable(error);
+            }
         }
     }
 
@@ -291,7 +349,7 @@ const updateUserProfile = async (userId, updates) => {
     }
 
     const client = getSupabaseClient();
-    if (client && userId) {
+    if (client && userId && isSupabaseEnabled()) {
         try {
             const metadataUpdates = {
                 name: nextUpdates.name,
@@ -309,7 +367,11 @@ const updateUserProfile = async (userId, updates) => {
             });
 
             if (error) {
-                return { success: false, message: error.message || 'Unable to update profile' };
+                if (shouldDisableSupabaseAuth(error)) {
+                    markSupabaseUnavailable(error);
+                } else {
+                    return { success: false, message: error.message || 'Unable to update profile' };
+                }
             }
 
             const supabaseUser = data.user;
@@ -322,7 +384,11 @@ const updateUserProfile = async (userId, updates) => {
 
             return { success: true, user: normalized };
         } catch (error) {
-            return { success: false, message: error.message || 'Unexpected error updating profile' };
+            if (shouldDisableSupabaseAuth(error)) {
+                markSupabaseUnavailable(error);
+            } else {
+                return { success: false, message: error.message || 'Unexpected error updating profile' };
+            }
         }
     }
 

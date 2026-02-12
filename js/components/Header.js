@@ -58,6 +58,14 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     React.createElement('i', { className: 'fas fa-plus-circle' }),
                     React.createElement('span', null, 'Sell')
                 ),
+
+                currentUser && React.createElement('button', {
+                    className: `nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`,
+                    onClick: () => handleNavigation('dashboard')
+                },
+                    React.createElement('i', { className: 'fas fa-chart-line' }),
+                    React.createElement('span', null, 'Dashboard')
+                ),
                 
                 currentUser ? (
                     // User menu dropdown

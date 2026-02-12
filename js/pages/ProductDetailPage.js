@@ -119,7 +119,9 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
             const result = window.DormGlideAuth.addToFavorites(currentUser.id, product.id, product.title);
             if (result.success) {
                 setIsSaved(true);
-                alert('Saved to your favorites! You can view it from your dashboard.');
+                if (confirm('Saved to your favorites! Open your dashboard now?')) {
+                    onNavigate('dashboard');
+                }
             } else {
                 alert(result.message || 'Unable to save this item right now.');
             }
