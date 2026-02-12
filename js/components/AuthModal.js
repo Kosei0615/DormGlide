@@ -7,8 +7,7 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
         name: '',
         phone: '',
         university: '',
-        campusLocation: '',
-        userType: 'buyer' // 'buyer' or 'seller'
+        campusLocation: ''
     });
     const [error, setError] = React.useState('');
     const [loading, setLoading] = React.useState(false);
@@ -73,13 +72,9 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
         }
 
         const digitsOnly = (formData.phone || '').replace(/\D/g, '');
-        if (digitsOnly.length < 7) {
-            setError('Please enter a phone number with at least 7 digits so buyers can reach you.');
-            setLoading(false);
-            return;
-        }
-
-        const sanitizedPhone = window.DormGlideAuth?.sanitizePhoneNumber?.(formData.phone) || `+${digitsOnly}`;
+        const sanitizedPhone = digitsOnly
+            ? (window.DormGlideAuth?.sanitizePhoneNumber?.(formData.phone) || `+${digitsOnly}`)
+            : '';
 
         try {
             const result = await window.DormGlideAuth.registerUser({
@@ -89,8 +84,9 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                 phone: sanitizedPhone,
                 university: formData.university,
                 campusLocation: formData.campusLocation,
-                role: formData.userType === 'seller' ? 'seller' : 'user',
-                bio: `${formData.userType === 'seller' ? 'Seller' : 'Student'} at ${formData.university || 'University'}`
+                // Mercari-style: every account can both buy and sell.
+                role: 'user',
+                bio: `Student at ${formData.university || 'University'}`
             });
 
             if (result.success) {
@@ -209,7 +205,7 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                     ),
 
                     React.createElement('div', { className: 'auth-footer' },
-                        React.createElement('p', null, 
+                        React.createElement('p', null,
                             'Don\'t have an account? ',
                             React.createElement('a', {
                                 href: '#',
@@ -263,14 +259,14 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                     ),
 
                     React.createElement('div', { className: 'form-group' },
-                        React.createElement('label', null, 'Phone Number *'),
+                        React.createElement('label', null, 'Phone Number (optional)'),
                         React.createElement('input', {
                             type: 'tel',
                             name: 'phone',
                             value: formData.phone,
                             onChange: handleInputChange,
                             placeholder: '(555) 123-4567',
-                            required: true
+                            required: false
                         })
                     ),
 
@@ -296,49 +292,17 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                         })
                     ),
 
-                    React.createElement('div', { className: 'form-group' },
-                        React.createElement('label', null, 'I want to:'),
-                        React.createElement('div', { className: 'user-type-selector' },
-                            React.createElement('label', { className: 'user-type-option' },
-                                React.createElement('input', {
-                                    type: 'radio',
-                                    name: 'userType',
-                                    value: 'buyer',
-                                    checked: formData.userType === 'buyer',
-                                    onChange: handleInputChange
-                                }),
-                                React.createElement('div', { className: 'user-type-content' },
-                                    React.createElement('i', { className: 'fas fa-shopping-bag' }),
-                                    React.createElement('span', null, 'Buy items')
-                                )
-                            ),
-                            React.createElement('label', { className: 'user-type-option' },
-                                React.createElement('input', {
-                                    type: 'radio',
-                                    name: 'userType',
-                                    value: 'seller',
-                                    checked: formData.userType === 'seller',
-                                    onChange: handleInputChange
-                                }),
-                                React.createElement('div', { className: 'user-type-content' },
-                                    React.createElement('i', { className: 'fas fa-store' }),
-                                    React.createElement('span', null, 'Sell items')
-                                )
-                            )
-                        )
-                    ),
-
                     React.createElement('button', {
                         type: 'submit',
                         className: 'btn btn-primary btn-block',
                         disabled: loading
                     },
                         loading && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
-                        loading ? 'Creating Account...' : 'Create Account'
+                        loading ? 'Creating account...' : 'Create account'
                     ),
 
                     React.createElement('div', { className: 'auth-footer' },
-                        React.createElement('p', null, 
+                        React.createElement('p', null,
                             'Already have an account? ',
                             React.createElement('a', {
                                 href: '#',
@@ -353,7 +317,7 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
             ),
 
             React.createElement('div', { className: 'auth-demo-hint' },
-                React.createElement('p', null, 
+                React.createElement('p', null,
                     React.createElement('i', { className: 'fas fa-info-circle' }),
                     ' Demo Mode: You can create any account or use test@demo.com / password'
                 )

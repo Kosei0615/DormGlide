@@ -18,6 +18,19 @@ const shouldDisableSupabaseAuth = (error) => {
     const status = Number(error.status || error.statusCode || 0);
     const message = String(error.message || error.error_description || error || '').toLowerCase();
 
+    // Expected auth errors (do not treat as "Supabase is down")
+    if (
+        message.includes('invalid login credentials') ||
+        message.includes('invalid email or password') ||
+        message.includes('email not confirmed') ||
+        message.includes('email not confirmed') ||
+        message.includes('user already registered') ||
+        message.includes('already registered') ||
+        message.includes('password should be at least')
+    ) {
+        return false;
+    }
+
     // Network/config/misconfiguration signals → fall back to local.
     if (
         message.includes('failed to fetch') ||

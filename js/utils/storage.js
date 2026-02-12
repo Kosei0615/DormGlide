@@ -197,14 +197,38 @@ const createProduct = async (product) => {
         return await productAdapter().create(product);
     } catch (error) {
         console.error('[DormGlide] Failed to create product:', error);
+
         if (usingSupabase) {
+            const message = String(error?.message || '');
+            const status = Number(error?.status || error?.statusCode || 0);
+            const code = String(error?.code || '').toUpperCase();
+
+            // If Supabase is configured, falling back to localStorage would make listings device-only
+            // (other users will not see them). Instead, surface a clear setup/auth error.
+            const looksLikeAuthOrRls =
+                status === 401 ||
+                status === 403 ||
+                code === '42501' ||
+                message.toLowerCase().includes('row level security') ||
+                message.toLowerCase().includes('not authorized') ||
+                message.toLowerCase().includes('permission denied');
+
+            if (looksLikeAuthOrRls) {
+                throw new Error('Listing failed: Supabase blocked the request (RLS/auth). Make sure you are logged in with Supabase Auth and that the products table + policies are set up.');
+            }
+
+            // For genuine connectivity/outage issues we can still fall back to local,
+            // but warn that the listing will not be shared.
             markSupabaseUnavailable(error.message || error);
             try {
-                return await localProductAdapter.create(product);
+                const local = await localProductAdapter.create(product);
+                console.warn('[DormGlide] Product saved locally because Supabase is unavailable; other users will not see it until Supabase is working.');
+                return local;
             } catch (localError) {
                 console.error('[DormGlide] Local fallback create failed:', localError);
             }
         }
+
         throw error;
     }
 };
@@ -216,6 +240,20 @@ const updateProduct = async (productId, updates) => {
     } catch (error) {
         console.error('[DormGlide] Failed to update product:', error);
         if (usingSupabase) {
+            const message = String(error?.message || '');
+            const status = Number(error?.status || error?.statusCode || 0);
+            const code = String(error?.code || '').toUpperCase();
+            const looksLikeAuthOrRls =
+                status === 401 ||
+                status === 403 ||
+                code === '42501' ||
+                message.toLowerCase().includes('row level security') ||
+                message.toLowerCase().includes('not authorized') ||
+                message.toLowerCase().includes('permission denied');
+            if (looksLikeAuthOrRls) {
+                throw new Error('Update failed: Supabase blocked the request (RLS/auth). Only the seller can edit listings, and you must be logged in with Supabase Auth.');
+            }
+
             markSupabaseUnavailable(error.message || error);
             try {
                 return await localProductAdapter.update(productId, updates);
@@ -234,6 +272,20 @@ const deleteProduct = async (productId) => {
     } catch (error) {
         console.error('[DormGlide] Failed to delete product:', error);
         if (usingSupabase) {
+            const message = String(error?.message || '');
+            const status = Number(error?.status || error?.statusCode || 0);
+            const code = String(error?.code || '').toUpperCase();
+            const looksLikeAuthOrRls =
+                status === 401 ||
+                status === 403 ||
+                code === '42501' ||
+                message.toLowerCase().includes('row level security') ||
+                message.toLowerCase().includes('not authorized') ||
+                message.toLowerCase().includes('permission denied');
+            if (looksLikeAuthOrRls) {
+                throw new Error('Delete failed: Supabase blocked the request (RLS/auth). Only the seller can delete listings, and you must be logged in with Supabase Auth.');
+            }
+
             markSupabaseUnavailable(error.message || error);
             try {
                 return await localProductAdapter.remove(productId);

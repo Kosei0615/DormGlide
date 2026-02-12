@@ -17,7 +17,7 @@
         supabaseChatAvailable = false;
         console.warn('[DormGlide] Supabase chat disabled for this session, falling back to local storage.', error);
     };
-    const isSupabaseEnabled = () => Boolean(getSupabaseClient()) && supabaseChatAvailable;
+    const isSupabaseEnabled = () => Boolean(getSupabaseClient()) && supabaseChatAvailable && Boolean(window.DormGlideSupabaseSessionActive);
 
     const readLocal = (key, fallback) => {
         try {
