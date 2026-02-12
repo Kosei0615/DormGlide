@@ -82,6 +82,26 @@ const isRateLimitAuthError = (error) => {
     );
 };
 
+const getRetryAfterSeconds = (error) => {
+    if (!error) return 60;
+
+    const retryAfter = Number(error.retry_after || error.retryAfter || error.retry_after_seconds || 0);
+    if (Number.isFinite(retryAfter) && retryAfter > 0) {
+        return Math.min(Math.max(Math.ceil(retryAfter), 15), 300);
+    }
+
+    const message = extractAuthErrorMessage(error);
+    const match = message.match(/(\d+)\s*second/i);
+    if (match?.[1]) {
+        const parsed = Number(match[1]);
+        if (Number.isFinite(parsed) && parsed > 0) {
+            return Math.min(Math.max(Math.ceil(parsed), 15), 300);
+        }
+    }
+
+    return 60;
+};
+
 const normalizeAuthMessage = (error, context = 'generic') => {
     const raw = extractAuthErrorMessage(error);
     const message = raw.toLowerCase();
@@ -105,7 +125,8 @@ const normalizeAuthMessage = (error, context = 'generic') => {
     }
 
     if (isRateLimitAuthError(error)) {
-        return 'Signup/login temporarily limited by Supabase (rate limit). Please wait a bit and try again.';
+        const retryAfter = getRetryAfterSeconds(error);
+        return `Too many login attempts right now. Please wait about ${retryAfter} seconds, then try again.`;
     }
 
     if (message.includes('invalid login credentials') || message.includes('invalid email or password')) {
@@ -380,7 +401,12 @@ const loginUser = async (emailOrName, password) => {
                     }
                     markSupabaseUnavailable(error);
                 } else {
-                    return { success: false, message: normalizeAuthMessage(error, 'login') };
+                    return {
+                        success: false,
+                        message: normalizeAuthMessage(error, 'login'),
+                        rateLimited: isRateLimitAuthError(error),
+                        retryAfterSeconds: getRetryAfterSeconds(error)
+                    };
                 }
             }
 
@@ -399,7 +425,12 @@ const loginUser = async (emailOrName, password) => {
                 }
                 markSupabaseUnavailable(error);
             } else {
-                return { success: false, message: normalizeAuthMessage(error, 'login') };
+                return {
+                    success: false,
+                    message: normalizeAuthMessage(error, 'login'),
+                    rateLimited: isRateLimitAuthError(error),
+                    retryAfterSeconds: getRetryAfterSeconds(error)
+                };
             }
         }
     }

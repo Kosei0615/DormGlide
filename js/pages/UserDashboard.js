@@ -58,8 +58,17 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
     };
 
     const calculateTotalEarnings = () => {
-        if (!activity || !activity.sales) return 0;
-        return activity.sales.reduce((total, sale) => total + (sale.price || 0), 0);
+        const completedSales = getCompletedSales();
+        return completedSales.reduce((total, sale) => total + (sale.price || 0), 0);
+    };
+
+    const getCompletedSales = () => {
+        if (!activity?.sales) return [];
+        return activity.sales.filter((sale) => {
+            if (!sale) return false;
+            const hasBuyer = Boolean(sale.buyerId);
+            return sale.status === 'completed' && hasBuyer;
+        });
     };
 
     const calculateTotalSpent = () => {
@@ -135,7 +144,7 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
                         React.createElement('i', { className: 'fas fa-check-circle', style: { color: '#009688' } })
                     ),
                     React.createElement('div', { className: 'stat-info' },
-                        React.createElement('h3', null, activity?.sales?.length || 0),
+                        React.createElement('h3', null, getCompletedSales().length),
                         React.createElement('p', null, 'Items Sold')
                     )
                 ),
@@ -234,7 +243,9 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
     };
 
     const renderSalesTab = () => {
-        if (!activity?.sales || activity.sales.length === 0) {
+        const completedSales = getCompletedSales();
+
+        if (completedSales.length === 0) {
             return React.createElement('div', { className: 'empty-state' },
                 React.createElement('i', { className: 'fas fa-tag' }),
                 React.createElement('h3', null, 'No sales yet'),
@@ -249,7 +260,7 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
         return React.createElement('div', { className: 'sales-list' },
             React.createElement('h3', null, 'Sales History'),
             React.createElement('div', { className: 'activity-list' },
-                activity.sales.map((sale, index) =>
+                completedSales.map((sale, index) =>
                     React.createElement('div', { key: index, className: 'sale-item' },
                         React.createElement('div', { className: 'sale-icon' },
                             React.createElement('i', { className: 'fas fa-dollar-sign' })

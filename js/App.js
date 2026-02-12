@@ -97,16 +97,6 @@ const App = () => {
             const persistedProduct = await (window.DormGlideStorage?.createProduct?.(newProduct) || Promise.resolve(newProduct));
             setProducts(prev => [...prev, persistedProduct]);
 
-            if (currentUser && window.DormGlideAuth && typeof window.DormGlideAuth.trackSale === 'function') {
-                await window.DormGlideAuth.trackSale(
-                    currentUser.id,
-                    persistedProduct.id,
-                    persistedProduct.title,
-                    persistedProduct.price,
-                    null
-                );
-            }
-
             return persistedProduct;
         } catch (error) {
             console.error('Failed to add product:', error);

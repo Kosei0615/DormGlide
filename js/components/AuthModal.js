@@ -11,6 +11,31 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
     });
     const [error, setError] = React.useState('');
     const [loading, setLoading] = React.useState(false);
+    const [cooldownUntil, setCooldownUntil] = React.useState(0);
+    const [cooldownRemaining, setCooldownRemaining] = React.useState(0);
+
+    React.useEffect(() => {
+        if (!cooldownUntil || Date.now() >= cooldownUntil) {
+            setCooldownRemaining(0);
+            return undefined;
+        }
+
+        const tick = () => {
+            const remainingSeconds = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
+            setCooldownRemaining(remainingSeconds);
+        };
+
+        tick();
+        const timer = window.setInterval(tick, 1000);
+        return () => window.clearInterval(timer);
+    }, [cooldownUntil]);
+
+    const startCooldown = (seconds) => {
+        const safeSeconds = Number.isFinite(Number(seconds)) && Number(seconds) > 0 ? Number(seconds) : 60;
+        const until = Date.now() + (safeSeconds * 1000);
+        setCooldownUntil(until);
+        setCooldownRemaining(Math.ceil(safeSeconds));
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -23,6 +48,10 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        if (cooldownRemaining > 0) {
+            setError(`Too many attempts. Please wait ${cooldownRemaining}s before trying again.`);
+            return;
+        }
         setLoading(true);
         setError('');
 
@@ -38,6 +67,9 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                 onAuthSuccess(result.user);
                 onClose();
             } else {
+                if (result.rateLimited) {
+                    startCooldown(result.retryAfterSeconds || 60);
+                }
                 setError(result.message || 'Unable to log in');
             }
         } catch (error) {
@@ -50,6 +82,10 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
 
     const handleSignup = async (e) => {
         e.preventDefault();
+        if (cooldownRemaining > 0) {
+            setError(`Too many attempts. Please wait ${cooldownRemaining}s before trying again.`);
+            return;
+        }
         setLoading(true);
         setError('');
 
@@ -103,6 +139,9 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                         onAuthSuccess(loginResult.user);
                         onClose();
                     } else {
+                        if (loginResult.rateLimited) {
+                            startCooldown(loginResult.retryAfterSeconds || 60);
+                        }
                         setMode('login');
                         setError(loginResult.message || 'Account created. Please log in.');
                     }
@@ -198,10 +237,10 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                     React.createElement('button', {
                         type: 'submit',
                         className: 'btn btn-primary btn-block',
-                        disabled: loading
+                        disabled: loading || cooldownRemaining > 0
                     },
                         loading && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
-                        loading ? 'Logging in...' : 'Login'
+                        loading ? 'Logging in...' : (cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s` : 'Login')
                     ),
 
                     React.createElement('div', { className: 'auth-footer' },
@@ -295,10 +334,10 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                     React.createElement('button', {
                         type: 'submit',
                         className: 'btn btn-primary btn-block',
-                        disabled: loading
+                        disabled: loading || cooldownRemaining > 0
                     },
                         loading && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
-                        loading ? 'Creating account...' : 'Create account'
+                        loading ? 'Creating account...' : (cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s` : 'Create account')
                     ),
 
                     React.createElement('div', { className: 'auth-footer' },
