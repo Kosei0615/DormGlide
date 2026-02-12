@@ -1,6 +1,7 @@
 const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const [showUserMenu, setShowUserMenu] = React.useState(false);
+    const [chatBackend, setChatBackend] = React.useState(null);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -30,6 +31,23 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
     }, [showUserMenu]);
+
+    React.useEffect(() => {
+        let isMounted = true;
+
+        const refresh = () => {
+            const status = window.DormGlideChat?.getStatus?.();
+            const backend = status?.backend || (window.SupabaseClient ? 'supabase' : 'local');
+            if (isMounted) setChatBackend(backend);
+        };
+
+        refresh();
+        const timer = setInterval(refresh, 2500);
+        return () => {
+            isMounted = false;
+            clearInterval(timer);
+        };
+    }, []);
 
     return React.createElement('header', { className: 'header' },
         React.createElement('div', { className: 'header-container' },
@@ -84,7 +102,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                                 React.createElement('span', { className: 'user-name' }, currentUser.name),
                                 React.createElement('span', { className: 'user-status' }, 
                                     React.createElement('span', { className: 'status-dot' }),
-                                    'Online'
+                                    `Chat: ${chatBackend === 'supabase' ? 'Live' : 'Local'}`
                                 )
                             ),
                             React.createElement('i', { className: `fas fa-chevron-down ${showUserMenu ? 'rotated' : ''}` })

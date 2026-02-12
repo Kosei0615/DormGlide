@@ -358,6 +358,13 @@
     };
 
     const ChatService = {
+        getStatus() {
+            return {
+                backend: isSupabaseEnabled() ? 'supabase' : 'local',
+                supabaseConfigured: Boolean(getSupabaseClient()),
+                supabaseAvailable: supabaseChatAvailable
+            };
+        },
         async getOrCreateConversation({ productId = null, participantA, participantB }) {
             return fetchWithFallback(
                 () => supabaseAdapter.getOrCreateConversation({ productId, participantA, participantB }),
