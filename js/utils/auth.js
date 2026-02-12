@@ -8,11 +8,13 @@ const USER_ACTIVITY_KEY = 'dormglide_user_activity';
 
 const getSupabaseClient = () => window.SupabaseClient || null;
 let supabaseAuthAvailable = true;
+let supabaseAuthDisabledUntil = 0;
 const getAuthMode = () => String(window.DORMGLIDE_AUTH_MODE || 'hybrid').toLowerCase();
 const isSupabaseOnlyMode = () => getAuthMode() === 'supabase';
 const isLocalOnlyMode = () => getAuthMode() === 'local';
 const markSupabaseUnavailable = (error) => {
     supabaseAuthAvailable = false;
+    supabaseAuthDisabledUntil = Date.now() + 30 * 1000;
     console.warn('[DormGlide] Supabase auth disabled for this session, falling back to local auth.', error);
 };
 
@@ -47,16 +49,22 @@ const shouldDisableSupabaseAuth = (error) => {
         return true;
     }
 
-    // Server-side outages / invalid project configuration
-    if (status >= 500 || status === 401 || status === 403) {
-        // Avoid disabling on expected credential errors (usually 400)
+    // Server-side outages
+    if (status >= 500) {
         return true;
     }
 
     return false;
 };
 
-const isSupabaseEnabled = () => Boolean(getSupabaseClient()) && supabaseAuthAvailable;
+const isSupabaseEnabled = () => {
+    if (!getSupabaseClient()) return false;
+    if (!supabaseAuthAvailable && Date.now() >= supabaseAuthDisabledUntil) {
+        supabaseAuthAvailable = true;
+        supabaseAuthDisabledUntil = 0;
+    }
+    return supabaseAuthAvailable;
+};
 
 const extractAuthErrorMessage = (error) => {
     if (!error) return '';
@@ -320,6 +328,7 @@ const registerUser = async (userData) => {
             if (normalized) {
                 upsertCachedUser({ ...normalized, password: undefined });
                 cacheSessionUser(data.session ? normalized : null);
+                window.DormGlideSupabaseSessionActive = Boolean(data.session);
             }
 
             return {
@@ -415,6 +424,7 @@ const loginUser = async (emailOrName, password) => {
             if (normalized) {
                 upsertCachedUser(normalized);
                 cacheSessionUser(normalized);
+                window.DormGlideSupabaseSessionActive = true;
             }
 
             return { success: true, user: normalized };
@@ -480,6 +490,7 @@ const logoutUser = async () => {
         }
     }
     cacheSessionUser(null);
+    window.DormGlideSupabaseSessionActive = false;
 };
 
 // Get current logged-in user
@@ -495,6 +506,7 @@ const getCurrentUser = async () => {
                 }
             }
             const supabaseUser = data?.session?.user;
+            window.DormGlideSupabaseSessionActive = Boolean(data?.session);
             if (!supabaseUser) {
                 const cached = localStorage.getItem(CURRENT_USER_KEY);
                 return cached ? JSON.parse(cached) : null;

@@ -26,9 +26,9 @@
     <!-- Load utility scripts first -->
     <!-- Supabase credentials (update with your actual project values) -->
     <script>
-        window.SUPABASE_URL = 'https://tmyjkucirpfquxostdhb.supabase.co';
+        window.SUPABASE_URL = 'https://kaciidosrtfiqjgqduny.supabase.co';
         // Public key only (safe to ship in the browser). Do NOT use sb_secret keys in frontend code.
-        window.SUPABASE_ANON_KEY = 'sb_publishable_8toJ2LmXCAbuxpn5AkOLTQ_S-CKZ355';
+        window.SUPABASE_ANON_KEY = 'sb_publishable_zE479VRvyhGX4C0LqxPKUA_z0jnIlXp';
         // Auth mode: 'supabase' (production) | 'hybrid' (demo fallback) | 'local' (offline demo)
         window.DORMGLIDE_AUTH_MODE = 'supabase';
     </script>
@@ -61,6 +61,37 @@
     
     <script>
         console.log('DormGlide loaded successfully!');
+
+        (async () => {
+            const alertKey = 'dormglide_supabase_health_alert_shown';
+            const authMode = String(window.DORMGLIDE_AUTH_MODE || 'hybrid').toLowerCase();
+
+            if (authMode !== 'supabase') {
+                return;
+            }
+
+            if (!window.SupabaseClient) {
+                if (!sessionStorage.getItem(alertKey)) {
+                    alert('Supabase client failed to initialize. Please check SUPABASE_URL and SUPABASE_ANON_KEY, then refresh.');
+                    sessionStorage.setItem(alertKey, 'true');
+                }
+                return;
+            }
+
+            try {
+                const { error } = await window.SupabaseClient.auth.getSession();
+                if (error) {
+                    throw error;
+                }
+            } catch (error) {
+                const message = String(error?.message || error || 'Unknown connection error');
+                console.error('[DormGlide] Supabase startup health check failed:', error);
+                if (!sessionStorage.getItem(alertKey)) {
+                    alert(`Supabase connection issue detected: ${message}. Please verify your project is active and your keys are correct.`);
+                    sessionStorage.setItem(alertKey, 'true');
+                }
+            }
+        })();
         
         (async () => {
             if (!window.DormGlideAuth || window.SupabaseClient) {

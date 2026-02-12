@@ -11,13 +11,53 @@
     let realtimeSubscriberCount = 0;
 
     let supabaseChatAvailable = true;
+    let supabaseChatDisabledUntil = 0;
 
     const getSupabaseClient = () => window.SupabaseClient || null;
     const markSupabaseUnavailable = (error) => {
         supabaseChatAvailable = false;
+        supabaseChatDisabledUntil = Date.now() + 30 * 1000;
         console.warn('[DormGlide] Supabase chat disabled for this session, falling back to local storage.', error);
     };
-    const isSupabaseEnabled = () => Boolean(getSupabaseClient()) && supabaseChatAvailable && Boolean(window.DormGlideSupabaseSessionActive);
+    const isSupabaseEnabled = () => {
+        if (!getSupabaseClient()) return false;
+        if (!supabaseChatAvailable && Date.now() >= supabaseChatDisabledUntil) {
+            supabaseChatAvailable = true;
+            supabaseChatDisabledUntil = 0;
+        }
+        return supabaseChatAvailable && Boolean(window.DormGlideSupabaseSessionActive);
+    };
+
+    const extractErrorMessage = (error) => String(
+        error?.message || error?.error_description || error?.msg || error?.error || ''
+    ).toLowerCase();
+
+    const isConnectivityChatError = (error) => {
+        const status = Number(error?.status || error?.statusCode || 0);
+        const message = extractErrorMessage(error);
+        return (
+            status >= 500 ||
+            message.includes('failed to fetch') ||
+            message.includes('network') ||
+            message.includes('load failed') ||
+            message.includes('fetcherror') ||
+            message.includes('timeout')
+        );
+    };
+
+    const isAuthChatError = (error) => {
+        const status = Number(error?.status || error?.statusCode || 0);
+        const message = extractErrorMessage(error);
+        return (
+            status === 401 ||
+            status === 403 ||
+            message.includes('jwt') ||
+            message.includes('auth') ||
+            message.includes('not authorized') ||
+            message.includes('permission denied') ||
+            message.includes('row level security')
+        );
+    };
 
     const readLocal = (key, fallback) => {
         try {
@@ -350,8 +390,14 @@
             try {
                 return await supabaseFn();
             } catch (error) {
-                console.warn('[DormGlide] Supabase chat operation failed, using local fallback:', error);
-                markSupabaseUnavailable(error);
+                if (isConnectivityChatError(error)) {
+                    console.warn('[DormGlide] Supabase chat operation failed, using local fallback:', error);
+                    markSupabaseUnavailable(error);
+                } else if (isAuthChatError(error)) {
+                    throw new Error('Chat is unavailable because your Supabase session is not authorized. Please log in again.');
+                } else {
+                    throw error;
+                }
             }
         }
         return localFn();
@@ -395,6 +441,10 @@
             }
             const timestamp = new Date().toISOString();
 
+            if (Boolean(getSupabaseClient()) && !Boolean(window.DormGlideSupabaseSessionActive)) {
+                throw new Error('Please log in with your Supabase account to send messages.');
+            }
+
             // Prefer Supabase when available, but fully fall back to local if any Supabase step fails.
             if (isSupabaseEnabled()) {
                 try {
@@ -436,8 +486,14 @@
 
                     return { conversation, message };
                 } catch (error) {
-                    console.warn('[DormGlide] Supabase sendMessage failed, falling back to local chat:', error);
-                    markSupabaseUnavailable(error);
+                    if (isConnectivityChatError(error)) {
+                        console.warn('[DormGlide] Supabase sendMessage failed, falling back to local chat:', error);
+                        markSupabaseUnavailable(error);
+                    } else if (isAuthChatError(error)) {
+                        throw new Error('Chat send failed because your Supabase session is not authorized. Please log in again.');
+                    } else {
+                        throw error;
+                    }
                 }
             }
 

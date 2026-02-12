@@ -5,6 +5,7 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
     const [products, setProducts] = React.useState([]);
     const [allProducts, setAllProducts] = React.useState([]);
     const [chatContext, setChatContext] = React.useState(null);
+    const [chatConversations, setChatConversations] = React.useState([]);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -32,6 +33,20 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
                     if (isMounted) {
                         setProducts(userProds);
                         setAllProducts(productsFromStorage || []);
+                    }
+                }
+
+                if (window.DormGlideChat && typeof window.DormGlideChat.fetchConversations === 'function') {
+                    try {
+                        const conversations = await window.DormGlideChat.fetchConversations(currentUser.id);
+                        if (isMounted) {
+                            setChatConversations(conversations || []);
+                        }
+                    } catch (error) {
+                        console.warn('[DormGlide] Failed to fetch Supabase chat conversations for dashboard:', error);
+                        if (isMounted) {
+                            setChatConversations([]);
+                        }
                     }
                 }
             } catch (error) {
@@ -324,7 +339,43 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
     };
 
     const renderMessagesTab = () => {
-        if (!activity?.messages || activity.messages.length === 0) {
+        const localConversations = [];
+        if (activity?.messages && activity.messages.length > 0) {
+            const conversationMap = new Map();
+            activity.messages.forEach((entry) => {
+                const otherUserId = entry.senderId === currentUser.id ? entry.receiverId : entry.senderId;
+                if (!otherUserId) return;
+                const key = `${otherUserId}_${entry.productId}`;
+                const existing = conversationMap.get(key);
+                if (!existing || new Date(entry.timestamp) > new Date(existing.timestamp)) {
+                    conversationMap.set(key, { ...entry, otherUserId });
+                }
+            });
+            localConversations.push(...Array.from(conversationMap.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+        }
+
+        const supabaseConversations = (chatConversations || []).map((conversation) => ({
+            otherUserId: conversation.otherUserId,
+            productId: conversation.productId,
+            productTitle: allProducts.find((prod) => prod.id === conversation.productId)?.title || 'Listing',
+            message: conversation.lastMessage || '',
+            timestamp: conversation.lastMessageAt || conversation.createdAt,
+            conversationId: conversation.id
+        }));
+
+        const merged = [];
+        const seenKeys = new Set();
+        [...supabaseConversations, ...localConversations].forEach((conversation) => {
+            if (!conversation?.otherUserId) return;
+            const key = `${conversation.otherUserId}_${conversation.productId || ''}`;
+            if (seenKeys.has(key)) return;
+            seenKeys.add(key);
+            merged.push(conversation);
+        });
+
+        const conversations = merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        if (conversations.length === 0) {
             return React.createElement('div', { className: 'empty-state' },
                 React.createElement('i', { className: 'fas fa-comments' }),
                 React.createElement('h3', null, 'No conversations yet'),
@@ -335,19 +386,6 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
                 }, 'Browse Listings')
             );
         }
-
-        const conversationMap = new Map();
-        activity.messages.forEach((entry) => {
-            const otherUserId = entry.senderId === currentUser.id ? entry.receiverId : entry.senderId;
-            if (!otherUserId) return;
-            const key = `${otherUserId}_${entry.productId}`;
-            const existing = conversationMap.get(key);
-            if (!existing || new Date(entry.timestamp) > new Date(existing.timestamp)) {
-                conversationMap.set(key, { ...entry, otherUserId });
-            }
-        });
-
-        const conversations = Array.from(conversationMap.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         const handleOpenChat = (conversation) => {
             const productData = allProducts.find((prod) => prod.id === conversation.productId) || {

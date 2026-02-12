@@ -61,6 +61,7 @@ const ChatModal = ({
                 });
             } catch (error) {
                 console.error('[DormGlide] Failed to load conversation', error);
+                alert(error?.message || 'Unable to load this conversation right now.');
             } finally {
                 if (isMounted) setIsLoading(false);
             }
@@ -107,7 +108,7 @@ const ChatModal = ({
             setMessage('');
         } catch (error) {
             console.error('[DormGlide] Failed to send message', error);
-            alert('Unable to send your message right now. Please try again.');
+            alert(error?.message || 'Unable to send your message right now. Please try again.');
         } finally {
             setIsSending(false);
         }
