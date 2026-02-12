@@ -9,6 +9,9 @@ const isSupabaseConfigured = () => Boolean(getStorageSupabaseClient());
 let supabaseAvailable = true;
 
 const isSupabaseActive = () => isSupabaseConfigured() && supabaseAvailable;
+const hasSupabaseSession = () => Boolean(window.DormGlideSupabaseSessionActive);
+const getAuthMode = () => String(window.DORMGLIDE_AUTH_MODE || 'hybrid').toLowerCase();
+const isSupabaseOnlyMode = () => getAuthMode() === 'supabase';
 const markSupabaseUnavailable = (error) => {
     supabaseAvailable = false;
     console.warn('[DormGlide] Supabase disabled for this session, falling back to local storage.', error);
@@ -193,6 +196,12 @@ const fetchProducts = async () => {
 
 const createProduct = async (product) => {
     const usingSupabase = isSupabaseActive();
+    if (usingSupabase && !hasSupabaseSession()) {
+        if (isSupabaseOnlyMode()) {
+            throw new Error('Listing failed: you must be logged in (Supabase Auth) to post items.');
+        }
+        return await localProductAdapter.create(product);
+    }
     try {
         return await productAdapter().create(product);
     } catch (error) {
@@ -235,6 +244,12 @@ const createProduct = async (product) => {
 
 const updateProduct = async (productId, updates) => {
     const usingSupabase = isSupabaseActive();
+    if (usingSupabase && !hasSupabaseSession()) {
+        if (isSupabaseOnlyMode()) {
+            throw new Error('Update failed: you must be logged in (Supabase Auth) to edit items.');
+        }
+        return await localProductAdapter.update(productId, updates);
+    }
     try {
         return await productAdapter().update(productId, updates);
     } catch (error) {
@@ -267,6 +282,12 @@ const updateProduct = async (productId, updates) => {
 
 const deleteProduct = async (productId) => {
     const usingSupabase = isSupabaseActive();
+    if (usingSupabase && !hasSupabaseSession()) {
+        if (isSupabaseOnlyMode()) {
+            throw new Error('Delete failed: you must be logged in (Supabase Auth) to delete items.');
+        }
+        return await localProductAdapter.remove(productId);
+    }
     try {
         return await productAdapter().remove(productId);
     } catch (error) {

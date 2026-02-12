@@ -176,7 +176,7 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                             name: 'email',
                             value: formData.email,
                             onChange: handleInputChange,
-                            placeholder: 'your.email@university.edu',
+                            placeholder: 'you@example.com',
                             required: true,
                             autoComplete: 'email'
                         })

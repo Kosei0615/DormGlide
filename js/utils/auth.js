@@ -8,6 +8,9 @@ const USER_ACTIVITY_KEY = 'dormglide_user_activity';
 
 const getSupabaseClient = () => window.SupabaseClient || null;
 let supabaseAuthAvailable = true;
+const getAuthMode = () => String(window.DORMGLIDE_AUTH_MODE || 'hybrid').toLowerCase();
+const isSupabaseOnlyMode = () => getAuthMode() === 'supabase';
+const isLocalOnlyMode = () => getAuthMode() === 'local';
 const markSupabaseUnavailable = (error) => {
     supabaseAuthAvailable = false;
     console.warn('[DormGlide] Supabase auth disabled for this session, falling back to local auth.', error);
@@ -54,6 +57,85 @@ const shouldDisableSupabaseAuth = (error) => {
 };
 
 const isSupabaseEnabled = () => Boolean(getSupabaseClient()) && supabaseAuthAvailable;
+
+const extractAuthErrorMessage = (error) => {
+    if (!error) return '';
+    return String(
+        error.message ||
+        error.error_description ||
+        error.msg ||
+        error.error ||
+        ''
+    );
+};
+
+const isRateLimitAuthError = (error) => {
+    if (!error) return false;
+    const status = Number(error.status || error.statusCode || 0);
+    const message = extractAuthErrorMessage(error).toLowerCase();
+    return (
+        status === 429 ||
+        message.includes('rate limit') ||
+        message.includes('too many requests') ||
+        message.includes('over_email_send_rate_limit') ||
+        message.includes('email rate limit')
+    );
+};
+
+const normalizeAuthMessage = (error, context = 'generic') => {
+    const raw = extractAuthErrorMessage(error);
+    const message = raw.toLowerCase();
+
+    if (!raw) {
+        if (context === 'login') return 'Unable to log in.';
+        if (context === 'signup') return 'Unable to create account.';
+        return 'Authentication error.';
+    }
+
+    if (message.includes('email not confirmed')) {
+        return 'Email not confirmed. Please check your inbox (and spam) for the confirmation email, then try logging in again.';
+    }
+
+    if (message.includes('captcha') || message.includes('hcaptcha') || message.includes('turnstile')) {
+        return 'Signup blocked by CAPTCHA settings. In Supabase Auth settings, disable CAPTCHA for development or configure it correctly, then try again.';
+    }
+
+    if (message.includes('signups not allowed') || message.includes('signup is disabled')) {
+        return 'Signups are disabled for this Supabase project. Enable signups in Supabase Auth settings, then try again.';
+    }
+
+    if (isRateLimitAuthError(error)) {
+        return 'Signup/login temporarily limited by Supabase (rate limit). Please wait a bit and try again.';
+    }
+
+    if (message.includes('invalid login credentials') || message.includes('invalid email or password')) {
+        // Common when Supabase is enabled but the user account only exists in local demo storage.
+        return 'Invalid email or password.';
+    }
+
+    return raw;
+};
+
+const resolveEmailFromIdentifier = (identifier) => {
+    const raw = String(identifier || '').trim();
+    if (!raw) return '';
+    if (raw.includes('@')) return raw;
+
+    // Allow logging in with a saved display name (demo/local accounts).
+    const users = getAllUsers();
+    const lowered = raw.toLowerCase();
+
+    const byName = users.find((user) => String(user.name || '').trim().toLowerCase() === lowered);
+    if (byName?.email) return byName.email;
+
+    const byEmailPrefix = users.find((user) => {
+        const email = String(user.email || '').toLowerCase();
+        return email && email.split('@')[0] === lowered;
+    });
+    if (byEmailPrefix?.email) return byEmailPrefix.email;
+
+    return raw;
+};
 
 const sanitizePhoneNumber = (raw) => {
     if (!raw) return '';
@@ -163,7 +245,7 @@ const registerUser = async (userData) => {
     const resolvedRole = validRoles.includes(userData.role) ? userData.role : 'user';
     const sanitizedPhone = sanitizePhoneNumber(userData.phone);
 
-    if (client && isSupabaseEnabled()) {
+    if (client && isSupabaseEnabled() && !isLocalOnlyMode()) {
         try {
             const joinedAt = new Date().toISOString();
 
@@ -185,11 +267,25 @@ const registerUser = async (userData) => {
             });
 
             if (error) {
-                if (shouldDisableSupabaseAuth(error)) {
-                    markSupabaseUnavailable(error);
-                } else {
-                    return { success: false, message: error.message || 'Unable to create account' };
+                // Supabase can rate-limit email sends for signups (especially with email confirmation enabled).
+                // In that case, fall back to local demo auth so the app remains usable.
+                if (isRateLimitAuthError(error)) {
+                    console.warn('[DormGlide] Supabase signup rate-limited; falling back to local signup.', error);
+                    if (isSupabaseOnlyMode()) {
+                        return { success: false, message: normalizeAuthMessage(error, 'signup') };
+                    }
+                    throw error;
                 }
+
+                if (shouldDisableSupabaseAuth(error)) {
+                    if (isSupabaseOnlyMode()) {
+                        return { success: false, message: 'Supabase authentication is unavailable right now. Please try again in a moment.' };
+                    }
+                    markSupabaseUnavailable(error);
+                    throw error;
+                }
+
+                return { success: false, message: normalizeAuthMessage(error, 'signup') };
             }
 
             const supabaseUser = data.user || data.session?.user;
@@ -211,12 +307,24 @@ const registerUser = async (userData) => {
                 requiresEmailConfirmation: !data.session
             };
         } catch (error) {
-            if (shouldDisableSupabaseAuth(error)) {
+            if (isRateLimitAuthError(error)) {
+                // Fall through to local signup below (hybrid only).
+                if (isSupabaseOnlyMode()) {
+                    return { success: false, message: normalizeAuthMessage(error, 'signup') };
+                }
+            } else if (shouldDisableSupabaseAuth(error)) {
+                if (isSupabaseOnlyMode()) {
+                    return { success: false, message: 'Supabase authentication is unavailable right now. Please try again in a moment.' };
+                }
                 markSupabaseUnavailable(error);
             } else {
-                return { success: false, message: error.message || 'Unexpected error creating account' };
+                return { success: false, message: normalizeAuthMessage(error, 'signup') };
             }
         }
+    }
+
+    if (isSupabaseOnlyMode()) {
+        return { success: false, message: 'Sign up is unavailable because Supabase Auth is not configured or not reachable.' };
     }
 
     // Local fallback
@@ -244,26 +352,40 @@ const registerUser = async (userData) => {
     users.push(newUser);
     saveAllUsers(users);
 
-    return { success: true, user: newUser };
+    const sessionUser = cacheSessionUser(newUser);
+    return {
+        success: true,
+        user: sessionUser,
+        usedLocalFallback: Boolean(client && !supabaseAuthAvailable) || Boolean(client && isSupabaseEnabled())
+    };
 };
 
 // Login user
-const loginUser = async (email, password) => {
+const loginUser = async (emailOrName, password) => {
     const client = getSupabaseClient();
 
-    if (client && isSupabaseEnabled()) {
+    const resolvedEmail = resolveEmailFromIdentifier(emailOrName);
+    const trimmedPassword = String(password || '').trim();
+
+    if (client && isSupabaseEnabled() && !isLocalOnlyMode()) {
         try {
-            const { data, error } = await client.auth.signInWithPassword({ email, password });
+            const { data, error } = await client.auth.signInWithPassword({
+                email: resolvedEmail,
+                password: trimmedPassword
+            });
             if (error) {
                 if (shouldDisableSupabaseAuth(error)) {
+                    if (isSupabaseOnlyMode()) {
+                        return { success: false, message: 'Supabase authentication is unavailable right now. Please try again in a moment.' };
+                    }
                     markSupabaseUnavailable(error);
                 } else {
-                    return { success: false, message: error.message || 'Invalid email or password' };
+                    return { success: false, message: normalizeAuthMessage(error, 'login') };
                 }
             }
 
             const supabaseUser = data.user || data.session?.user;
-            const normalized = normalizeSupabaseUser(supabaseUser, { email });
+            const normalized = normalizeSupabaseUser(supabaseUser, { email: resolvedEmail });
             if (normalized) {
                 upsertCachedUser(normalized);
                 cacheSessionUser(normalized);
@@ -272,25 +394,42 @@ const loginUser = async (email, password) => {
             return { success: true, user: normalized };
         } catch (error) {
             if (shouldDisableSupabaseAuth(error)) {
+                if (isSupabaseOnlyMode()) {
+                    return { success: false, message: 'Supabase authentication is unavailable right now. Please try again in a moment.' };
+                }
                 markSupabaseUnavailable(error);
             } else {
-                return { success: false, message: error.message || 'Unexpected error signing in' };
+                return { success: false, message: normalizeAuthMessage(error, 'login') };
             }
         }
     }
 
+    if (isSupabaseOnlyMode()) {
+        return { success: false, message: 'Login is unavailable because Supabase Auth is not configured or not reachable.' };
+    }
+
+    return loginUserLocal(resolvedEmail, trimmedPassword, emailOrName);
+};
+
+const loginUserLocal = async (resolvedEmail, trimmedPassword, originalIdentifier) => {
+    const identifier = String(originalIdentifier || resolvedEmail || '').trim();
     const users = getAllUsers();
-    const user = users.find(u =>
-        u.email.toLowerCase() === email.toLowerCase() &&
-        u.password === password &&
-        u.status === 'active'
-    );
+    const loweredEmail = String(resolvedEmail || '').toLowerCase();
+    const loweredIdentifier = identifier.toLowerCase();
+
+    const user = users.find((candidate) => {
+        const candidateEmail = String(candidate.email || '').toLowerCase();
+        const candidateName = String(candidate.name || '').trim().toLowerCase();
+        const emailMatches = candidateEmail && (candidateEmail === loweredEmail || candidateEmail.split('@')[0] === loweredIdentifier);
+        const nameMatches = candidateName && candidateName === loweredIdentifier;
+        return (emailMatches || nameMatches) && candidate.password === trimmedPassword && candidate.status === 'active';
+    });
 
     if (user) {
         user.lastLogin = new Date().toISOString();
         saveAllUsers(users);
         const sessionUser = cacheSessionUser(user);
-        return { success: true, user: sessionUser };
+        return { success: true, user: sessionUser, authMode: 'local' };
     }
 
     return { success: false, message: 'Invalid email or password' };
@@ -709,6 +848,61 @@ const activateUser = async (adminId, userId) => {
     return { success: false, message: 'User not found' };
 };
 
+const seedLocalDemoUsersIfEmpty = () => {
+    try {
+        if (window.DormGlideSeedDemoUsers === false) return;
+        if (isSupabaseOnlyMode()) return;
+        const users = getAllUsers();
+        if (Array.isArray(users) && users.length > 0) return;
+
+        const now = new Date().toISOString();
+        const seeded = [
+            {
+                id: 'user_demo_admin',
+                email: 'admin@dormglide.com',
+                password: 'admin123',
+                name: 'Admin User',
+                phone: '+15550000000',
+                university: 'DormGlide University',
+                campusLocation: 'Founders Hall',
+                role: 'admin',
+                bio: 'Platform Administrator',
+                createdAt: now,
+                joinedAt: now,
+                lastLogin: now,
+                status: 'active',
+                rating: 0,
+                totalSales: 0,
+                totalPurchases: 0,
+                verified: true
+            },
+            {
+                id: 'user_demo_user',
+                email: 'test@demo.com',
+                password: 'password',
+                name: 'Demo User',
+                phone: '+15551234567',
+                university: 'Demo University',
+                campusLocation: 'North Campus',
+                role: 'user',
+                bio: 'Demo account for testing',
+                createdAt: now,
+                joinedAt: now,
+                lastLogin: now,
+                status: 'active',
+                rating: 0,
+                totalSales: 0,
+                totalPurchases: 0,
+                verified: true
+            }
+        ];
+
+        saveAllUsers(seeded);
+    } catch (error) {
+        console.warn('[DormGlide] Failed to seed local demo users:', error);
+    }
+};
+
 // Export all functions
 window.DormGlideAuth = {
     registerUser,
@@ -736,6 +930,8 @@ window.DormGlideAuth = {
     activateUser,
     recordMessageActivity
 };
+
+seedLocalDemoUsersIfEmpty();
 
 console.log('DormGlide Auth system loaded');
 })();
