@@ -51,6 +51,8 @@ alter table public.products enable row level security;
 Allows everyone (even logged-out visitors) to browse listings.
 
 ```sql
+drop policy if exists "products_select_public" on public.products;
+
 create policy "products_select_public"
 on public.products
 for select
@@ -61,6 +63,8 @@ using (true);
 ### Only logged-in users can post
 
 ```sql
+drop policy if exists "products_insert_authenticated" on public.products;
+
 create policy "products_insert_authenticated"
 on public.products
 for insert
@@ -71,6 +75,9 @@ with check (auth.uid() = seller_id);
 ### Only the seller can edit/delete their listing
 
 ```sql
+drop policy if exists "products_update_owner" on public.products;
+drop policy if exists "products_delete_owner" on public.products;
+
 create policy "products_update_owner"
 on public.products
 for update
