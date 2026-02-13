@@ -1,3 +1,6 @@
+drop policy if exists "messages_select_participants" on public.messages;
+drop policy if exists "messages_insert_sender" on public.messages;
+
 -- Read: sender or receiver can read
 create policy "messages_select_participants"
 on public.messages

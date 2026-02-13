@@ -97,3 +97,5 @@ using (auth.uid() = seller_id);
 - The app sends `seller_id` as the currently logged-in user id (Supabase Auth `auth.uid()`).
 - If you are using local-only login (not Supabase Auth), Supabase inserts will fail (no authenticated session).
 - After this is set up, new products will be visible to everyone when Supabase is active.
+
+

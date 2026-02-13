@@ -1,3 +1,7 @@
+drop policy if exists "conversations_select_participants" on public.conversations;
+drop policy if exists "conversations_insert_participants" on public.conversations;
+drop policy if exists "conversations_update_participants" on public.conversations;
+
 -- Read: only participants can read
 create policy "conversations_select_participants"
 on public.conversations
