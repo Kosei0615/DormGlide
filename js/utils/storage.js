@@ -7,14 +7,35 @@ const LOCAL_PREFS_KEY = 'dormglide_preferences';
 const getStorageSupabaseClient = () => window.SupabaseClient || null;
 const isSupabaseConfigured = () => Boolean(getStorageSupabaseClient());
 let supabaseAvailable = true;
+let supabaseDisabledUntil = 0;
 
-const isSupabaseActive = () => isSupabaseConfigured() && supabaseAvailable;
+const isSupabaseActive = () => {
+    if (!isSupabaseConfigured()) return false;
+    if (!supabaseAvailable && Date.now() >= supabaseDisabledUntil) {
+        supabaseAvailable = true;
+        supabaseDisabledUntil = 0;
+    }
+    return supabaseAvailable;
+};
 const hasSupabaseSession = () => Boolean(window.DormGlideSupabaseSessionActive);
 const getAuthMode = () => String(window.DORMGLIDE_AUTH_MODE || 'hybrid').toLowerCase();
 const isSupabaseOnlyMode = () => getAuthMode() === 'supabase';
 const markSupabaseUnavailable = (error) => {
     supabaseAvailable = false;
+    supabaseDisabledUntil = Date.now() + 30 * 1000;
     console.warn('[DormGlide] Supabase disabled for this session, falling back to local storage.', error);
+};
+
+const isConnectivityError = (error) => {
+    const status = Number(error?.status || error?.statusCode || 0);
+    const message = String(error?.message || error || '').toLowerCase();
+    return (
+        status >= 500 ||
+        message.includes('failed to fetch') ||
+        message.includes('network') ||
+        message.includes('timeout') ||
+        message.includes('load failed')
+    );
 };
 
 // -----------------------------
@@ -211,6 +232,7 @@ const createProduct = async (product) => {
             const message = String(error?.message || '');
             const status = Number(error?.status || error?.statusCode || 0);
             const code = String(error?.code || '').toUpperCase();
+            const lowered = message.toLowerCase();
 
             // If Supabase is configured, falling back to localStorage would make listings device-only
             // (other users will not see them). Instead, surface a clear setup/auth error.
@@ -226,15 +248,29 @@ const createProduct = async (product) => {
                 throw new Error('Listing failed: Supabase blocked the request (RLS/auth). Make sure you are logged in with Supabase Auth and that the products table + policies are set up.');
             }
 
+            if (code === '42P01' || lowered.includes('relation') && lowered.includes('products')) {
+                throw new Error('Listing failed: products table is missing in Supabase. Run SUPABASE-PRODUCTS-SETUP.md SQL in your new project.');
+            }
+
+            if (code === '22P02' || lowered.includes('invalid input syntax for type uuid')) {
+                throw new Error('Listing failed: seller_id must be a Supabase Auth UUID. Please log out and log in again with Supabase Auth.');
+            }
+
             // For genuine connectivity/outage issues we can still fall back to local,
             // but warn that the listing will not be shared.
-            markSupabaseUnavailable(error.message || error);
-            try {
-                const local = await localProductAdapter.create(product);
-                console.warn('[DormGlide] Product saved locally because Supabase is unavailable; other users will not see it until Supabase is working.');
-                return local;
-            } catch (localError) {
-                console.error('[DormGlide] Local fallback create failed:', localError);
+            if (isConnectivityError(error)) {
+                if (isSupabaseOnlyMode()) {
+                    throw new Error('Listing failed: Supabase is temporarily unreachable. Please try again in a moment.');
+                }
+
+                markSupabaseUnavailable(error.message || error);
+                try {
+                    const local = await localProductAdapter.create(product);
+                    console.warn('[DormGlide] Product saved locally because Supabase is unavailable; other users will not see it until Supabase is working.');
+                    return local;
+                } catch (localError) {
+                    console.error('[DormGlide] Local fallback create failed:', localError);
+                }
             }
         }
 

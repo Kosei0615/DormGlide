@@ -149,7 +149,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             onNavigate('home', persisted?.id);
         } catch (error) {
             console.error('Failed to save product:', error);
-            alert('Something went wrong while listing your item. Please try again.');
+            alert(error?.message || 'Something went wrong while listing your item. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
