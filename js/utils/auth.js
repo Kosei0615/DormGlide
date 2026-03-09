@@ -5,6 +5,7 @@
 const USERS_STORAGE_KEY = 'dormglide_users';
 const CURRENT_USER_KEY = 'dormglide_current_user';
 const USER_ACTIVITY_KEY = 'dormglide_user_activity';
+const SELLER_RATINGS_KEY = 'dormglide_seller_ratings';
 
 const getSupabaseClient = () => window.SupabaseClient || null;
 let supabaseAuthAvailable = true;
@@ -202,6 +203,25 @@ const getAllUsers = () => {
     }
 };
 
+const getAllSellerRatingsLocal = () => {
+    try {
+        const raw = localStorage.getItem(SELLER_RATINGS_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        console.error('Error loading seller ratings:', error);
+        return [];
+    }
+};
+
+const saveAllSellerRatingsLocal = (ratings) => {
+    try {
+        localStorage.setItem(SELLER_RATINGS_KEY, JSON.stringify(ratings));
+    } catch (error) {
+        console.error('Error saving seller ratings:', error);
+    }
+};
+
 // Save all cached users to storage
 const saveAllUsers = (users) => {
     try {
@@ -259,6 +279,7 @@ const normalizeSupabaseUser = (supabaseUser, fallback = {}) => {
         joinedAt,
         status: metadata.status || 'active',
         rating: metadata.rating ?? fallback.rating ?? 0,
+        totalReviews: metadata.totalReviews ?? fallback.totalReviews ?? 0,
         totalSales: metadata.totalSales ?? fallback.totalSales ?? 0,
         totalPurchases: metadata.totalPurchases ?? fallback.totalPurchases ?? 0,
         verified: Boolean(supabaseUser.email_confirmed_at || metadata.verified)
@@ -374,6 +395,7 @@ const registerUser = async (userData) => {
         phone: sanitizedPhone,
         status: 'active',
         rating: 0,
+        totalReviews: 0,
         totalSales: 0,
         totalPurchases: 0,
         verified: false
@@ -834,6 +856,159 @@ const recordMessageActivity = ({ senderId, receiverId, productId, productTitle, 
     saveUserActivity(receiverId, receiverActivity);
 };
 
+const normalizeRating = (record = {}) => ({
+    id: record.id || `${record.seller_id || record.sellerId}_${record.buyer_id || record.buyerId}_${record.product_id || record.productId}`,
+    sellerId: record.seller_id || record.sellerId,
+    buyerId: record.buyer_id || record.buyerId,
+    productId: record.product_id || record.productId || null,
+    rating: Number(record.rating || 0),
+    comment: String(record.comment || ''),
+    createdAt: record.created_at || record.createdAt || new Date().toISOString()
+});
+
+const calculateRatingSummary = (ratings) => {
+    if (!Array.isArray(ratings) || ratings.length === 0) {
+        return { average: 0, count: 0 };
+    }
+    const total = ratings.reduce((sum, item) => sum + (Number(item.rating) || 0), 0);
+    const average = total / ratings.length;
+    return {
+        average: Number(average.toFixed(1)),
+        count: ratings.length
+    };
+};
+
+const updateCachedSellerSummary = (sellerId, summary) => {
+    if (!sellerId) return;
+    const users = getAllUsers();
+    const idx = users.findIndex((u) => u.id === sellerId);
+    if (idx === -1) return;
+    users[idx].rating = summary.average;
+    users[idx].totalReviews = summary.count;
+    saveAllUsers(users);
+
+    try {
+        const sessionRaw = localStorage.getItem(CURRENT_USER_KEY);
+        if (!sessionRaw) return;
+        const current = JSON.parse(sessionRaw);
+        if (current?.id === sellerId) {
+            cacheSessionUser({ ...current, rating: summary.average, totalReviews: summary.count });
+        }
+    } catch (error) {
+        console.warn('[DormGlide] Failed syncing cached seller summary:', error);
+    }
+};
+
+const getSellerRatings = async (sellerId) => {
+    if (!sellerId) return [];
+
+    const client = getSupabaseClient();
+    if (client && isSupabaseEnabled() && !isLocalOnlyMode()) {
+        try {
+            const { data, error } = await client
+                .from('seller_ratings')
+                .select('*')
+                .eq('seller_id', sellerId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            const normalized = (data || []).map(normalizeRating);
+            updateCachedSellerSummary(sellerId, calculateRatingSummary(normalized));
+            return normalized;
+        } catch (error) {
+            console.warn('[DormGlide] Supabase seller ratings unavailable, using local fallback:', error);
+        }
+    }
+
+    const local = getAllSellerRatingsLocal()
+        .map(normalizeRating)
+        .filter((rating) => rating.sellerId === sellerId)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    updateCachedSellerSummary(sellerId, calculateRatingSummary(local));
+    return local;
+};
+
+const getSellerRatingSummary = async (sellerId) => {
+    const ratings = await getSellerRatings(sellerId);
+    return calculateRatingSummary(ratings);
+};
+
+const submitSellerRating = async ({ sellerId, buyerId, productId = null, rating, comment = '' }) => {
+    const numeric = Number(rating);
+    if (!sellerId || !buyerId) {
+        return { success: false, message: 'Missing seller or buyer.' };
+    }
+    if (sellerId === buyerId) {
+        return { success: false, message: 'You cannot rate your own account.' };
+    }
+    if (!Number.isFinite(numeric) || numeric < 1 || numeric > 5) {
+        return { success: false, message: 'Rating must be between 1 and 5.' };
+    }
+
+    const cleanComment = String(comment || '').trim().slice(0, 280);
+    const payload = {
+        seller_id: sellerId,
+        buyer_id: buyerId,
+        product_id: productId || null,
+        rating: Math.round(numeric),
+        comment: cleanComment,
+        created_at: new Date().toISOString()
+    };
+
+    const client = getSupabaseClient();
+    if (client && isSupabaseEnabled() && !isLocalOnlyMode()) {
+        try {
+            let existingQuery = client
+                .from('seller_ratings')
+                .select('*')
+                .eq('seller_id', sellerId)
+                .eq('buyer_id', buyerId);
+
+            if (productId) {
+                existingQuery = existingQuery.eq('product_id', productId);
+            } else {
+                existingQuery = existingQuery.is('product_id', null);
+            }
+
+            const { data: existing, error: existingError } = await existingQuery.maybeSingle();
+            if (existingError && existingError.code !== 'PGRST116') throw existingError;
+
+            if (existing?.id) {
+                const { error: updateError } = await client
+                    .from('seller_ratings')
+                    .update({ rating: payload.rating, comment: payload.comment, created_at: payload.created_at })
+                    .eq('id', existing.id);
+                if (updateError) throw updateError;
+            } else {
+                const { error: insertError } = await client
+                    .from('seller_ratings')
+                    .insert(payload);
+                if (insertError) throw insertError;
+            }
+
+            const summary = await getSellerRatingSummary(sellerId);
+            return { success: true, summary };
+        } catch (error) {
+            console.warn('[DormGlide] Supabase rating write failed, using local fallback:', error);
+        }
+    }
+
+    const localRatings = getAllSellerRatingsLocal();
+    const idx = localRatings.findIndex((item) =>
+        String(item.seller_id || item.sellerId) === String(sellerId) &&
+        String(item.buyer_id || item.buyerId) === String(buyerId) &&
+        String(item.product_id || item.productId || '') === String(productId || '')
+    );
+
+    if (idx >= 0) {
+        localRatings[idx] = { ...localRatings[idx], ...payload };
+    } else {
+        localRatings.push({ id: `rating_${Date.now()}`, ...payload });
+    }
+    saveAllSellerRatingsLocal(localRatings);
+    const summary = await getSellerRatingSummary(sellerId);
+    return { success: true, summary };
+};
+
 // Admin functions
 const isAdmin = (user) => {
     return user && user.role === 'admin';
@@ -915,6 +1090,7 @@ const seedLocalDemoUsersIfEmpty = () => {
                 lastLogin: now,
                 status: 'active',
                 rating: 0,
+                totalReviews: 0,
                 totalSales: 0,
                 totalPurchases: 0,
                 verified: true
@@ -934,6 +1110,7 @@ const seedLocalDemoUsersIfEmpty = () => {
                 lastLogin: now,
                 status: 'active',
                 rating: 0,
+                totalReviews: 0,
                 totalSales: 0,
                 totalPurchases: 0,
                 verified: true
@@ -971,7 +1148,10 @@ window.DormGlideAuth = {
     getAllUsersForAdmin,
     suspendUser,
     activateUser,
-    recordMessageActivity
+    recordMessageActivity,
+    getSellerRatings,
+    getSellerRatingSummary,
+    submitSellerRating
 };
 
 seedLocalDemoUsersIfEmpty();

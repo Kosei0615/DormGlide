@@ -4,6 +4,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
     const [isSaved, setIsSaved] = React.useState(false);
     const [isChatOpen, setIsChatOpen] = React.useState(false);
     const [sellerProfile, setSellerProfile] = React.useState(null);
+    const [sellerRatingSummary, setSellerRatingSummary] = React.useState({ average: 0, count: 0 });
 
     if (!product) {
         return React.createElement('div', { className: 'product-detail-page' },
@@ -56,6 +57,25 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
         }
         const seller = window.DormGlideAuth.getUserById(product.sellerId);
         setSellerProfile(seller);
+    }, [product?.sellerId]);
+
+    React.useEffect(() => {
+        let isMounted = true;
+        const loadRating = async () => {
+            if (!product?.sellerId || !window.DormGlideAuth?.getSellerRatingSummary) return;
+            try {
+                const summary = await window.DormGlideAuth.getSellerRatingSummary(product.sellerId);
+                if (isMounted) {
+                    setSellerRatingSummary(summary || { average: 0, count: 0 });
+                }
+            } catch (error) {
+                console.warn('[DormGlide] Failed to load seller rating summary:', error);
+            }
+        };
+        loadRating();
+        return () => {
+            isMounted = false;
+        };
     }, [product?.sellerId]);
 
     const chatParticipant = React.useMemo(() => {
@@ -133,6 +153,49 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
             } else {
                 alert(result.message || 'Unable to save this item right now.');
             }
+        }
+    };
+
+    const handleRateSeller = async () => {
+        if (!ensureAuthenticated('Please log in to rate this seller.')) return;
+        if (!product?.sellerId || currentUser?.id === product.sellerId) {
+            alert('You cannot rate your own listing.');
+            return;
+        }
+        if (!window.DormGlideAuth?.submitSellerRating) {
+            alert('Rating service is unavailable right now.');
+            return;
+        }
+
+        const raw = window.prompt('Rate this seller from 1 to 5 stars (e.g. 5):');
+        if (raw === null) return;
+        const rating = Number(raw);
+        if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+            alert('Please enter a number between 1 and 5.');
+            return;
+        }
+
+        const comment = window.prompt('Optional review comment (max 280 chars):', '') || '';
+
+        try {
+            const result = await window.DormGlideAuth.submitSellerRating({
+                sellerId: product.sellerId,
+                buyerId: currentUser.id,
+                productId: product.id,
+                rating,
+                comment
+            });
+
+            if (!result.success) {
+                alert(result.message || 'Unable to submit rating right now.');
+                return;
+            }
+
+            setSellerRatingSummary(result.summary || { average: rating, count: 1 });
+            alert('Thanks! Your seller rating has been submitted.');
+        } catch (error) {
+            console.error('[DormGlide] Failed to submit seller rating:', error);
+            alert('Unable to submit rating right now.');
         }
     };
 
@@ -246,7 +309,11 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
                                 React.createElement('p', null, product.sellerEmail || 'Student at University'),
                                 React.createElement('div', { className: 'seller-rating' },
                                     React.createElement('i', { className: 'fas fa-star' }),
-                                    React.createElement('span', null, '4.8 (23 reviews)')
+                                    React.createElement('span', null,
+                                        sellerRatingSummary.count > 0
+                                            ? `${sellerRatingSummary.average} (${sellerRatingSummary.count} review${sellerRatingSummary.count === 1 ? '' : 's'})`
+                                            : 'No ratings yet'
+                                    )
                                 ),
                                 product.contactInfo && React.createElement('p', { className: 'seller-contact' },
                                     React.createElement('i', { className: 'fas fa-comment-dots' }),
@@ -255,6 +322,13 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
                                 chatParticipant?.phone && React.createElement('p', { className: 'seller-contact' },
                                     React.createElement('i', { className: 'fas fa-phone' }),
                                     ' Phone: ', window.DormGlideAuth?.formatPhoneNumberReadable?.(chatParticipant.phone) || chatParticipant.phone
+                                ),
+                                currentUser && currentUser.id !== product.sellerId && React.createElement('button', {
+                                    className: 'btn btn-outline btn-sm',
+                                    onClick: handleRateSeller
+                                },
+                                    React.createElement('i', { className: 'fas fa-star' }),
+                                    ' Rate Seller'
                                 )
                             )
                         )
