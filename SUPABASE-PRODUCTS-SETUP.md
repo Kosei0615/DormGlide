@@ -20,6 +20,7 @@ create table if not exists public.products (
   condition text not null,
   location text null,
   contact_info text null,
+  payment_link text null,
   images text[] not null default '{}',
   main_image text null,
 
@@ -36,6 +37,13 @@ create table if not exists public.products (
 create index if not exists products_created_at_idx on public.products(created_at desc);
 create index if not exists products_seller_id_idx on public.products(seller_id);
 create index if not exists products_category_idx on public.products(category);
+```
+
+If your `products` table already exists, run this once to add Stripe support:
+
+```sql
+alter table public.products
+add column if not exists payment_link text null;
 ```
 
 ## 2) Enable RLS

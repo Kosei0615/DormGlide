@@ -84,6 +84,14 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     React.createElement('i', { className: 'fas fa-chart-line' }),
                     React.createElement('span', null, 'Dashboard')
                 ),
+
+                currentUser && React.createElement('button', {
+                    className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,
+                    onClick: () => handleNavigation('messages')
+                },
+                    React.createElement('i', { className: 'fas fa-comments' }),
+                    React.createElement('span', null, 'Messages')
+                ),
                 
                 currentUser ? (
                     // User menu dropdown
@@ -123,6 +131,12 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             },
                                 React.createElement('i', { className: 'fas fa-chart-line' }),
                                 'My Dashboard'
+                            ),
+                            React.createElement('button', {
+                                onClick: () => handleNavigation('messages')
+                            },
+                                React.createElement('i', { className: 'fas fa-comments' }),
+                                'Messages'
                             ),
                             React.createElement('button', {
                                 onClick: () => handleNavigation('profile')
@@ -193,6 +207,13 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     }, 
                         React.createElement('i', { className: 'fas fa-chart-line' }),
                         React.createElement('span', null, 'Dashboard')
+                    ),
+                    React.createElement('button', {
+                        className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,
+                        onClick: () => handleNavigation('messages')
+                    }, 
+                        React.createElement('i', { className: 'fas fa-comments' }),
+                        React.createElement('span', null, 'Messages')
                     ),
                     React.createElement('button', {
                         className: `nav-btn ${currentPage === 'profile' ? 'active' : ''}`,

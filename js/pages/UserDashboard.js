@@ -1,11 +1,15 @@
 // User Dashboard Component - Shows user activity and history
-const UserDashboard = ({ currentUser, onNavigate }) => {
-    const [activeTab, setActiveTab] = React.useState('overview');
+const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => {
+    const [activeTab, setActiveTab] = React.useState(initialTab);
     const [activity, setActivity] = React.useState(null);
     const [products, setProducts] = React.useState([]);
     const [allProducts, setAllProducts] = React.useState([]);
     const [chatContext, setChatContext] = React.useState(null);
     const [chatConversations, setChatConversations] = React.useState([]);
+
+    React.useEffect(() => {
+        setActiveTab(initialTab || 'overview');
+    }, [initialTab]);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -500,21 +504,14 @@ const UserDashboard = ({ currentUser, onNavigate }) => {
                 React.createElement('i', { className: 'fas fa-heart' }),
                 'Favorites'
             ),
-            React.createElement('button', {
-                className: `tab ${activeTab === 'messages' ? 'active' : ''}`,
-                onClick: () => setActiveTab('messages')
-            },
-                React.createElement('i', { className: 'fas fa-comments' }),
-                'Messages'
-            )
+            null
         ),
 
         React.createElement('div', { className: 'dashboard-content' },
             activeTab === 'overview' && renderOverviewTab(),
             activeTab === 'purchases' && renderPurchasesTab(),
             activeTab === 'sales' && renderSalesTab(),
-            activeTab === 'favorites' && renderFavoritesTab(),
-            activeTab === 'messages' && renderMessagesTab()
+            activeTab === 'favorites' && renderFavoritesTab()
         ),
 
         chatContext && React.createElement(ChatModal, {

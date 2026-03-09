@@ -53,6 +53,7 @@ const normalizeProductRecord = (record) => {
         condition: record.condition,
         location: record.location,
         contactInfo: record.contact_info || record.contactInfo || '',
+        stripePaymentLink: record.payment_link || record.stripePaymentLink || '',
         images,
         image: record.main_image || record.image || images[0] || PLACEHOLDER_IMAGE,
         sellerId: record.seller_id || record.sellerId,
@@ -73,6 +74,7 @@ const productToSupabasePayload = (product) => ({
     condition: product.condition,
     location: product.location || null,
     contact_info: product.contactInfo || null,
+    payment_link: (product.stripePaymentLink || '').trim() || null,
     images: product.images || [],
     main_image: product.image || (product.images && product.images[0]) || null,
     seller_id: product.sellerId,
@@ -118,6 +120,7 @@ const localProductAdapter = {
             ...product,
             image: product.image || product.images?.[0] || PLACEHOLDER_IMAGE,
             sellerCampus: product.sellerCampus || product.location || '',
+            stripePaymentLink: (product.stripePaymentLink || '').trim(),
             isDemo: Boolean(product.isDemo),
             createdAt: product.createdAt || new Date().toISOString()
         };

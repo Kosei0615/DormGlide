@@ -11,6 +11,8 @@ const App = () => {
     const [products, setProducts] = useState([]);
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const seenMessageIdsRef = React.useRef(new Set());
 
     useEffect(() => {
         let isMounted = true;
@@ -115,8 +117,69 @@ const App = () => {
         }
         setCurrentUser(null);
         setCurrentPage('home');
+        setNotifications([]);
+        seenMessageIdsRef.current.clear();
         console.log('User logged out');
     };
+
+    useEffect(() => {
+        if (!currentUser?.id || !window.DormGlideChat?.subscribeToConversationUpdates) {
+            return;
+        }
+
+        const removeNotification = (id) => {
+            setNotifications((prev) => prev.filter((item) => item.id !== id));
+        };
+
+        const unsubscribe = window.DormGlideChat.subscribeToConversationUpdates(currentUser.id, (payload) => {
+            const message = payload?.message;
+            if (!message) {
+                return;
+            }
+
+            const isIncoming = message.receiverId === currentUser.id && message.senderId !== currentUser.id;
+            const isOutgoing = message.senderId === currentUser.id;
+            if (!isIncoming && !isOutgoing) return;
+
+            if (seenMessageIdsRef.current.has(message.id)) {
+                return;
+            }
+            seenMessageIdsRef.current.add(message.id);
+
+            const sender = window.DormGlideAuth?.getUserById?.(message.senderId);
+            const receiver = window.DormGlideAuth?.getUserById?.(message.receiverId);
+            const toastId = `toast_${message.id || Date.now()}`;
+            const toast = {
+                id: toastId,
+                title: isIncoming
+                    ? `New message from ${sender?.name || 'DormGlide user'}`
+                    : `Message sent to ${receiver?.name || 'DormGlide user'}`,
+                body: String(message.body || '').slice(0, 120)
+            };
+
+            setNotifications((prev) => [...prev, toast].slice(-4));
+            window.setTimeout(() => removeNotification(toastId), 4500);
+
+            if (isIncoming && 'Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification(toast.title, { body: toast.body || 'Open DormGlide to reply.' });
+                } catch (_error) {
+                    // Browser notification support varies by platform.
+                }
+            }
+        });
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, [currentUser?.id]);
+
+    useEffect(() => {
+        if (!currentUser?.id || !('Notification' in window)) return;
+        if (Notification.permission === 'default') {
+            Notification.requestPermission().catch(() => {});
+        }
+    }, [currentUser?.id]);
 
     const renderCurrentPage = () => {
         switch (currentPage) {
@@ -152,6 +215,12 @@ const App = () => {
                 });
             case 'dashboard':
                 return React.createElement(UserDashboard, {
+                    currentUser: currentUser,
+                    onNavigate: navigateToPage,
+                    initialTab: 'overview'
+                });
+            case 'messages':
+                return React.createElement(MessagesPage, {
                     currentUser: currentUser,
                     onNavigate: navigateToPage
                 });
@@ -193,7 +262,36 @@ const App = () => {
         // Admin Panel (hidden by default, activated with Ctrl+Shift+A)
         showAdminPanel && React.createElement(AdminPanel, {
             onClose: () => setShowAdminPanel(false)
-        })
+        }),
+
+        notifications.length > 0 && React.createElement('div', {
+            style: {
+                position: 'fixed',
+                right: '16px',
+                top: '84px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                zIndex: 1200,
+                maxWidth: '320px'
+            }
+        }, notifications.map((item) =>
+            React.createElement('div', {
+                key: item.id,
+                onClick: () => navigateToPage('messages'),
+                style: {
+                    background: '#ffffff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
+                    padding: '10px 12px',
+                    cursor: 'pointer'
+                }
+            },
+                React.createElement('div', { style: { fontWeight: 600, marginBottom: '2px' } }, item.title),
+                React.createElement('div', { style: { fontSize: '0.9rem', color: '#4b5563' } }, item.body || 'Tap to open messages')
+            )
+        ))
     );
 };
 

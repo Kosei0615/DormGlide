@@ -9,6 +9,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
         condition: '',
         location: preferredLocation,
         contactInfo: preferredContact,
+        stripePaymentLink: '',
         images: []
     });
     const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -113,6 +114,12 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             return;
         }
 
+        if (formData.stripePaymentLink && window.DormGlidePayments?.isValidStripePaymentLink && !window.DormGlidePayments.isValidStripePaymentLink(formData.stripePaymentLink)) {
+            alert('Please use a valid Stripe payment link (https://buy.stripe.com/...).');
+            setIsSubmitting(false);
+            return;
+        }
+
         const newProduct = {
             id: Date.now().toString(),
             title: formData.title,
@@ -122,6 +129,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             condition: formData.condition,
             location: formData.location || 'Campus',
             contactInfo: formData.contactInfo.trim(),
+            stripePaymentLink: (formData.stripePaymentLink || '').trim(),
             images: formData.images,
             image: formData.images[0] || 'https://via.placeholder.com/300x200?text=No+Image',
             sellerId: currentUser.id,
@@ -144,6 +152,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                 condition: '',
                 location: currentUser.campusLocation || currentUser.university || '',
                 contactInfo: currentUser.phone || currentUser.email || '',
+                stripePaymentLink: '',
                 images: []
             });
             onNavigate('home', persisted?.id);
@@ -284,6 +293,18 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                             required: true
                         }),
                         React.createElement('small', { className: 'form-hint' }, 'Buyers will see this after they tap “Chat with Seller”.')
+                    ),
+
+                    React.createElement('div', { className: 'form-group' },
+                        React.createElement('label', null, 'Stripe Payment Link (optional)'),
+                        React.createElement('input', {
+                            type: 'url',
+                            name: 'stripePaymentLink',
+                            value: formData.stripePaymentLink,
+                            onChange: handleInputChange,
+                            placeholder: 'https://buy.stripe.com/...'
+                        }),
+                        React.createElement('small', { className: 'form-hint' }, 'If provided, buyers can pay instantly via Stripe on the product page.')
                     ),
 
                     React.createElement('div', { className: 'form-row' },

@@ -80,7 +80,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
 
     return React.createElement('div', { className: 'search-filter' },
         React.createElement('div', { className: 'search-bar' },
-            React.createElement('div', { className: 'search-input-container' },
+            React.createElement('div', { className: `search-input-container ${searchTerm ? 'has-value' : ''}` },
                 React.createElement('i', { className: 'fas fa-search search-icon' }),
                 React.createElement('input', {
                     type: 'text',

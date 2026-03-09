@@ -101,7 +101,15 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
 
     const handleBuyNow = () => {
         if (!ensureAuthenticated('Log in to start the purchase flow.')) return;
-        alert(`Purchase feature would initiate buying process for "${product.title}". In a real app, this would handle payment and delivery.`);
+        if (!window.DormGlidePayments?.startCheckout) {
+            alert('Payment service is unavailable right now. Please try again.');
+            return;
+        }
+
+        const result = window.DormGlidePayments.startCheckout({ product });
+        if (!result.success) {
+            alert(result.message || 'Unable to start checkout right now.');
+        }
     };
 
     const handleToggleSave = () => {
@@ -218,6 +226,10 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
                             product.contactInfo && React.createElement('div', { className: 'detail-item' },
                                 React.createElement('i', { className: 'fas fa-phone' }),
                                 React.createElement('span', null, 'Contact: ', product.contactInfo)
+                            ),
+                            React.createElement('div', { className: 'detail-item' },
+                                React.createElement('i', { className: 'fas fa-credit-card' }),
+                                React.createElement('span', null, 'Stripe Checkout: ', window.DormGlidePayments?.getProductPaymentLink?.(product) ? 'Available' : 'Not set')
                             )
                         )
                     ),

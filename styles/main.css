@@ -525,7 +525,14 @@ p {
     top: 50%;
     transform: translateY(-50%);
     color: rgba(79, 70, 229, 0.7);
-    z-index: 1;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.search-input-container.has-value .search-icon {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-8px);
 }
 
 .search-input {
@@ -537,6 +544,8 @@ p {
     background: rgba(255, 255, 255, 0.92);
     box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    position: relative;
+    z-index: 1;
 }
 
 .search-input:focus {

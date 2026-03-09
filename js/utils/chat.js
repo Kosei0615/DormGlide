@@ -142,6 +142,29 @@
         });
     };
 
+    const triggerNotificationWebhook = async ({ senderId, receiverId, productId, body, conversationId }) => {
+        const webhookUrl = String(window.DORMGLIDE_NOTIFICATION_WEBHOOK_URL || '').trim();
+        if (!webhookUrl) return;
+
+        try {
+            await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event: 'chat_message',
+                    senderId,
+                    receiverId,
+                    productId: productId || null,
+                    body,
+                    conversationId: conversationId || null,
+                    sentAt: new Date().toISOString()
+                })
+            });
+        } catch (error) {
+            console.warn('[DormGlide] Notification webhook request failed:', error);
+        }
+    };
+
     const ensureRealtimeChannel = () => {
         if (!isSupabaseEnabled()) return null;
         const client = getSupabaseClient();
@@ -484,6 +507,14 @@
                         });
                     }
 
+                    await triggerNotificationWebhook({
+                        senderId,
+                        receiverId,
+                        productId,
+                        body,
+                        conversationId: conversation.id
+                    });
+
                     return { conversation, message };
                 } catch (error) {
                     if (isConnectivityChatError(error)) {
@@ -530,6 +561,14 @@
                     conversationId: conversation.id
                 });
             }
+
+            await triggerNotificationWebhook({
+                senderId,
+                receiverId,
+                productId,
+                body,
+                conversationId: conversation.id
+            });
 
             return { conversation, message };
         },
