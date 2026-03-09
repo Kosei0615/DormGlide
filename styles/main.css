@@ -528,16 +528,12 @@ p {
     z-index: 0;
     pointer-events: none;
     transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-.search-input-container.has-value .search-icon {
-    opacity: 0;
-    transform: translateY(-50%) translateX(-8px);
+    display: none;
 }
 
 .search-input {
     width: 100%;
-    padding: 0.9rem 1.1rem 0.9rem 2.85rem;
+    padding: 0.9rem 1.1rem;
     border: 1px solid rgba(99, 102, 241, 0.25);
     border-radius: 0.85rem;
     font-size: 1rem;
