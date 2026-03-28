@@ -1,10 +1,11 @@
-const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => {
+const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onProductUpdate }) => {
     const [isImageModalOpen, setIsImageModalOpen] = React.useState(false);
     const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
     const [isSaved, setIsSaved] = React.useState(false);
     const [isChatOpen, setIsChatOpen] = React.useState(false);
     const [sellerProfile, setSellerProfile] = React.useState(null);
     const [sellerRatingSummary, setSellerRatingSummary] = React.useState({ average: 0, count: 0 });
+    const [isSavingStatus, setIsSavingStatus] = React.useState(false);
 
     if (!product) {
         return React.createElement('div', { className: 'product-detail-page' },
@@ -37,6 +38,16 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
         if (days < 7) return `${days} days ago`;
         if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
         return `${Math.floor(days / 30)} months ago`;
+    };
+
+    const formatTimelineDate = (value) => {
+        if (!value) return 'Pending';
+        return new Date(value).toLocaleString([], {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     };
 
     React.useEffect(() => {
@@ -121,16 +132,84 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
 
     const handleBuyNow = () => {
         if (!ensureAuthenticated('Log in to start the purchase flow.')) return;
-        if (!window.DormGlidePayments?.startCheckout) {
-            alert('Payment service is unavailable right now. Please try again.');
+        if (String(product?.status || 'active').toLowerCase() === 'sold') {
+            alert('This item is already marked as sold.');
+            return;
+        }
+        if (!product?.sellerId) {
+            alert('Seller information is missing for this listing.');
+            return;
+        }
+        if (currentUser.id === product.sellerId) {
+            alert('This is your own listing.');
             return;
         }
 
-        const result = window.DormGlidePayments.startCheckout({ product });
-        if (!result.success) {
-            alert(result.message || 'Unable to start checkout right now.');
+        setIsChatOpen(true);
+    };
+
+    const saveProductStatus = async (nextStatus) => {
+        if (!currentUser?.id || currentUser.id !== product?.sellerId) return;
+        if (!window.DormGlideStorage?.updateProduct) {
+            alert('Listing update service is unavailable right now.');
+            return;
+        }
+
+        const normalized = String(nextStatus || '').toLowerCase();
+        const now = new Date().toISOString();
+        const updates = normalized === 'sold'
+            ? {
+                ...product,
+                status: 'sold',
+                requestedAt: product?.requestedAt || now,
+                soldAt: product?.soldAt || now,
+                sellerConfirmedAt: now
+            }
+            : {
+                ...product,
+                status: 'active',
+                requestedAt: null,
+                soldAt: null,
+                buyerId: null,
+                soldMethod: null,
+                buyerConfirmedAt: null,
+                sellerConfirmedAt: null
+            };
+
+        setIsSavingStatus(true);
+        try {
+            const updated = await window.DormGlideStorage.updateProduct(product.id, updates);
+            if (updated && onProductUpdate) {
+                onProductUpdate(updated);
+            }
+            alert(normalized === 'sold' ? 'Listing marked as sold.' : 'Listing is available again.');
+        } catch (error) {
+            console.error('[DormGlide] Failed updating listing status:', error);
+            alert(error?.message || 'Unable to update listing status right now.');
+        } finally {
+            setIsSavingStatus(false);
         }
     };
+
+    const listingStatus = String(product?.status || 'active').toLowerCase();
+    const isSellerOwner = Boolean(currentUser?.id && product?.sellerId && currentUser.id === product.sellerId);
+    const dealTimeline = [
+        {
+            key: 'requested',
+            label: 'Requested purchase',
+            at: product?.requestedAt
+        },
+        {
+            key: 'buyer-confirmed',
+            label: 'Buyer confirmed received',
+            at: product?.buyerConfirmedAt
+        },
+        {
+            key: 'seller-confirmed',
+            label: 'Seller confirmed sold',
+            at: product?.sellerConfirmedAt || product?.soldAt
+        }
+    ];
 
     const handleToggleSave = () => {
         if (!ensureAuthenticated('Log in to mark this item as a favorite.')) return;
@@ -255,6 +334,9 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
                     React.createElement('div', { className: 'product-header' },
                         React.createElement('h1', null, product.title),
                         React.createElement('div', { className: 'product-price-large' }, formatPrice(product.price)),
+                        React.createElement('div', { className: `listing-status-badge listing-status-${listingStatus}` },
+                            listingStatus === 'sold' ? 'Sold' : 'Available'
+                        ),
                         React.createElement('div', { className: 'product-badges' },
                             React.createElement('span', {
                                 className: `condition-badge condition-${product.condition.toLowerCase()}`
@@ -291,9 +373,30 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
                                 React.createElement('span', null, 'Contact: ', product.contactInfo)
                             ),
                             React.createElement('div', { className: 'detail-item' },
-                                React.createElement('i', { className: 'fas fa-credit-card' }),
-                                React.createElement('span', null, 'Stripe Checkout: ', window.DormGlidePayments?.getProductPaymentLink?.(product) ? 'Available' : 'Not set')
+                                React.createElement('i', { className: 'fas fa-handshake' }),
+                                React.createElement('span', null, 'Deal Type: Direct via chat (Zelle, Venmo, Cash)')
                             )
+                        )
+                    ),
+
+                    React.createElement('div', { className: 'deal-timeline-card' },
+                        React.createElement('h3', null, 'Deal Timeline'),
+                        React.createElement('div', { className: 'deal-timeline-list' },
+                            dealTimeline.map((step) => {
+                                const completed = Boolean(step.at);
+                                return React.createElement('div', {
+                                    key: step.key,
+                                    className: `deal-timeline-item ${completed ? 'completed' : ''}`
+                                },
+                                    React.createElement('div', { className: 'deal-timeline-dot' },
+                                        React.createElement('i', { className: completed ? 'fas fa-check' : 'fas fa-circle' })
+                                    ),
+                                    React.createElement('div', { className: 'deal-timeline-content' },
+                                        React.createElement('h4', null, step.label),
+                                        React.createElement('p', null, formatTimelineDate(step.at))
+                                    )
+                                );
+                            })
                         )
                     ),
 
@@ -338,10 +441,11 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
                     React.createElement('div', { className: 'product-actions' },
                         React.createElement('button', {
                             className: 'btn btn-primary btn-large',
-                            onClick: handleBuyNow
+                            onClick: handleBuyNow,
+                            disabled: listingStatus === 'sold' || isSellerOwner
                         },
                             React.createElement('i', { className: 'fas fa-shopping-cart' }),
-                            'Buy Now'
+                            listingStatus === 'sold' ? 'Sold Out' : (isSellerOwner ? 'Your Listing' : 'Proceed to Purchase')
                         ),
                         React.createElement('button', {
                             className: 'btn btn-secondary btn-large',
@@ -356,6 +460,16 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
                         },
                             React.createElement('i', { className: isSaved ? 'fas fa-heart' : 'far fa-heart' }),
                             isSaved ? 'Saved' : 'Save'
+                        ),
+                        isSellerOwner && React.createElement('button', {
+                            className: `btn btn-outline ${listingStatus === 'sold' ? '' : 'btn-danger'}`,
+                            onClick: () => saveProductStatus(listingStatus === 'sold' ? 'active' : 'sold'),
+                            disabled: isSavingStatus
+                        },
+                            React.createElement('i', { className: listingStatus === 'sold' ? 'fas fa-rotate-left' : 'fas fa-check-circle' }),
+                            isSavingStatus
+                                ? 'Saving...'
+                                : (listingStatus === 'sold' ? 'Mark as Available' : 'Mark as Sold')
                         )
                     )
                 )
@@ -385,6 +499,8 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth }) => 
             product,
             currentUser,
             participant: chatParticipant,
+            initialDraft: `Hi ${chatParticipant?.name || 'there'}, I want to proceed with this purchase. Is it still available?`,
+            onProductUpdate,
             onClose: () => setIsChatOpen(false)
         })
     );

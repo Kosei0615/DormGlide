@@ -3,6 +3,8 @@
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/300x200?text=No+Image';
 const LOCAL_PRODUCT_KEY = 'dormglide_products';
 const LOCAL_PREFS_KEY = 'dormglide_preferences';
+const LOCAL_TRANSACTION_KEY = 'dormglide_transactions';
+const LOCAL_SUPPORT_KEY = 'dormglide_support_requests';
 
 const getStorageSupabaseClient = () => window.SupabaseClient || null;
 const isSupabaseConfigured = () => Boolean(getStorageSupabaseClient());
@@ -60,6 +62,13 @@ const normalizeProductRecord = (record) => {
         sellerName: record.seller_name || record.sellerName,
         sellerEmail: record.seller_email || record.sellerEmail,
         sellerCampus: record.seller_campus || record.sellerCampus || record.location || '',
+        status: String(record.status || 'active').toLowerCase(),
+        requestedAt: record.requested_at || record.requestedAt || null,
+        soldAt: record.sold_at || record.soldAt || null,
+        buyerId: record.buyer_id || record.buyerId || null,
+        soldMethod: record.sold_method || record.soldMethod || null,
+        buyerConfirmedAt: record.buyer_confirmed_at || record.buyerConfirmedAt || null,
+        sellerConfirmedAt: record.seller_confirmed_at || record.sellerConfirmedAt || null,
         isDemo: Boolean(record.isDemo ?? record.is_demo ?? false),
         createdAt: record.created_at || record.createdAt || new Date().toISOString(),
         views: record.views || 0
@@ -81,10 +90,50 @@ const productToSupabasePayload = (product) => ({
     seller_name: product.sellerName,
     seller_email: product.sellerEmail,
     seller_campus: product.sellerCampus || product.location || null,
+    status: String(product.status || 'active').toLowerCase(),
+    requested_at: product.requestedAt || null,
+    sold_at: product.soldAt || null,
+    buyer_id: product.buyerId || null,
+    sold_method: product.soldMethod || null,
+    buyer_confirmed_at: product.buyerConfirmedAt || null,
+    seller_confirmed_at: product.sellerConfirmedAt || null,
     is_demo: Boolean(product.isDemo),
     created_at: product.createdAt || new Date().toISOString(),
     views: product.views || 0
 });
+
+const normalizeTransactionRecord = (record) => {
+    if (!record) return null;
+    return {
+        id: record.id || record.transaction_id || `txn_${Date.now()}`,
+        productId: record.product_id || record.productId || null,
+        sellerId: record.seller_id || record.sellerId || null,
+        buyerId: record.buyer_id || record.buyerId || null,
+        amount: typeof record.amount === 'number' ? record.amount : Number(record.amount || 0),
+        currency: String(record.currency || 'USD').toUpperCase(),
+        paymentMethod: record.payment_method || record.paymentMethod || 'cash',
+        status: String(record.status || 'completed').toLowerCase(),
+        source: record.source || 'manual_chat',
+        notes: record.notes || '',
+        confirmedBySellerAt: record.confirmed_by_seller_at || record.confirmedBySellerAt || null,
+        confirmedByBuyerAt: record.confirmed_by_buyer_at || record.confirmedByBuyerAt || null,
+        createdAt: record.created_at || record.createdAt || new Date().toISOString()
+    };
+};
+
+const normalizeSupportRecord = (record) => {
+    if (!record) return null;
+    return {
+        id: record.id || `support_${Date.now()}`,
+        productId: record.product_id || record.productId || null,
+        reporterId: record.reporter_id || record.reporterId || null,
+        counterpartyId: record.counterparty_id || record.counterpartyId || null,
+        issueType: record.issue_type || record.issueType || 'other',
+        details: record.details || '',
+        status: String(record.status || 'open').toLowerCase(),
+        createdAt: record.created_at || record.createdAt || new Date().toISOString()
+    };
+};
 
 // -----------------------------
 // Local storage adapter
@@ -105,6 +154,43 @@ const writeLocal = (key, value) => {
         localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
         console.error(`[DormGlide] Failed writing ${key}:`, error);
+    }
+};
+
+const localTransactionAdapter = {
+    async fetchAll() {
+        const raw = readLocal(LOCAL_TRANSACTION_KEY, []);
+        return Array.isArray(raw) ? raw.map((item) => normalizeTransactionRecord(item)).filter(Boolean) : [];
+    },
+    async create(transaction) {
+        const records = readLocal(LOCAL_TRANSACTION_KEY, []);
+        const record = {
+            id: transaction.id || `txn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            ...transaction,
+            createdAt: transaction.createdAt || new Date().toISOString()
+        };
+        records.push(record);
+        writeLocal(LOCAL_TRANSACTION_KEY, records);
+        return normalizeTransactionRecord(record);
+    }
+};
+
+const localSupportAdapter = {
+    async fetchAll() {
+        const raw = readLocal(LOCAL_SUPPORT_KEY, []);
+        return Array.isArray(raw) ? raw.map((item) => normalizeSupportRecord(item)).filter(Boolean) : [];
+    },
+    async create(request) {
+        const records = readLocal(LOCAL_SUPPORT_KEY, []);
+        const record = {
+            id: request.id || `support_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            ...request,
+            createdAt: request.createdAt || new Date().toISOString(),
+            status: request.status || 'open'
+        };
+        records.push(record);
+        writeLocal(LOCAL_SUPPORT_KEY, records);
+        return normalizeSupportRecord(record);
     }
 };
 
@@ -190,6 +276,67 @@ const supabaseProductAdapter = {
         const { error } = await client.from('products').delete().eq('id', productId);
         if (error) throw error;
         return true;
+    }
+};
+
+const supabaseTransactionAdapter = {
+    async fetchAll() {
+        const client = getStorageSupabaseClient();
+        if (!client) throw new Error('Supabase client not available');
+        const { data, error } = await client
+            .from('transactions')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(normalizeTransactionRecord);
+    },
+    async create(transaction) {
+        const client = getStorageSupabaseClient();
+        if (!client) throw new Error('Supabase client not available');
+        const payload = {
+            product_id: transaction.productId || null,
+            seller_id: transaction.sellerId || null,
+            buyer_id: transaction.buyerId || null,
+            amount: typeof transaction.amount === 'number' ? transaction.amount : Number(transaction.amount || 0),
+            currency: String(transaction.currency || 'USD').toUpperCase(),
+            payment_method: transaction.paymentMethod || 'cash',
+            status: String(transaction.status || 'completed').toLowerCase(),
+            source: transaction.source || 'manual_chat',
+            notes: transaction.notes || null,
+            confirmed_by_seller_at: transaction.confirmedBySellerAt || null,
+            confirmed_by_buyer_at: transaction.confirmedByBuyerAt || null,
+            created_at: transaction.createdAt || new Date().toISOString()
+        };
+        const { data, error } = await client
+            .from('transactions')
+            .insert(payload)
+            .select('*')
+            .single();
+        if (error) throw error;
+        return normalizeTransactionRecord(data);
+    }
+};
+
+const supabaseSupportAdapter = {
+    async create(request) {
+        const client = getStorageSupabaseClient();
+        if (!client) throw new Error('Supabase client not available');
+        const payload = {
+            product_id: request.productId || null,
+            reporter_id: request.reporterId || null,
+            counterparty_id: request.counterpartyId || null,
+            issue_type: request.issueType || 'other',
+            details: request.details || null,
+            status: String(request.status || 'open').toLowerCase(),
+            created_at: request.createdAt || new Date().toISOString()
+        };
+        const { data, error } = await client
+            .from('support_requests')
+            .insert(payload)
+            .select('*')
+            .single();
+        if (error) throw error;
+        return normalizeSupportRecord(data);
     }
 };
 
@@ -367,6 +514,75 @@ const addToSearchHistory = async (searchTerm) => {
     await localPreferencesAdapter.savePreferences(preferences);
 };
 
+const fetchTransactions = async () => {
+    const usingSupabase = isSupabaseActive();
+    try {
+        return usingSupabase
+            ? await supabaseTransactionAdapter.fetchAll()
+            : await localTransactionAdapter.fetchAll();
+    } catch (error) {
+        console.error('[DormGlide] Failed to fetch transactions:', error);
+        if (usingSupabase && isConnectivityError(error)) {
+            markSupabaseUnavailable(error.message || error);
+            return await localTransactionAdapter.fetchAll();
+        }
+        return [];
+    }
+};
+
+const createManualTransaction = async (transaction) => {
+    const usingSupabase = isSupabaseActive();
+    const payload = {
+        ...transaction,
+        source: transaction?.source || 'manual_chat',
+        status: String(transaction?.status || 'completed').toLowerCase(),
+        createdAt: transaction?.createdAt || new Date().toISOString()
+    };
+
+    try {
+        return usingSupabase
+            ? await supabaseTransactionAdapter.create(payload)
+            : await localTransactionAdapter.create(payload);
+    } catch (error) {
+        console.error('[DormGlide] Failed to create transaction:', error);
+        if (usingSupabase && isConnectivityError(error)) {
+            markSupabaseUnavailable(error.message || error);
+            return await localTransactionAdapter.create(payload);
+        }
+        throw error;
+    }
+};
+
+const createSupportRequest = async (request) => {
+    const usingSupabase = isSupabaseActive();
+    const payload = {
+        ...request,
+        status: String(request?.status || 'open').toLowerCase(),
+        createdAt: request?.createdAt || new Date().toISOString()
+    };
+
+    try {
+        return usingSupabase
+            ? await supabaseSupportAdapter.create(payload)
+            : await localSupportAdapter.create(payload);
+    } catch (error) {
+        console.error('[DormGlide] Failed to create support request:', error);
+
+        const code = String(error?.code || '').toUpperCase();
+        const message = String(error?.message || '').toLowerCase();
+        const missingTable = code === '42P01' || (message.includes('relation') && message.includes('support_requests'));
+
+        if (usingSupabase && (isConnectivityError(error) || missingTable)) {
+            if (isConnectivityError(error)) {
+                markSupabaseUnavailable(error.message || error);
+            }
+            return await localSupportAdapter.create(payload);
+        }
+
+        throw error;
+    }
+};
+
 const getSearchHistory = async () => {
     const preferences = await localPreferencesAdapter.getPreferences();
     return preferences.searchHistory || [];
@@ -417,6 +633,9 @@ window.DormGlideStorage = {
     deleteProduct,
     getSearchHistory,
     addToSearchHistory,
+    fetchTransactions,
+    createManualTransaction,
+    createSupportRequest,
     clearAllData,
     initializeDefaultData,
     isSupabaseConfigured,

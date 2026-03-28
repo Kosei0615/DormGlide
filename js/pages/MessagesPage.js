@@ -4,6 +4,7 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
     const [allProducts, setAllProducts] = React.useState([]);
     const [activity, setActivity] = React.useState(null);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [searchQuery, setSearchQuery] = React.useState('');
 
     React.useEffect(() => {
         let isMounted = true;
@@ -121,28 +122,77 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
         return merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     }, [chatConversations, activity, allProducts]);
 
-    const handleOpenChat = (conversation) => {
-        const productData = allProducts.find((prod) => prod.id === conversation.productId) || {
-            id: conversation.productId,
-            title: conversation.productTitle,
-            price: null
-        };
+    const directConversationIdByUser = React.useMemo(() => {
+        const mapping = new Map();
+        (chatConversations || []).forEach((conversation) => {
+            if (!conversation?.otherUserId) return;
+            if (conversation.productId !== null && conversation.productId !== undefined && conversation.productId !== '') return;
+            const existing = mapping.get(conversation.otherUserId);
+            if (!existing || new Date(conversation.lastMessageAt || conversation.createdAt) > new Date(existing.lastMessageAt || existing.createdAt)) {
+                mapping.set(conversation.otherUserId, conversation);
+            }
+        });
+        return mapping;
+    }, [chatConversations]);
+
+    const threadsByUser = React.useMemo(() => {
+        const grouped = new Map();
+        mergedConversations.forEach((conversation) => {
+            const otherUserId = conversation.otherUserId;
+            if (!otherUserId) return;
+
+            const existing = grouped.get(otherUserId);
+            if (!existing || new Date(conversation.timestamp) > new Date(existing.timestamp)) {
+                grouped.set(otherUserId, {
+                    otherUserId,
+                    message: conversation.message,
+                    timestamp: conversation.timestamp,
+                    recentProductId: conversation.productId,
+                    recentProductTitle: conversation.productTitle || allProducts.find((item) => item.id === conversation.productId)?.title || 'Listing',
+                    conversationCount: (existing?.conversationCount || 0) + 1
+                });
+            } else {
+                existing.conversationCount += 1;
+            }
+        });
+
+        return Array.from(grouped.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    }, [mergedConversations, allProducts]);
+
+    const filteredThreads = React.useMemo(() => {
+        const keyword = String(searchQuery || '').trim().toLowerCase();
+        if (!keyword) return threadsByUser;
+
+        return threadsByUser.filter((thread) => {
+            const otherUser = window.DormGlideAuth?.getUserById
+                ? window.DormGlideAuth.getUserById(thread.otherUserId)
+                : null;
+            const name = String(otherUser?.name || 'DormGlide user').toLowerCase();
+            const productTitle = String(thread.recentProductTitle || '').toLowerCase();
+            const preview = String(thread.message || '').toLowerCase();
+            return name.includes(keyword) || productTitle.includes(keyword) || preview.includes(keyword);
+        });
+    }, [threadsByUser, searchQuery]);
+
+    const handleOpenChat = (thread) => {
+        const directConversation = directConversationIdByUser.get(thread.otherUserId);
         const participant = window.DormGlideAuth?.getUserById
-            ? window.DormGlideAuth.getUserById(conversation.otherUserId)
+            ? window.DormGlideAuth.getUserById(thread.otherUserId)
             : null;
 
         setChatContext({
             product: {
-                id: productData.id,
-                title: productData.title || conversation.productTitle || 'Listing',
-                price: productData.price
+                id: null,
+                title: `Direct chat${thread.recentProductTitle ? ` - latest: ${thread.recentProductTitle}` : ''}`,
+                price: null
             },
             participant: {
-                id: conversation.otherUserId,
+                id: thread.otherUserId,
                 name: participant?.name || 'DormGlide user',
                 phone: participant?.phone || ''
             },
-            conversationId: conversation.conversationId || null
+            conversationId: directConversation?.id || null,
+            initialDraft: 'Hi! Want to continue our deal here in one chat thread?'
         });
     };
 
@@ -168,14 +218,24 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
     return React.createElement('div', { className: 'dashboard-page' },
         React.createElement('div', { className: 'dashboard-header' },
             React.createElement('h1', null, 'Messages'),
-            React.createElement('p', null, 'Stay connected with buyers and sellers')
+            React.createElement('p', null, 'Stay connected with buyers and sellers in one unified thread per person')
         ),
 
-        mergedConversations.length === 0
+        React.createElement('div', { className: 'messages-search-bar' },
+            React.createElement('i', { className: 'fas fa-search' }),
+            React.createElement('input', {
+                type: 'search',
+                placeholder: 'Search by user, listing, or message preview',
+                value: searchQuery,
+                onChange: (event) => setSearchQuery(event.target.value)
+            })
+        ),
+
+        filteredThreads.length === 0
             ? React.createElement('div', { className: 'empty-state' },
                 React.createElement('i', { className: 'fas fa-comments' }),
-                React.createElement('h3', null, 'No conversations yet'),
-                React.createElement('p', null, 'Start chatting from product pages to negotiate and close deals'),
+                React.createElement('h3', null, searchQuery ? 'No matching conversations' : 'No conversations yet'),
+                React.createElement('p', null, searchQuery ? 'Try a different keyword.' : 'Start chatting from product pages to negotiate and close deals'),
                 React.createElement('button', {
                     className: 'btn btn-primary',
                     onClick: () => onNavigate('home')
@@ -183,16 +243,15 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
             )
             : React.createElement('div', { className: 'messages-tab' },
                 React.createElement('div', { className: 'message-thread-list' },
-                    mergedConversations.map((conversation, index) => {
+                    filteredThreads.map((thread, index) => {
                         const otherUser = window.DormGlideAuth?.getUserById
-                            ? window.DormGlideAuth.getUserById(conversation.otherUserId)
+                            ? window.DormGlideAuth.getUserById(thread.otherUserId)
                             : null;
                         const displayName = otherUser?.name || 'DormGlide user';
-                        const productData = allProducts.find((prod) => prod.id === conversation.productId);
-                        const title = productData?.title || conversation.productTitle || 'Listing';
+                        const title = thread.recentProductTitle || 'Listing';
 
                         return React.createElement('div', {
-                            key: `${conversation.otherUserId}_${conversation.productId || ''}_${index}`,
+                            key: `${thread.otherUserId}_${index}`,
                             className: 'message-thread'
                         },
                             React.createElement('div', { className: 'message-thread-avatar' },
@@ -200,17 +259,20 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
                             ),
                             React.createElement('div', { className: 'message-thread-content' },
                                 React.createElement('h4', null, displayName),
-                                React.createElement('p', { className: 'message-thread-product' }, title),
-                                React.createElement('p', { className: 'message-thread-snippet' }, conversation.message || 'No message preview')
+                                React.createElement('p', { className: 'message-thread-product' }, `Latest listing: ${title}`),
+                                React.createElement('p', { className: 'message-thread-snippet' }, thread.message || 'No message preview'),
+                                (thread.conversationCount || 0) > 1 && React.createElement('span', { className: 'message-thread-badge' },
+                                    `${thread.conversationCount} related chats`
+                                )
                             ),
                             React.createElement('div', { className: 'message-thread-meta' },
-                                React.createElement('span', { className: 'message-thread-time' }, formatDate(conversation.timestamp)),
+                                React.createElement('span', { className: 'message-thread-time' }, formatDate(thread.timestamp)),
                                 React.createElement('button', {
                                     className: 'btn btn-secondary btn-sm',
-                                    onClick: () => handleOpenChat(conversation)
+                                    onClick: () => handleOpenChat(thread)
                                 },
                                     React.createElement('i', { className: 'fas fa-comments' }),
-                                    ' Open Chat'
+                                    ' Open Unified Chat'
                                 )
                             )
                         );
@@ -223,6 +285,7 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
             currentUser,
             participant: chatContext.participant,
             initialConversation: chatContext.conversationId ? { id: chatContext.conversationId } : null,
+            initialDraft: chatContext.initialDraft || '',
             onClose: () => setChatContext(null)
         })
     );

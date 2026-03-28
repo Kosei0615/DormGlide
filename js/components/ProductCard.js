@@ -21,6 +21,7 @@ const ProductCard = ({ product, onProductClick }) => {
     const isDemo = Boolean(product.isDemo);
     const isNearby = Boolean(product.isNearby);
     const sellerCampus = product.sellerCampus || product.location || '';
+    const listingStatus = String(product.status || 'active').toLowerCase();
 
     return React.createElement('div', {
         className: 'product-card',
@@ -45,6 +46,10 @@ const ProductCard = ({ product, onProductClick }) => {
             product.condition && React.createElement('span', {
                 className: `condition-badge condition-${product.condition.toLowerCase()}`
             }, product.condition)
+            ,
+            React.createElement('span', {
+                className: `listing-status-chip listing-status-${listingStatus}`
+            }, listingStatus === 'sold' ? 'Sold' : 'Available')
         ),
         React.createElement('div', { className: 'product-info' },
             React.createElement('h3', { className: 'product-title' }, product.title),

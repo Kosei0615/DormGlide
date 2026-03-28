@@ -106,6 +106,15 @@ const App = () => {
         }
     };
 
+    const handleProductUpdate = (updatedProduct) => {
+        if (!updatedProduct?.id) return;
+        setProducts((prev) => prev.map((item) => (item.id === updatedProduct.id ? { ...item, ...updatedProduct } : item)));
+        setSelectedProduct((prev) => {
+            if (!prev || prev.id !== updatedProduct.id) return prev;
+            return { ...prev, ...updatedProduct };
+        });
+    };
+
     const handleAuthSuccess = (user) => {
         setCurrentUser(user);
         console.log('User logged in:', user);
@@ -196,7 +205,8 @@ const App = () => {
                     product: selectedProduct,
                     onNavigate: navigateToPage,
                     currentUser: currentUser,
-                    onShowAuth: () => setShowAuthModal(true)
+                    onShowAuth: () => setShowAuthModal(true),
+                    onProductUpdate: handleProductUpdate
                 });
             case 'sell':
                 return React.createElement(SellPage, {

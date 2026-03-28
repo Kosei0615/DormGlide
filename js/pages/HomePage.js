@@ -86,6 +86,13 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         let results = [...decoratedProducts];
         const normalizedSearch = searchTerm.trim().toLowerCase();
 
+        // Keep marketplace focused on available inventory for buyers.
+        results = results.filter((product) => {
+            const isSold = String(product.status || 'active').toLowerCase() === 'sold';
+            if (!isSold) return true;
+            return Boolean(currentUser?.id && product.sellerId === currentUser.id);
+        });
+
         if (normalizedSearch) {
             results = results.filter((product) => {
                 const candidateFields = [
@@ -123,7 +130,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         }
 
         return results;
-    }, [decoratedProducts, searchTerm, filters]);
+    }, [decoratedProducts, searchTerm, filters, currentUser?.id]);
 
     const sortedProducts = React.useMemo(() => {
         return [...filteredProducts].sort((a, b) => {

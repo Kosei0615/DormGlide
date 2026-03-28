@@ -6,6 +6,7 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
     const [allProducts, setAllProducts] = React.useState([]);
     const [chatContext, setChatContext] = React.useState(null);
     const [chatConversations, setChatConversations] = React.useState([]);
+    const [updatingListingId, setUpdatingListingId] = React.useState(null);
 
     React.useEffect(() => {
         setActiveTab(initialTab || 'overview');
@@ -76,6 +77,16 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
         });
     };
 
+    const formatTimelineDate = (dateString) => {
+        if (!dateString) return 'Pending';
+        return new Date(dateString).toLocaleString([], {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     const calculateTotalEarnings = () => {
         const completedSales = getCompletedSales();
         return completedSales.reduce((total, sale) => total + (sale.price || 0), 0);
@@ -93,6 +104,47 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
     const calculateTotalSpent = () => {
         if (!activity || !activity.purchases) return 0;
         return activity.purchases.reduce((total, purchase) => total + (purchase.price || 0), 0);
+    };
+
+    const handleListingStatusUpdate = async (product, nextStatus) => {
+        if (!product?.id || !window.DormGlideStorage?.updateProduct) {
+            alert('Listing update service is unavailable right now.');
+            return;
+        }
+
+        setUpdatingListingId(product.id);
+        const now = new Date().toISOString();
+        const updates = String(nextStatus).toLowerCase() === 'sold'
+            ? {
+                ...product,
+                status: 'sold',
+                requestedAt: product?.requestedAt || now,
+                soldAt: product?.soldAt || now,
+                sellerConfirmedAt: now
+            }
+            : {
+                ...product,
+                status: 'active',
+                requestedAt: null,
+                soldAt: null,
+                buyerId: null,
+                soldMethod: null,
+                buyerConfirmedAt: null,
+                sellerConfirmedAt: null
+            };
+
+        try {
+            const updated = await window.DormGlideStorage.updateProduct(product.id, updates);
+            if (!updated) throw new Error('Listing not found.');
+
+            setProducts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+            setAllProducts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+        } catch (error) {
+            console.error('[DormGlide] Failed to update listing status from dashboard:', error);
+            alert(error?.message || 'Unable to update this listing right now.');
+        } finally {
+            setUpdatingListingId(null);
+        }
     };
 
     const renderOverviewTab = () => {
@@ -216,6 +268,47 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                         }, 'Start Browsing')
                     )
                 )
+            ),
+
+            React.createElement('div', { className: 'recent-activity' },
+                React.createElement('h3', null, 'Manage My Listings'),
+                products.length === 0
+                    ? React.createElement('div', { className: 'empty-state' },
+                        React.createElement('i', { className: 'fas fa-tag' }),
+                        React.createElement('p', null, 'You have no active listings yet.')
+                    )
+                    : React.createElement('div', { className: 'activity-list' },
+                        products.slice(0, 6).map((product) => {
+                            const status = String(product.status || 'active').toLowerCase();
+                            const isBusy = updatingListingId === product.id;
+                            return React.createElement('div', { key: product.id, className: 'message-thread' },
+                                React.createElement('div', { className: 'message-thread-avatar' },
+                                    React.createElement('i', { className: 'fas fa-box' })
+                                ),
+                                React.createElement('div', { className: 'message-thread-content' },
+                                    React.createElement('h4', null, product.title),
+                                    React.createElement('p', { className: 'message-thread-product' }, `$${product.price || 0}`),
+                                    React.createElement('span', { className: `message-thread-badge listing-status-${status}` }, status === 'sold' ? 'Sold' : 'Available'),
+                                    React.createElement('div', { className: 'dashboard-timeline-mini' },
+                                        React.createElement('span', { className: product?.requestedAt ? 'done' : '' }, `Requested: ${formatTimelineDate(product?.requestedAt)}`),
+                                        React.createElement('span', { className: product?.buyerConfirmedAt ? 'done' : '' }, `Buyer confirmed: ${formatTimelineDate(product?.buyerConfirmedAt)}`),
+                                        React.createElement('span', { className: (product?.sellerConfirmedAt || product?.soldAt) ? 'done' : '' }, `Seller confirmed: ${formatTimelineDate(product?.sellerConfirmedAt || product?.soldAt)}`)
+                                    )
+                                ),
+                                React.createElement('div', { className: 'message-thread-meta' },
+                                    React.createElement('button', {
+                                        className: 'btn btn-sm btn-secondary',
+                                        onClick: () => onNavigate('product-detail', product.id)
+                                    }, 'Open'),
+                                    React.createElement('button', {
+                                        className: `btn btn-sm ${status === 'sold' ? 'btn-outline' : 'btn-danger'}`,
+                                        onClick: () => handleListingStatusUpdate(product, status === 'sold' ? 'active' : 'sold'),
+                                        disabled: isBusy
+                                    }, isBusy ? 'Saving...' : (status === 'sold' ? 'Mark Available' : 'Mark Sold'))
+                                )
+                            );
+                        })
+                    )
             )
         );
     };
@@ -518,6 +611,11 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
             product: chatContext.product,
             currentUser,
             participant: chatContext.participant,
+            onProductUpdate: (updated) => {
+                if (!updated?.id) return;
+                setProducts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+                setAllProducts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+            },
             onClose: () => setChatContext(null)
         })
     );
