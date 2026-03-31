@@ -1,4 +1,11 @@
 const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
+    const toast = window.DormGlideToast || {
+        success: () => {},
+        error: () => {},
+        warning: () => {},
+        info: () => {}
+    };
+
     const preferredContact = currentUser?.phone || currentUser?.email || '';
     const preferredLocation = currentUser?.campusLocation || currentUser?.university || '';
     const [formData, setFormData] = React.useState({
@@ -43,7 +50,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
         const files = Array.from(e.target.files);
         
         if (files.length + formData.images.length > 5) {
-            alert('You can upload maximum 5 images');
+            toast.warning('You can upload up to 5 images.');
             return;
         }
         
@@ -75,7 +82,8 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                 }));
             })
             .catch(error => {
-                alert(error);
+                console.error('[DormGlide] Image upload validation failed:', error);
+                toast.error('One or more images could not be processed.');
             });
     };
 
@@ -90,7 +98,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
         e.preventDefault();
         
         if (!currentUser) {
-            alert('Please login or create an account first!');
+            toast.warning('Please log in or create an account first.');
             if (onShowAuth) {
                 onShowAuth();
             } else {
@@ -103,19 +111,19 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
 
         // Validate form
         if (!formData.title || !formData.description || !formData.price || !formData.category || !formData.condition) {
-            alert('Please fill in all required fields.');
+            toast.warning('Please fill in all required fields.');
             setIsSubmitting(false);
             return;
         }
 
         if (!formData.contactInfo || !formData.contactInfo.trim()) {
-            alert('Please provide contact information so buyers can reach you.');
+            toast.warning('Please provide contact information so buyers can reach you.');
             setIsSubmitting(false);
             return;
         }
 
         if (formData.stripePaymentLink && window.DormGlidePayments?.isValidStripePaymentLink && !window.DormGlidePayments.isValidStripePaymentLink(formData.stripePaymentLink)) {
-            alert('Please use a valid Stripe payment link (https://buy.stripe.com/...).');
+            toast.warning('Please use a valid Stripe payment link.');
             setIsSubmitting(false);
             return;
         }
@@ -143,7 +151,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
 
         try {
             const persisted = await onProductAdd(newProduct);
-            alert('Your item has been listed successfully!');
+            toast.success('Your item has been listed successfully.');
             setFormData({
                 title: '',
                 description: '',
@@ -158,7 +166,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             onNavigate('home', persisted?.id);
         } catch (error) {
             console.error('Failed to save product:', error);
-            alert(error?.message || 'Something went wrong while listing your item. Please try again.');
+            toast.error('Something went wrong while listing your item. Please try again.');
         } finally {
             setIsSubmitting(false);
         }

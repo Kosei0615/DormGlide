@@ -1,5 +1,12 @@
 // Admin Dashboard for Managing Users and Platform
 const AdminDashboard = ({ onNavigate, currentUser }) => {
+    const toast = window.DormGlideToast || {
+        success: () => {},
+        error: () => {},
+        warning: () => {},
+        info: () => {}
+    };
+
     const [users, setUsers] = React.useState([]);
     const [products, setProducts] = React.useState([]);
     const [activeTab, setActiveTab] = React.useState('overview');
@@ -65,7 +72,7 @@ const AdminDashboard = ({ onNavigate, currentUser }) => {
         if (confirm('Are you sure you want to suspend this user?')) {
             const result = await window.DormGlideAuth.suspendUser(currentUser.id, userId);
             if (result.success) {
-                alert('User suspended successfully');
+                toast.success('User suspended successfully.');
                 reloadData();
             }
         }
@@ -74,7 +81,7 @@ const AdminDashboard = ({ onNavigate, currentUser }) => {
     const handleActivateUser = async (userId) => {
         const result = await window.DormGlideAuth.activateUser(currentUser.id, userId);
         if (result.success) {
-            alert('User activated successfully');
+            toast.success('User activated successfully.');
             reloadData();
         }
     };
@@ -83,7 +90,7 @@ const AdminDashboard = ({ onNavigate, currentUser }) => {
         if (confirm('Are you sure you want to delete this product?')) {
             await deleteProductFromStorage(productId);
             await reloadData();
-            alert('Product deleted successfully');
+            toast.success('Product deleted successfully.');
         }
     };
 

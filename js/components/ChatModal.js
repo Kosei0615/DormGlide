@@ -8,6 +8,13 @@ const ChatModal = ({
     onClose,
     onConversationActivity
 }) => {
+    const toast = window.DormGlideToast || {
+        success: () => {},
+        error: () => {},
+        warning: () => {},
+        info: () => {}
+    };
+
     const [message, setMessage] = React.useState('');
     const [messages, setMessages] = React.useState([]);
     const [conversation, setConversation] = React.useState(initialConversation);
@@ -71,7 +78,7 @@ const ChatModal = ({
                 });
             } catch (error) {
                 console.error('[DormGlide] Failed to load conversation', error);
-                alert(error?.message || 'Unable to load this conversation right now.');
+                toast.error('Unable to load this conversation right now.');
             } finally {
                 if (isMounted) setIsLoading(false);
             }
@@ -95,7 +102,7 @@ const ChatModal = ({
         const trimmed = String(body || '').trim();
         if (!trimmed || !currentUser?.id || !participant?.id || !window.DormGlideChat) return false;
         if (!conversation?.id) {
-            alert('Unable to load this chat right now. Please wait a moment and try again.');
+            toast.error('Unable to load this chat right now. Please wait a moment and try again.');
             return false;
         }
 
@@ -129,7 +136,7 @@ const ChatModal = ({
             return true;
         } catch (error) {
             console.error('[DormGlide] Failed to send message', error);
-            alert(error?.message || 'Unable to send your message right now. Please try again.');
+            toast.error('Unable to send your message right now. Please try again.');
             return false;
         } finally {
             setIsSending(false);
@@ -257,7 +264,7 @@ const ChatModal = ({
         if (raw === null) return;
         const numeric = Number(raw);
         if (!Number.isFinite(numeric) || numeric < 1 || numeric > 5) {
-            alert('Please enter a valid number from 1 to 5.');
+            toast.warning('Please enter a valid number from 1 to 5.');
             return;
         }
 
@@ -272,14 +279,14 @@ const ChatModal = ({
             });
 
             if (!result?.success) {
-                alert(result?.message || 'Unable to save your rating right now.');
+                toast.error('Unable to save your rating right now.');
                 return;
             }
 
-            alert(`Thanks! Your rating for ${targetLabel} has been submitted.`);
+            toast.success(`Thanks! Your rating for ${targetLabel} has been submitted.`);
         } catch (error) {
             console.error('[DormGlide] Failed to submit peer rating:', error);
-            alert('Unable to save your rating right now.');
+            toast.error('Unable to save your rating right now.');
         }
     };
 
@@ -328,7 +335,7 @@ const ChatModal = ({
 
         const details = (window.prompt('Please describe what happened (required):', '') || '').trim();
         if (!details) {
-            alert('Please provide issue details so we can help.');
+            toast.warning('Please provide issue details so we can help.');
             return;
         }
 
@@ -345,10 +352,10 @@ const ChatModal = ({
             }
 
             await sendMessageBody(`[Buyer Protection Report]\nIssue: ${issueType}\nDetails: ${details}\nPlease respond here so we can resolve this fairly.`);
-            alert('Your report has been submitted. We logged it and posted a guided summary in chat.');
+            toast.success('Your report has been submitted. We logged it and posted a guided summary in chat.');
         } catch (error) {
             console.error('[DormGlide] Failed creating buyer protection report:', error);
-            alert(error?.message || 'Unable to submit your report right now.');
+            toast.error('Unable to submit your report right now.');
         }
     };
 
@@ -365,14 +372,14 @@ const ChatModal = ({
             });
 
             await sendMessageBody('Buyer confirmation: I received the item. Thank you!');
-            alert('Buyer confirmation saved.');
+            toast.success('Buyer confirmation saved.');
             await promptPeerRating({
                 targetUserId: product?.sellerId,
                 targetLabel: participant?.name || 'the seller'
             });
         } catch (error) {
             console.error('[DormGlide] Buyer confirmation failed:', error);
-            alert(error?.message || 'Unable to save buyer confirmation right now.');
+            toast.error('Unable to save buyer confirmation right now.');
         } finally {
             setIsConfirming(false);
         }
@@ -390,7 +397,7 @@ const ChatModal = ({
             const now = new Date().toISOString();
             const checklistSent = await ensureSafetyChecklistSent();
             if (!checklistSent) {
-                alert('Unable to send the safety checklist message. Please try again.');
+                toast.error('Unable to send the safety checklist message. Please try again.');
                 return;
             }
 
@@ -444,14 +451,14 @@ const ChatModal = ({
             }
 
             await sendMessageBody(`Seller confirmation: Marked as sold via ${method.toUpperCase()}. Thanks for the smooth transaction.`);
-            alert('Listing marked sold and transaction recorded.');
+            toast.success('Listing marked sold and transaction recorded.');
             await promptPeerRating({
                 targetUserId: product?.buyerId || participant?.id || null,
                 targetLabel: participant?.name || 'the buyer'
             });
         } catch (error) {
             console.error('[DormGlide] Seller confirmation failed:', error);
-            alert(error?.message || 'Unable to mark this listing as sold right now.');
+            toast.error('Unable to mark this listing as sold right now.');
         } finally {
             setIsConfirming(false);
         }

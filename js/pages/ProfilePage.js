@@ -1,4 +1,11 @@
 const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, onShowAuth }) => {
+    const toast = window.DormGlideToast || {
+        success: () => {},
+        error: () => {},
+        warning: () => {},
+        info: () => {}
+    };
+
     const [isEditing, setIsEditing] = React.useState(!currentUser);
     const [formData, setFormData] = React.useState({
         name: currentUser?.name || '',
@@ -24,7 +31,7 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
         e.preventDefault();
 
         if (!formData.name || !formData.email) {
-            alert('Please fill in required fields (Name and Email).');
+            toast.warning('Please fill in required fields (Name and Email).');
             return;
         }
 
@@ -43,7 +50,7 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
                 }
             } catch (error) {
                 console.error('[DormGlide] Failed to update profile', error);
-                alert('Unable to save profile right now. Please try again.');
+                toast.error('Unable to save profile right now. Please try again.');
                 return;
             }
         } else {
@@ -52,14 +59,14 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
 
         setCurrentUser(resolvedUser);
         setIsEditing(false);
-        alert('Profile saved successfully!');
+        toast.success('Profile saved successfully.');
     };
 
     const handleDeleteAccount = () => {
         if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
             setCurrentUser(null);
             localStorage.removeItem('currentUser');
-            alert('Account deleted successfully.');
+            toast.success('Account deleted successfully.');
             onNavigate('home');
         }
     };

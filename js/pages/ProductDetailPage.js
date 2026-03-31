@@ -6,13 +6,22 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     const [sellerProfile, setSellerProfile] = React.useState(null);
     const [sellerRatingSummary, setSellerRatingSummary] = React.useState({ average: 0, count: 0 });
     const [isSavingStatus, setIsSavingStatus] = React.useState(false);
+    const [isRequestingPurchase, setIsRequestingPurchase] = React.useState(false);
+    const [purchaseRequests, setPurchaseRequests] = React.useState([]);
+
+    const toast = window.DormGlideToast || {
+        success: () => {},
+        error: () => {},
+        warning: () => {},
+        info: () => {}
+    };
 
     if (!product) {
         return React.createElement('div', { className: 'product-detail-page' },
             React.createElement('div', { className: 'error-state' },
                 React.createElement('i', { className: 'fas fa-exclamation-triangle' }),
                 React.createElement('h2', null, 'Product not found'),
-                React.createElement('p', null, 'The product you\'re looking for doesn\'t exist or has been removed.'),
+                React.createElement('p', null, 'The product you\'re looking for does not exist or has been removed.'),
                 React.createElement('button', {
                     className: 'btn btn-primary',
                     onClick: () => onNavigate('home')
@@ -32,7 +41,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         const now = new Date();
         const diff = now - new Date(date);
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        
+
         if (days === 0) return 'Today';
         if (days === 1) return '1 day ago';
         if (days < 7) return `${days} days ago`;
@@ -50,16 +59,42 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         });
     };
 
+    const refreshListingState = React.useCallback(async () => {
+        if (!product?.id || !window.DormGlideStorage?.fetchListingById) return;
+        try {
+            const latest = await window.DormGlideStorage.fetchListingById(product.id);
+            if (latest && onProductUpdate) {
+                onProductUpdate(latest);
+            }
+        } catch (error) {
+            console.error('[DormGlide] Failed to refresh listing state:', error);
+        }
+    }, [product?.id, onProductUpdate]);
+
+    const refreshPurchaseRequests = React.useCallback(async () => {
+        if (!product?.id || !window.DormGlideStorage?.fetchPurchaseRequests) {
+            setPurchaseRequests([]);
+            return;
+        }
+        try {
+            const requests = await window.DormGlideStorage.fetchPurchaseRequests(product.id);
+            setPurchaseRequests(Array.isArray(requests) ? requests : []);
+        } catch (error) {
+            console.error('[DormGlide] Failed to fetch purchase requests:', error);
+            setPurchaseRequests([]);
+        }
+    }, [product?.id]);
+
     React.useEffect(() => {
         if (currentUser && product && window.DormGlideAuth) {
             const favorited = window.DormGlideAuth.isProductFavorited
                 ? window.DormGlideAuth.isProductFavorited(currentUser.id, product.id)
-                : window.DormGlideAuth.getUserActivity(currentUser.id).favorites.some(f => f.productId === product.id);
+                : window.DormGlideAuth.getUserActivity(currentUser.id).favorites.some((f) => f.productId === product.id);
             setIsSaved(favorited);
         } else {
             setIsSaved(false);
         }
-    }, [currentUser, product ? product.id : null]);
+    }, [currentUser, product?.id]);
 
     React.useEffect(() => {
         if (!product?.sellerId || !window.DormGlideAuth?.getUserById) {
@@ -89,6 +124,10 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         };
     }, [product?.sellerId]);
 
+    React.useEffect(() => {
+        refreshPurchaseRequests();
+    }, [refreshPurchaseRequests, currentUser?.id]);
+
     const chatParticipant = React.useMemo(() => {
         if (sellerProfile) {
             return {
@@ -105,10 +144,8 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     }, [sellerProfile, product]);
 
     const ensureAuthenticated = (message) => {
-        if (currentUser) {
-            return true;
-        }
-        alert(message || 'Please log in or create an account to continue.');
+        if (currentUser) return true;
+        toast.warning(message || 'Please log in or create an account to continue.');
         if (onShowAuth) {
             onShowAuth();
         } else {
@@ -120,163 +157,146 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     const handleChatWithSeller = () => {
         if (!ensureAuthenticated('Please log in to chat with the seller.')) return;
         if (!product.sellerId) {
-            alert('Seller information is missing for this listing.');
+            toast.error('This listing is missing seller details.');
             return;
         }
         if (currentUser.id === product.sellerId) {
-            alert('This is your own listing.');
+            toast.info('This is your own listing.');
             return;
         }
         setIsChatOpen(true);
     };
 
-    const handleBuyNow = () => {
+    const handleBuyNow = async () => {
         if (!ensureAuthenticated('Log in to start the purchase flow.')) return;
-        if (String(product?.status || 'active').toLowerCase() === 'sold') {
-            alert('This item is already marked as sold.');
+
+        const currentStatus = String(product?.status || 'available').toLowerCase();
+        if (currentStatus === 'sold') {
+            toast.info('This item is already sold.');
             return;
         }
+
         if (!product?.sellerId) {
-            alert('Seller information is missing for this listing.');
+            toast.error('This listing is missing seller details.');
             return;
         }
+
         if (currentUser.id === product.sellerId) {
-            alert('This is your own listing.');
+            toast.info('This is your own listing.');
             return;
         }
 
-        if (window.DormGlideStorage?.updateProduct && product?.id) {
-            const now = new Date().toISOString();
-            const requestedAt = product?.requestedAt || now;
-            window.DormGlideStorage.updateProduct(product.id, {
-                ...product,
-                requestedAt,
-                buyerId: product?.buyerId || currentUser.id
-            }).then((updated) => {
-                if (updated && onProductUpdate) {
-                    onProductUpdate(updated);
-                }
-            }).catch((error) => {
-                console.warn('[DormGlide] Failed to record requested purchase state:', error);
-            });
+        if (!window.DormGlideStorage?.requestPurchase || !product?.id) {
+            toast.error('Purchase requests are unavailable right now.');
+            return;
         }
 
-        setIsChatOpen(true);
+        setIsRequestingPurchase(true);
+        try {
+            await window.DormGlideStorage.requestPurchase({
+                listingId: product.id,
+                buyerId: currentUser.id,
+                sellerId: product.sellerId
+            });
+
+            await refreshPurchaseRequests();
+            await refreshListingState();
+            toast.success('Purchase request sent! The seller will be notified.');
+        } catch (error) {
+            console.error('[DormGlide] Failed to send purchase request:', error);
+            toast.error('Unable to send purchase request right now.');
+        } finally {
+            setIsRequestingPurchase(false);
+        }
     };
 
     const saveProductStatus = async (nextStatus) => {
-        if (!currentUser?.id || currentUser.id !== product?.sellerId) return;
-        if (!window.DormGlideStorage?.updateProduct) {
-            alert('Listing update service is unavailable right now.');
-            return;
-        }
+        if (!currentUser?.id || currentUser.id !== product?.sellerId || !product?.id) return;
 
         const normalized = String(nextStatus || '').toLowerCase();
-        const now = new Date().toISOString();
-        const updates = normalized === 'sold'
-            ? {
-                ...product,
-                status: 'sold',
-                requestedAt: product?.requestedAt || now,
-                soldAt: product?.soldAt || now,
-                sellerConfirmedAt: now
-            }
-            : {
-                ...product,
-                status: 'active',
-                requestedAt: null,
-                soldAt: null,
-                buyerId: null,
-                soldMethod: null,
-                buyerConfirmedAt: null,
-                sellerConfirmedAt: null
-            };
-
         setIsSavingStatus(true);
         try {
-            const updated = await window.DormGlideStorage.updateProduct(product.id, updates);
-            if (updated && onProductUpdate) {
-                onProductUpdate(updated);
-            }
+            if (normalized === 'sold') {
+                const pendingRequest = purchaseRequests.find((request) => request?.status === 'pending');
 
-            if (normalized === 'sold' && window.DormGlideAuth?.trackSale) {
-                const activity = await window.DormGlideAuth.getUserActivity?.(currentUser.id);
-                const alreadyTracked = Array.isArray(activity?.sales)
-                    ? activity.sales.some((entry) => entry?.productId === product.id)
-                    : false;
-
-                if (!alreadyTracked) {
-                    window.DormGlideAuth.trackSale(
-                        currentUser.id,
-                        product.id,
-                        product.title || 'Listing',
-                        Number(product.price) || 0,
-                        product?.buyerId || null
-                    );
+                if (window.DormGlideStorage?.confirmPurchase) {
+                    await window.DormGlideStorage.confirmPurchase({
+                        listingId: product.id,
+                        purchaseRequestId: pendingRequest?.id || null,
+                        buyerId: pendingRequest?.buyerId || product?.buyerId || null
+                    });
+                } else if (window.DormGlideStorage?.updateProduct) {
+                    const now = new Date().toISOString();
+                    await window.DormGlideStorage.updateProduct(product.id, {
+                        ...product,
+                        status: 'sold',
+                        buyerId: pendingRequest?.buyerId || product?.buyerId || null,
+                        purchasedAt: now,
+                        soldAt: now,
+                        sellerConfirmedAt: now
+                    });
                 }
+
+                toast.success('Sale confirmed! The item has been marked as sold.');
+            } else {
+                await window.DormGlideStorage.updateProduct(product.id, {
+                    ...product,
+                    status: 'available',
+                    requestedAt: null,
+                    purchasedAt: null,
+                    soldAt: null,
+                    buyerId: null,
+                    soldMethod: null,
+                    buyerConfirmedAt: null,
+                    sellerConfirmedAt: null
+                });
+                toast.success('Listing is available again.');
             }
 
-            alert(normalized === 'sold' ? 'Listing marked as sold.' : 'Listing is available again.');
+            await refreshPurchaseRequests();
+            await refreshListingState();
         } catch (error) {
             console.error('[DormGlide] Failed updating listing status:', error);
-            alert(error?.message || 'Unable to update listing status right now.');
+            toast.error('Unable to update listing status right now.');
         } finally {
             setIsSavingStatus(false);
         }
     };
 
-    const listingStatus = String(product?.status || 'active').toLowerCase();
-    const isSellerOwner = Boolean(currentUser?.id && product?.sellerId && currentUser.id === product.sellerId);
-    const dealTimeline = [
-        {
-            key: 'requested',
-            label: 'Requested purchase',
-            at: product?.requestedAt
-        },
-        {
-            key: 'buyer-confirmed',
-            label: 'Buyer confirmed received',
-            at: product?.buyerConfirmedAt
-        },
-        {
-            key: 'seller-confirmed',
-            label: 'Seller confirmed sold',
-            at: product?.sellerConfirmedAt || product?.soldAt
-        }
-    ];
-
     const handleToggleSave = () => {
         if (!ensureAuthenticated('Log in to mark this item as a favorite.')) return;
         if (!window.DormGlideAuth) {
-            alert('Favorites are not available at the moment.');
+            toast.error('Favorites are not available right now.');
             return;
         }
 
         if (isSaved) {
             window.DormGlideAuth.removeFromFavorites(currentUser.id, product.id);
             setIsSaved(false);
-            alert('Removed from your saved items.');
-        } else {
-            const result = window.DormGlideAuth.addToFavorites(currentUser.id, product.id, product.title);
-            if (result.success) {
-                setIsSaved(true);
-                if (confirm('Saved to your favorites! Open your dashboard now?')) {
-                    onNavigate('dashboard');
-                }
-            } else {
-                alert(result.message || 'Unable to save this item right now.');
-            }
+            toast.info('Removed from your saved items.');
+            return;
         }
+
+        const result = window.DormGlideAuth.addToFavorites(currentUser.id, product.id, product.title);
+        if (result.success) {
+            setIsSaved(true);
+            if (confirm('Saved to your favorites! Open your dashboard now?')) {
+                onNavigate('dashboard');
+            }
+            return;
+        }
+
+        toast.error('Unable to save this item right now.');
     };
 
     const handleRateSeller = async () => {
         if (!ensureAuthenticated('Please log in to rate this seller.')) return;
         if (!product?.sellerId || currentUser?.id === product.sellerId) {
-            alert('You cannot rate your own listing.');
+            toast.warning('You cannot rate your own listing.');
             return;
         }
         if (!window.DormGlideAuth?.submitSellerRating) {
-            alert('Rating service is unavailable right now.');
+            toast.error('Rating service is unavailable right now.');
             return;
         }
 
@@ -284,7 +304,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         if (raw === null) return;
         const rating = Number(raw);
         if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-            alert('Please enter a number between 1 and 5.');
+            toast.warning('Please enter a number between 1 and 5.');
             return;
         }
 
@@ -300,23 +320,52 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             });
 
             if (!result.success) {
-                alert(result.message || 'Unable to submit rating right now.');
+                toast.error('Unable to submit rating right now.');
                 return;
             }
 
             setSellerRatingSummary(result.summary || { average: rating, count: 1 });
-            alert('Thanks! Your seller rating has been submitted.');
+            toast.success('Thanks! Your seller rating has been submitted.');
         } catch (error) {
             console.error('[DormGlide] Failed to submit seller rating:', error);
-            alert('Unable to submit rating right now.');
+            toast.error('Unable to submit rating right now.');
         }
     };
 
-    const images = product.images && product.images.length > 0 ? product.images : [product.image || 'https://via.placeholder.com/600x400?text=No+Image'];
+    const listingStatusRaw = String(product?.status || 'available').toLowerCase();
+    const listingStatus = listingStatusRaw === 'active' ? 'available' : listingStatusRaw;
+    const isSellerOwner = Boolean(currentUser?.id && product?.sellerId && currentUser.id === product.sellerId);
+    const myPurchaseRequest = purchaseRequests.find((request) => request?.buyerId === currentUser?.id) || null;
+    const sellerPendingRequest = purchaseRequests.find((request) => request?.sellerId === currentUser?.id && request?.status === 'pending') || null;
+    const pendingBuyerName = sellerPendingRequest?.buyerId
+        ? (window.DormGlideAuth?.getUserById?.(sellerPendingRequest.buyerId)?.name || sellerPendingRequest.buyerId)
+        : '';
+    const isRequestAlreadySent = Boolean(myPurchaseRequest && ['pending', 'confirmed'].includes(myPurchaseRequest.status));
+
+    const dealTimeline = [
+        {
+            key: 'requested',
+            label: 'Requested purchase',
+            at: product?.requestedAt
+        },
+        {
+            key: 'buyer-confirmed',
+            label: 'Buyer confirmed received',
+            at: product?.buyerConfirmedAt
+        },
+        {
+            key: 'seller-confirmed',
+            label: 'Seller confirmed sold',
+            at: product?.sellerConfirmedAt || product?.purchasedAt || product?.soldAt
+        }
+    ];
+
+    const images = product.images && product.images.length > 0
+        ? product.images
+        : [product.image || 'https://via.placeholder.com/600x400?text=No+Image'];
 
     return React.createElement('div', { className: 'product-detail-page' },
         React.createElement('div', { className: 'product-detail-container' },
-            // Back button
             React.createElement('button', {
                 className: 'back-btn',
                 onClick: () => onNavigate('home')
@@ -326,7 +375,6 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             ),
 
             React.createElement('div', { className: 'product-detail-content' },
-                // Product Images
                 React.createElement('div', { className: 'product-images' },
                     React.createElement('div', { className: 'main-image' },
                         React.createElement('img', {
@@ -338,16 +386,12 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                             React.createElement('button', {
                                 onClick: () => setCurrentImageIndex(Math.max(0, currentImageIndex - 1)),
                                 disabled: currentImageIndex === 0
-                            },
-                                React.createElement('i', { className: 'fas fa-chevron-left' })
-                            ),
+                            }, React.createElement('i', { className: 'fas fa-chevron-left' })),
                             React.createElement('span', null, `${currentImageIndex + 1} / ${images.length}`),
                             React.createElement('button', {
                                 onClick: () => setCurrentImageIndex(Math.min(images.length - 1, currentImageIndex + 1)),
                                 disabled: currentImageIndex === images.length - 1
-                            },
-                                React.createElement('i', { className: 'fas fa-chevron-right' })
-                            )
+                            }, React.createElement('i', { className: 'fas fa-chevron-right' }))
                         )
                     ),
                     images.length > 1 && React.createElement('div', { className: 'thumbnail-strip' },
@@ -363,18 +407,15 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                     )
                 ),
 
-                // Product Info
                 React.createElement('div', { className: 'product-info-detail' },
                     React.createElement('div', { className: 'product-header' },
                         React.createElement('h1', null, product.title),
                         React.createElement('div', { className: 'product-price-large' }, formatPrice(product.price)),
                         React.createElement('div', { className: `listing-status-badge listing-status-${listingStatus}` },
-                            listingStatus === 'sold' ? 'Sold' : 'Available'
+                            listingStatus === 'sold' ? 'Sold' : (listingStatus === 'pending' ? 'Pending' : 'Available')
                         ),
                         React.createElement('div', { className: 'product-badges' },
-                            React.createElement('span', {
-                                className: `condition-badge condition-${product.condition.toLowerCase()}`
-                            }, product.condition),
+                            React.createElement('span', { className: `condition-badge condition-${product.condition.toLowerCase()}` }, product.condition),
                             React.createElement('span', { className: 'category-badge' },
                                 React.createElement('i', { className: 'fas fa-tag' }),
                                 product.category
@@ -382,15 +423,16 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         )
                     ),
 
-                    // Action Buttons moved near top for quick decision-making
                     React.createElement('div', { className: 'product-actions product-actions-priority' },
                         React.createElement('button', {
                             className: 'btn btn-primary btn-large',
                             onClick: handleBuyNow,
-                            disabled: listingStatus === 'sold' || isSellerOwner
+                            disabled: listingStatus === 'sold' || isSellerOwner || isRequestingPurchase || isRequestAlreadySent
                         },
-                            React.createElement('i', { className: 'fas fa-shopping-cart' }),
-                            listingStatus === 'sold' ? 'Sold Out' : (isSellerOwner ? 'Your Listing' : 'Proceed to Purchase')
+                            React.createElement('i', { className: isRequestingPurchase ? 'fas fa-spinner fa-spin' : 'fas fa-shopping-cart' }),
+                            isRequestingPurchase
+                                ? 'Sending Request...'
+                                : (isRequestAlreadySent ? 'Request Sent' : (listingStatus === 'sold' ? 'Sold Out' : (isSellerOwner ? 'Your Listing' : 'Request Purchase')))
                         ),
                         React.createElement('button', {
                             className: 'btn btn-secondary btn-large',
@@ -408,14 +450,24 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         ),
                         isSellerOwner && React.createElement('button', {
                             className: `btn btn-outline ${listingStatus === 'sold' ? '' : 'btn-danger'}`,
-                            onClick: () => saveProductStatus(listingStatus === 'sold' ? 'active' : 'sold'),
+                            onClick: () => saveProductStatus(listingStatus === 'sold' ? 'available' : 'sold'),
                             disabled: isSavingStatus
                         },
-                            React.createElement('i', { className: listingStatus === 'sold' ? 'fas fa-rotate-left' : 'fas fa-check-circle' }),
+                            React.createElement('i', { className: isSavingStatus ? 'fas fa-spinner fa-spin' : (listingStatus === 'sold' ? 'fas fa-rotate-left' : 'fas fa-check-circle') }),
                             isSavingStatus
                                 ? 'Saving...'
-                                : (listingStatus === 'sold' ? 'Mark as Available' : 'Mark as Sold')
+                                : (listingStatus === 'sold' ? 'Mark as Available' : 'Confirm Purchase')
                         )
+                    ),
+
+                    myPurchaseRequest?.status === 'pending' && React.createElement('p', { className: 'message-thread-product' },
+                        '⏳ Your purchase request is pending seller approval'
+                    ),
+                    myPurchaseRequest?.status === 'confirmed' && React.createElement('p', { className: 'message-thread-product' },
+                        '✅ Purchase confirmed!'
+                    ),
+                    sellerPendingRequest && React.createElement('p', { className: 'message-thread-product' },
+                        `Purchase request pending from buyer ${pendingBuyerName}`
                     ),
 
                     React.createElement('div', { className: 'product-description' },
@@ -466,7 +518,6 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         )
                     ),
 
-                    // Seller Info
                     React.createElement('div', { className: 'seller-info' },
                         React.createElement('h3', null, 'Seller Information'),
                         React.createElement('div', { className: 'seller-card' },
@@ -498,7 +549,6 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             )
         ),
 
-        // Image Modal
         isImageModalOpen && React.createElement('div', {
             className: 'image-modal',
             onClick: () => setIsImageModalOpen(false)
@@ -507,9 +557,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                 React.createElement('button', {
                     className: 'close-modal',
                     onClick: () => setIsImageModalOpen(false)
-                },
-                    React.createElement('i', { className: 'fas fa-times' })
-                ),
+                }, React.createElement('i', { className: 'fas fa-times' })),
                 React.createElement('img', {
                     src: images[currentImageIndex],
                     alt: product.title

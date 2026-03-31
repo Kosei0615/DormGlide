@@ -5,6 +5,7 @@ const LOCAL_PRODUCT_KEY = 'dormglide_products';
 const LOCAL_PREFS_KEY = 'dormglide_preferences';
 const LOCAL_TRANSACTION_KEY = 'dormglide_transactions';
 const LOCAL_SUPPORT_KEY = 'dormglide_support_requests';
+const LOCAL_PURCHASE_REQUESTS_KEY = 'dormglide_purchase_requests';
 
 const getStorageSupabaseClient = () => window.SupabaseClient || null;
 const isSupabaseConfigured = () => Boolean(getStorageSupabaseClient());
@@ -40,6 +41,12 @@ const isConnectivityError = (error) => {
     );
 };
 
+const normalizeListingStatus = (status) => {
+    const normalized = String(status || '').toLowerCase();
+    if (!normalized || normalized === 'active') return 'available';
+    return normalized;
+};
+
 // -----------------------------
 // Helper mappers
 // -----------------------------
@@ -62,8 +69,9 @@ const normalizeProductRecord = (record) => {
         sellerName: record.seller_name || record.sellerName,
         sellerEmail: record.seller_email || record.sellerEmail,
         sellerCampus: record.seller_campus || record.sellerCampus || record.location || '',
-        status: String(record.status || 'active').toLowerCase(),
+        status: normalizeListingStatus(record.status || 'available'),
         requestedAt: record.requested_at || record.requestedAt || null,
+        purchasedAt: record.purchased_at || record.purchasedAt || null,
         soldAt: record.sold_at || record.soldAt || null,
         buyerId: record.buyer_id || record.buyerId || null,
         soldMethod: record.sold_method || record.soldMethod || null,
@@ -90,8 +98,9 @@ const productToSupabasePayload = (product) => ({
     seller_name: product.sellerName,
     seller_email: product.sellerEmail,
     seller_campus: product.sellerCampus || product.location || null,
-    status: String(product.status || 'active').toLowerCase(),
+    status: normalizeListingStatus(product.status || 'available'),
     requested_at: product.requestedAt || null,
+    purchased_at: product.purchasedAt || null,
     sold_at: product.soldAt || null,
     buyer_id: product.buyerId || null,
     sold_method: product.soldMethod || null,
@@ -132,6 +141,19 @@ const normalizeSupportRecord = (record) => {
         details: record.details || '',
         status: String(record.status || 'open').toLowerCase(),
         createdAt: record.created_at || record.createdAt || new Date().toISOString()
+    };
+};
+
+const normalizePurchaseRequestRecord = (record) => {
+    if (!record) return null;
+    return {
+        id: record.id,
+        listingId: record.listing_id || record.listingId,
+        buyerId: record.buyer_id || record.buyerId,
+        sellerId: record.seller_id || record.sellerId,
+        status: String(record.status || 'pending').toLowerCase(),
+        createdAt: record.created_at || record.createdAt || new Date().toISOString(),
+        updatedAt: record.updated_at || record.updatedAt || new Date().toISOString()
     };
 };
 
@@ -583,6 +605,128 @@ const createSupportRequest = async (request) => {
     }
 };
 
+const fetchListingById = async (listingId) => {
+    if (!listingId) return null;
+    const records = await fetchProducts();
+    return (records || []).find((item) => item?.id === listingId) || null;
+};
+
+const fetchPurchaseRequests = async (listingId) => {
+    if (!listingId) return [];
+    const client = getStorageSupabaseClient();
+
+    if (isSupabaseActive() && client) {
+        const { data, error } = await client
+            .from('purchase_requests')
+            .select('*')
+            .eq('listing_id', listingId)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(normalizePurchaseRequestRecord);
+    }
+
+    const raw = readLocal(LOCAL_PURCHASE_REQUESTS_KEY, []);
+    return (Array.isArray(raw) ? raw : [])
+        .map(normalizePurchaseRequestRecord)
+        .filter((request) => request?.listingId === listingId)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+};
+
+const createPurchaseRequest = async ({ listingId, buyerId, sellerId }) => {
+    if (!listingId || !buyerId || !sellerId) {
+        throw new Error('Missing purchase request fields.');
+    }
+
+    const now = new Date().toISOString();
+    const client = getStorageSupabaseClient();
+
+    if (isSupabaseActive() && client) {
+        const { data, error } = await client
+            .from('purchase_requests')
+            .insert({
+                listing_id: listingId,
+                buyer_id: buyerId,
+                seller_id: sellerId,
+                status: 'pending'
+            })
+            .select('*')
+            .single();
+        if (error) throw error;
+        return normalizePurchaseRequestRecord(data);
+    }
+
+    const requests = readLocal(LOCAL_PURCHASE_REQUESTS_KEY, []);
+    const record = {
+        id: `pr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        listingId,
+        buyerId,
+        sellerId,
+        status: 'pending',
+        createdAt: now,
+        updatedAt: now
+    };
+    requests.push(record);
+    writeLocal(LOCAL_PURCHASE_REQUESTS_KEY, requests);
+    return normalizePurchaseRequestRecord(record);
+};
+
+const updatePurchaseRequestStatus = async (requestId, status) => {
+    if (!requestId) return null;
+    const nextStatus = String(status || 'pending').toLowerCase();
+    const now = new Date().toISOString();
+    const client = getStorageSupabaseClient();
+
+    if (isSupabaseActive() && client) {
+        const { data, error } = await client
+            .from('purchase_requests')
+            .update({ status: nextStatus, updated_at: now })
+            .eq('id', requestId)
+            .select('*')
+            .single();
+        if (error) throw error;
+        return normalizePurchaseRequestRecord(data);
+    }
+
+    const requests = readLocal(LOCAL_PURCHASE_REQUESTS_KEY, []);
+    const index = requests.findIndex((entry) => entry?.id === requestId);
+    if (index === -1) return null;
+    requests[index] = { ...requests[index], status: nextStatus, updatedAt: now };
+    writeLocal(LOCAL_PURCHASE_REQUESTS_KEY, requests);
+    return normalizePurchaseRequestRecord(requests[index]);
+};
+
+const requestPurchase = async ({ listingId, buyerId, sellerId }) => {
+    const existing = await fetchPurchaseRequests(listingId);
+    const existingForBuyer = (existing || []).find((entry) => entry?.buyerId === buyerId && ['pending', 'confirmed'].includes(entry?.status));
+    const request = existingForBuyer || await createPurchaseRequest({ listingId, buyerId, sellerId });
+    await updateProduct(listingId, {
+        status: 'pending',
+        buyerId,
+        requestedAt: request?.createdAt || new Date().toISOString()
+    });
+    const listing = await fetchListingById(listingId);
+    return { request, listing };
+};
+
+const confirmPurchase = async ({ listingId, purchaseRequestId, buyerId }) => {
+    const now = new Date().toISOString();
+
+    if (purchaseRequestId) {
+        await updatePurchaseRequestStatus(purchaseRequestId, 'confirmed');
+    }
+
+    await updateProduct(listingId, {
+        status: 'sold',
+        buyerId: buyerId || null,
+        purchasedAt: now,
+        soldAt: now,
+        sellerConfirmedAt: now
+    });
+
+    const listing = await fetchListingById(listingId);
+    return { listing };
+};
+
 const getSearchHistory = async () => {
     const preferences = await localPreferencesAdapter.getPreferences();
     return preferences.searchHistory || [];
@@ -636,6 +780,10 @@ window.DormGlideStorage = {
     fetchTransactions,
     createManualTransaction,
     createSupportRequest,
+    fetchListingById,
+    fetchPurchaseRequests,
+    requestPurchase,
+    confirmPurchase,
     clearAllData,
     initializeDefaultData,
     isSupabaseConfigured,

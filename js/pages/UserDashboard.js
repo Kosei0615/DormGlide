@@ -7,6 +7,12 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
     const [chatContext, setChatContext] = React.useState(null);
     const [chatConversations, setChatConversations] = React.useState([]);
     const [updatingListingId, setUpdatingListingId] = React.useState(null);
+    const toast = window.DormGlideToast || {
+        success: () => {},
+        error: () => {},
+        warning: () => {},
+        info: () => {}
+    };
 
     React.useEffect(() => {
         setActiveTab(initialTab || 'overview');
@@ -105,26 +111,29 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
         return activity.purchases.reduce((total, purchase) => total + (purchase.price || 0), 0);
     };
 
+    const refreshListings = async () => {
+        if (typeof getProductsFromStorage === 'undefined' || !currentUser?.id) return;
+        const productsFromStorage = await getProductsFromStorage();
+        const userProds = (productsFromStorage || []).filter((p) => p.sellerId === currentUser.id);
+        setProducts(userProds);
+        setAllProducts(productsFromStorage || []);
+    };
+
     const handleListingStatusUpdate = async (product, nextStatus) => {
         if (!product?.id || !window.DormGlideStorage?.updateProduct) {
-            alert('Listing update service is unavailable right now.');
+            toast.error('Listing update service is unavailable right now.');
             return;
         }
 
         setUpdatingListingId(product.id);
         const now = new Date().toISOString();
         const updates = String(nextStatus).toLowerCase() === 'sold'
-            ? {
-                ...product,
-                status: 'sold',
-                requestedAt: product?.requestedAt || now,
-                soldAt: product?.soldAt || now,
-                sellerConfirmedAt: now
-            }
+            ? null
             : {
                 ...product,
-                status: 'active',
+                status: 'available',
                 requestedAt: null,
+                purchasedAt: null,
                 soldAt: null,
                 buyerId: null,
                 soldMethod: null,
@@ -133,31 +142,39 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
             };
 
         try {
-            const updated = await window.DormGlideStorage.updateProduct(product.id, updates);
-            if (!updated) throw new Error('Listing not found.');
-
-            if (String(nextStatus).toLowerCase() === 'sold' && window.DormGlideAuth?.trackSale) {
-                const userActivity = await window.DormGlideAuth.getUserActivity?.(currentUser?.id);
-                const alreadyTracked = Array.isArray(userActivity?.sales)
-                    ? userActivity.sales.some((entry) => entry?.productId === product.id)
-                    : false;
-
-                if (!alreadyTracked) {
-                    window.DormGlideAuth.trackSale(
-                        currentUser?.id,
-                        product.id,
-                        product.title || 'Listing',
-                        Number(product.price) || 0,
-                        product?.buyerId || null
-                    );
+            if (String(nextStatus).toLowerCase() === 'sold') {
+                let pendingRequest = null;
+                if (window.DormGlideStorage?.fetchPurchaseRequests) {
+                    const requests = await window.DormGlideStorage.fetchPurchaseRequests(product.id);
+                    pendingRequest = (requests || []).find((entry) => entry?.status === 'pending') || null;
                 }
+
+                if (window.DormGlideStorage?.confirmPurchase) {
+                    await window.DormGlideStorage.confirmPurchase({
+                        listingId: product.id,
+                        purchaseRequestId: pendingRequest?.id || null,
+                        buyerId: pendingRequest?.buyerId || product?.buyerId || null
+                    });
+                } else {
+                    await window.DormGlideStorage.updateProduct(product.id, {
+                        ...product,
+                        status: 'sold',
+                        buyerId: pendingRequest?.buyerId || product?.buyerId || null,
+                        purchasedAt: now,
+                        soldAt: now,
+                        sellerConfirmedAt: now
+                    });
+                }
+                toast.success('Sale confirmed! The item has been marked as sold.');
+            } else {
+                await window.DormGlideStorage.updateProduct(product.id, updates);
+                toast.success('Listing is available again.');
             }
 
-            setProducts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-            setAllProducts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+            await refreshListings();
         } catch (error) {
             console.error('[DormGlide] Failed to update listing status from dashboard:', error);
-            alert(error?.message || 'Unable to update this listing right now.');
+            toast.error('Unable to update this listing right now.');
         } finally {
             setUpdatingListingId(null);
         }
@@ -295,7 +312,8 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                     )
                     : React.createElement('div', { className: 'activity-list' },
                         products.slice(0, 6).map((product) => {
-                            const status = String(product.status || 'active').toLowerCase();
+                            const statusRaw = String(product.status || 'available').toLowerCase();
+                            const status = statusRaw === 'active' ? 'available' : statusRaw;
                             const isBusy = updatingListingId === product.id;
                             return React.createElement('div', { key: product.id, className: 'message-thread' },
                                 React.createElement('div', { className: 'message-thread-avatar' },
@@ -304,7 +322,7 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                                 React.createElement('div', { className: 'message-thread-content' },
                                     React.createElement('h4', null, product.title),
                                     React.createElement('p', { className: 'message-thread-product' }, `$${product.price || 0}`),
-                                    React.createElement('span', { className: `message-thread-badge listing-status-${status}` }, status === 'sold' ? 'Sold' : 'Available'),
+                                    React.createElement('span', { className: `message-thread-badge listing-status-${status}` }, status === 'sold' ? 'Sold' : (status === 'pending' ? 'Pending' : 'Available')),
                                     React.createElement('div', { className: 'dashboard-timeline-mini' },
                                         React.createElement('span', { className: product?.requestedAt ? 'done' : '' }, `Requested: ${formatTimelineDate(product?.requestedAt)}`),
                                         React.createElement('span', { className: product?.buyerConfirmedAt ? 'done' : '' }, `Buyer confirmed: ${formatTimelineDate(product?.buyerConfirmedAt)}`),
@@ -318,9 +336,9 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                                     }, 'Open'),
                                     React.createElement('button', {
                                         className: `btn btn-sm ${status === 'sold' ? 'btn-outline' : 'btn-danger'}`,
-                                        onClick: () => handleListingStatusUpdate(product, status === 'sold' ? 'active' : 'sold'),
+                                        onClick: () => handleListingStatusUpdate(product, status === 'sold' ? 'available' : 'sold'),
                                         disabled: isBusy
-                                    }, isBusy ? 'Saving...' : (status === 'sold' ? 'Mark Available' : 'Mark Sold'))
+                                    }, isBusy ? 'Saving...' : (status === 'sold' ? 'Mark Available' : 'Confirm Purchase'))
                                 )
                             );
                         })

@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data: blob: https:;">
     <title>DormGlide - Student Marketplace</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
-    
+
     <!-- React and Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <!-- Main Styles -->
@@ -21,6 +22,12 @@
     <link rel="stylesheet" href="styles/enhanced.css?v=3">
 </head>
 <body>
+    <noscript>
+        <div style="max-width:720px;margin:24px auto;padding:16px;border:1px solid #d1d5db;border-radius:10px;background:#f9fafb;color:#111827;font-family:Arial,sans-serif;">
+            DormGlide requires JavaScript to load listings, chat, and account features. Please enable JavaScript and refresh this page.
+        </div>
+    </noscript>
+
     <div id="root"></div>
 
     <!-- Load utility scripts first -->
@@ -35,12 +42,13 @@
         window.DORMGLIDE_NOTIFICATION_WEBHOOK_URL = '';
     </script>
     <script src="js/utils/supabaseClient.js?v=1"></script>
-    <script src="js/utils/storage.js?v=4"></script>
+    <script src="js/utils/toast.js?v=1"></script>
+    <script src="js/utils/storage.js?v=5"></script>
     <script src="js/utils/auth.js?v=5"></script>
     <script src="js/utils/chat.js?v=1"></script>
     <script src="js/utils/payments.js?v=1"></script>
     <script src="js/utils/sampleData.js?v=3"></script>
-    
+
     <!-- Load components -->
     <script type="text/babel" src="js/components/Header.js?v=5"></script>
     <script type="text/babel" src="js/components/Footer.js?v=4"></script>
@@ -48,23 +56,23 @@
     <script type="text/babel" src="js/components/ProductGrid.js?v=3"></script>
     <script type="text/babel" src="js/components/SearchFilter.js?v=3"></script>
     <script type="text/babel" src="js/components/AuthModal.js?v=4"></script>
-    <script type="text/babel" src="js/components/ChatModal.js?v=2"></script>
+    <script type="text/babel" src="js/components/ChatModal.js?v=3"></script>
     <script type="text/babel" src="js/components/AdminPanel.js?v=3"></script>
-    
+
     <!-- Load pages -->
     <script type="text/babel" src="js/pages/HomePage.js?v=4"></script>
-    <script type="text/babel" src="js/pages/ProductDetailPage.js?v=7"></script>
-    <script type="text/babel" src="js/pages/SellPage.js?v=4"></script>
-    <script type="text/babel" src="js/pages/ProfilePage.js?v=3"></script>
-    <script type="text/babel" src="js/pages/UserDashboard.js?v=6"></script>
+    <script type="text/babel" src="js/pages/ProductDetailPage.js?v=8"></script>
+    <script type="text/babel" src="js/pages/SellPage.js?v=5"></script>
+    <script type="text/babel" src="js/pages/ProfilePage.js?v=4"></script>
+    <script type="text/babel" src="js/pages/UserDashboard.js?v=7"></script>
     <script type="text/babel" src="js/pages/MessagesPage.js?v=1"></script>
     <script type="text/babel" src="js/pages/AdminDashboard.js?v=3"></script>
     <script type="text/babel" src="js/pages/HowItWorksPage.js?v=1"></script>
     <script type="text/babel" src="js/pages/PrivacyPolicyPage.js?v=1"></script>
-    
+
     <!-- Load main app -->
     <script type="text/babel" src="js/App.js?v=6"></script>
-    
+
     <script>
         console.log('DormGlide loaded successfully!');
 
@@ -78,7 +86,7 @@
 
             if (!window.SupabaseClient) {
                 if (!sessionStorage.getItem(alertKey)) {
-                    alert('Supabase client failed to initialize. Please check SUPABASE_URL and SUPABASE_ANON_KEY, then refresh.');
+                    window.DormGlideToast?.error('A connection service failed to start. Please refresh and try again.');
                     sessionStorage.setItem(alertKey, 'true');
                 }
                 return;
@@ -90,68 +98,15 @@
                     throw error;
                 }
             } catch (error) {
-                const message = String(error?.message || error || 'Unknown connection error');
                 console.error('[DormGlide] Supabase startup health check failed:', error);
                 if (!sessionStorage.getItem(alertKey)) {
-                    alert(`Supabase connection issue detected: ${message}. Please verify your project is active and your keys are correct.`);
+                    window.DormGlideToast?.warning('We could not verify the live connection. Some features may be unavailable right now.');
                     sessionStorage.setItem(alertKey, 'true');
                 }
             }
         })();
-        
-        (async () => {
-            if (!window.DormGlideAuth || window.SupabaseClient) {
-                return;
-            }
 
-            // Create a demo admin account on first load
-            if (!localStorage.getItem('dormglide_demo_admin_created')) {
-                const demoAdmin = {
-                    email: 'admin@dormglide.com',
-                    password: 'admin123',
-                    name: 'Admin User',
-                    phone: '(555) 000-0000',
-                    university: 'DormGlide University',
-                    campusLocation: 'Founders Hall',
-                    role: 'admin',
-                    bio: 'Platform Administrator'
-                };
-
-                try {
-                    const result = await window.DormGlideAuth.registerUser(demoAdmin);
-                    if (result.success) {
-                        console.log('Demo admin account created: admin@dormglide.com / admin123');
-                        localStorage.setItem('dormglide_demo_admin_created', 'true');
-                    }
-                } catch (error) {
-                    console.warn('[DormGlide] Failed to seed demo admin account:', error);
-                }
-            }
-
-            // Create demo test account
-            if (!localStorage.getItem('dormglide_demo_user_created')) {
-                const demoUser = {
-                    email: 'test@demo.com',
-                    password: 'password',
-                    name: 'Demo User',
-                    phone: '(555) 123-4567',
-                    university: 'Demo University',
-                    campusLocation: 'North Campus',
-                    role: 'seller',
-                    bio: 'Demo seller account for testing'
-                };
-
-                try {
-                    const result = await window.DormGlideAuth.registerUser(demoUser);
-                    if (result.success) {
-                        console.log('Demo user account created: test@demo.com / password');
-                        localStorage.setItem('dormglide_demo_user_created', 'true');
-                    }
-                } catch (error) {
-                    console.warn('[DormGlide] Failed to seed demo user account:', error);
-                }
-            }
-        })();
+        // Demo credential seeding must only run in a local development script, never in production HTML.
     </script>
 </body>
 </html>
