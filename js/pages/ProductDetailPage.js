@@ -145,6 +145,22 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             return;
         }
 
+        if (window.DormGlideStorage?.updateProduct && product?.id) {
+            const now = new Date().toISOString();
+            const requestedAt = product?.requestedAt || now;
+            window.DormGlideStorage.updateProduct(product.id, {
+                ...product,
+                requestedAt,
+                buyerId: product?.buyerId || currentUser.id
+            }).then((updated) => {
+                if (updated && onProductUpdate) {
+                    onProductUpdate(updated);
+                }
+            }).catch((error) => {
+                console.warn('[DormGlide] Failed to record requested purchase state:', error);
+            });
+        }
+
         setIsChatOpen(true);
     };
 

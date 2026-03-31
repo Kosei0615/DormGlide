@@ -4,6 +4,11 @@ const Footer = ({ onNavigate }) => {
         if (onNavigate) onNavigate(page);
     };
 
+    const handleCategoryClick = (event, category) => {
+        event.preventDefault();
+        if (onNavigate) onNavigate('home', null, { category });
+    };
+
     return React.createElement('footer', { className: 'footer' },
         React.createElement('div', { className: 'footer-container' },
             React.createElement('div', { className: 'footer-section' },
@@ -34,10 +39,22 @@ const Footer = ({ onNavigate }) => {
             React.createElement('div', { className: 'footer-section' },
                 React.createElement('h4', null, 'Categories'),
                 React.createElement('ul', null,
-                    React.createElement('li', null, React.createElement('a', { href: '#' }, 'Electronics')),
-                    React.createElement('li', null, React.createElement('a', { href: '#' }, 'Textbooks')),
-                    React.createElement('li', null, React.createElement('a', { href: '#' }, 'Furniture')),
-                    React.createElement('li', null, React.createElement('a', { href: '#' }, 'Clothing'))
+                    React.createElement('li', null, React.createElement('a', {
+                        href: '#',
+                        onClick: (event) => handleCategoryClick(event, 'Electronics')
+                    }, 'Electronics')),
+                    React.createElement('li', null, React.createElement('a', {
+                        href: '#',
+                        onClick: (event) => handleCategoryClick(event, 'Textbooks')
+                    }, 'Textbooks')),
+                    React.createElement('li', null, React.createElement('a', {
+                        href: '#',
+                        onClick: (event) => handleCategoryClick(event, 'Furniture')
+                    }, 'Furniture')),
+                    React.createElement('li', null, React.createElement('a', {
+                        href: '#',
+                        onClick: (event) => handleCategoryClick(event, 'Clothing')
+                    }, 'Clothing'))
                 )
             ),
             React.createElement('div', { className: 'footer-section' },

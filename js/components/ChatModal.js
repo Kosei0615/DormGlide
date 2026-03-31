@@ -101,6 +101,17 @@ const ChatModal = ({
 
         setIsSending(true);
         try {
+            if (isBuyer && product?.id && !product?.requestedAt) {
+                try {
+                    await persistProductUpdate({
+                        requestedAt: new Date().toISOString(),
+                        buyerId: product?.buyerId || currentUser.id
+                    });
+                } catch (error) {
+                    console.warn('[DormGlide] Failed to persist requested purchase metadata:', error);
+                }
+            }
+
             const result = await window.DormGlideChat.sendMessage({
                 conversationId: conversation?.id || null,
                 senderId: currentUser.id,
@@ -393,19 +404,23 @@ const ChatModal = ({
             });
 
             if (window.DormGlideStorage?.createManualTransaction) {
-                await window.DormGlideStorage.createManualTransaction({
-                    productId: product.id,
-                    sellerId: currentUser.id,
-                    buyerId: product?.buyerId || participant?.id || null,
-                    amount: numericPrice || 0,
-                    currency: 'USD',
-                    paymentMethod: method,
-                    status: 'completed',
-                    source: 'manual_chat',
-                    notes: `Recorded from chat conversation ${conversation?.id || ''}`.trim(),
-                    confirmedBySellerAt: now,
-                    confirmedByBuyerAt: product?.buyerConfirmedAt || null
-                });
+                try {
+                    await window.DormGlideStorage.createManualTransaction({
+                        productId: product.id,
+                        sellerId: currentUser.id,
+                        buyerId: product?.buyerId || participant?.id || null,
+                        amount: numericPrice || 0,
+                        currency: 'USD',
+                        paymentMethod: method,
+                        status: 'completed',
+                        source: 'manual_chat',
+                        notes: `Recorded from chat conversation ${conversation?.id || ''}`.trim(),
+                        confirmedBySellerAt: now,
+                        confirmedByBuyerAt: product?.buyerConfirmedAt || null
+                    });
+                } catch (error) {
+                    console.warn('[DormGlide] Transaction logging failed; keeping listing marked sold:', error);
+                }
             }
 
             if (window.DormGlideAuth?.trackSale) {

@@ -1,4 +1,4 @@
-const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAuth }) => {
+const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAuth, initialCategory = '' }) => {
     const [searchTerm, setSearchTerm] = React.useState('');
     const [filters, setFilters] = React.useState({
         category: '',
@@ -170,6 +170,16 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
             category: prev.category === categoryName ? '' : categoryName
         }));
     };
+
+    React.useEffect(() => {
+        const nextCategory = String(initialCategory || '').trim();
+        if (!nextCategory) return;
+        setSearchTerm('');
+        setFilters((prev) => ({
+            ...prev,
+            category: nextCategory
+        }));
+    }, [initialCategory]);
 
     const handleStartSelling = () => {
         if (currentUser) {

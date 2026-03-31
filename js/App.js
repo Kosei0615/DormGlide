@@ -12,6 +12,7 @@ const App = () => {
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [notifications, setNotifications] = useState([]);
+    const [homeInitialCategory, setHomeInitialCategory] = useState('');
     const seenMessageIdsRef = React.useRef(new Set());
 
     useEffect(() => {
@@ -77,7 +78,13 @@ const App = () => {
         };
     }, []);
 
-    const navigateToPage = (page, productId = null) => {
+    const navigateToPage = (page, productId = null, options = {}) => {
+        if (page === 'home') {
+            setHomeInitialCategory(String(options?.category || '').trim());
+        } else if (homeInitialCategory) {
+            setHomeInitialCategory('');
+        }
+
         setCurrentPage(page);
         if (productId) {
             const product = products.find(p => p.id === productId);
@@ -198,7 +205,8 @@ const App = () => {
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
                     onNavigate: navigateToPage,
                     currentUser: currentUser,
-                    onShowAuth: () => setShowAuthModal(true)
+                    onShowAuth: () => setShowAuthModal(true),
+                    initialCategory: homeInitialCategory
                 });
             case 'product-detail':
                 return React.createElement(ProductDetailPage, {
@@ -255,7 +263,8 @@ const App = () => {
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
                     onNavigate: navigateToPage,
                     currentUser: currentUser,
-                    onShowAuth: () => setShowAuthModal(true)
+                    onShowAuth: () => setShowAuthModal(true),
+                    initialCategory: homeInitialCategory
                 });
         }
     };
