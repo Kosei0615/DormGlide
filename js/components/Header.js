@@ -76,6 +76,20 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     React.createElement('i', { className: 'fas fa-plus-circle' }),
                     React.createElement('span', null, 'Sell')
                 ),
+                React.createElement('button', {
+                    className: `nav-btn ${currentPage === 'how-it-works' ? 'active' : ''}`,
+                    onClick: () => handleNavigation('how-it-works')
+                },
+                    React.createElement('i', { className: 'fas fa-compass' }),
+                    React.createElement('span', null, 'How It Works')
+                ),
+                React.createElement('button', {
+                    className: `nav-btn ${currentPage === 'privacy-policy' ? 'active' : ''}`,
+                    onClick: () => handleNavigation('privacy-policy')
+                },
+                    React.createElement('i', { className: 'fas fa-shield-halved' }),
+                    React.createElement('span', null, 'Policy')
+                ),
 
                 currentUser && React.createElement('button', {
                     className: `nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`,
@@ -197,6 +211,20 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
             }, 
                 React.createElement('i', { className: 'fas fa-plus-circle' }),
                 React.createElement('span', null, 'Sell')
+            ),
+            React.createElement('button', {
+                className: `nav-btn ${currentPage === 'how-it-works' ? 'active' : ''}`,
+                onClick: () => handleNavigation('how-it-works')
+            },
+                React.createElement('i', { className: 'fas fa-compass' }),
+                React.createElement('span', null, 'How It Works')
+            ),
+            React.createElement('button', {
+                className: `nav-btn ${currentPage === 'privacy-policy' ? 'active' : ''}`,
+                onClick: () => handleNavigation('privacy-policy')
+            },
+                React.createElement('i', { className: 'fas fa-shield-halved' }),
+                React.createElement('span', null, 'Policy')
             ),
             
             currentUser ? (

@@ -96,8 +96,7 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
         if (!activity?.sales) return [];
         return activity.sales.filter((sale) => {
             if (!sale) return false;
-            const hasBuyer = Boolean(sale.buyerId);
-            return sale.status === 'completed' && hasBuyer;
+            return sale.status === 'completed';
         });
     };
 
@@ -136,6 +135,23 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
         try {
             const updated = await window.DormGlideStorage.updateProduct(product.id, updates);
             if (!updated) throw new Error('Listing not found.');
+
+            if (String(nextStatus).toLowerCase() === 'sold' && window.DormGlideAuth?.trackSale) {
+                const userActivity = await window.DormGlideAuth.getUserActivity?.(currentUser?.id);
+                const alreadyTracked = Array.isArray(userActivity?.sales)
+                    ? userActivity.sales.some((entry) => entry?.productId === product.id)
+                    : false;
+
+                if (!alreadyTracked) {
+                    window.DormGlideAuth.trackSale(
+                        currentUser?.id,
+                        product.id,
+                        product.title || 'Listing',
+                        Number(product.price) || 0,
+                        product?.buyerId || null
+                    );
+                }
+            }
 
             setProducts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
             setAllProducts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));

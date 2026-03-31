@@ -234,6 +234,16 @@ const App = () => {
                     currentUser: currentUser,
                     onNavigate: navigateToPage
                 });
+            case 'how-it-works':
+                return React.createElement(HowItWorksPage, {
+                    onNavigate: navigateToPage,
+                    currentUser: currentUser
+                });
+            case 'privacy-policy':
+                return React.createElement(PrivacyPolicyPage, {
+                    onNavigate: navigateToPage,
+                    currentUser: currentUser
+                });
             case 'admin':
                 return React.createElement(AdminDashboard, {
                     currentUser: currentUser,
@@ -261,7 +271,9 @@ const App = () => {
         React.createElement('main', { className: 'main-content' },
             renderCurrentPage()
         ),
-        React.createElement(Footer, null),
+        React.createElement(Footer, {
+            onNavigate: navigateToPage
+        }),
         
         // Auth Modal
         showAuthModal && React.createElement(AuthModal, {

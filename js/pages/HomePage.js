@@ -209,8 +209,8 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         // Hero Section
         React.createElement('section', { className: 'hero-section' },
             React.createElement('div', { className: 'hero-content' },
-                React.createElement('h1', null, 'Welcome to DormGlide'),
-                React.createElement('p', null, 'Buy and sell student goods easily and safely'),
+                React.createElement('h1', null, 'Campus Marketplace, Built for Real Student Life'),
+                React.createElement('p', null, 'Buy and sell faster with clear chat confirmations, safer meetup guidance, and transparent listing status.'),
                 React.createElement('div', { className: 'hero-stats' },
                     React.createElement('div', { className: 'stat' },
                         React.createElement('i', { className: 'fas fa-users' }),
@@ -222,7 +222,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                     ),
                     React.createElement('div', { className: 'stat' },
                         React.createElement('i', { className: 'fas fa-handshake' }),
-                        React.createElement('span', null, '100% Safe')
+                        React.createElement('span', null, 'Safer Meetup Flow')
                     )
                 ),
                 React.createElement('button', {

@@ -182,6 +182,24 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             if (updated && onProductUpdate) {
                 onProductUpdate(updated);
             }
+
+            if (normalized === 'sold' && window.DormGlideAuth?.trackSale) {
+                const activity = await window.DormGlideAuth.getUserActivity?.(currentUser.id);
+                const alreadyTracked = Array.isArray(activity?.sales)
+                    ? activity.sales.some((entry) => entry?.productId === product.id)
+                    : false;
+
+                if (!alreadyTracked) {
+                    window.DormGlideAuth.trackSale(
+                        currentUser.id,
+                        product.id,
+                        product.title || 'Listing',
+                        Number(product.price) || 0,
+                        product?.buyerId || null
+                    );
+                }
+            }
+
             alert(normalized === 'sold' ? 'Listing marked as sold.' : 'Listing is available again.');
         } catch (error) {
             console.error('[DormGlide] Failed updating listing status:', error);
@@ -348,6 +366,42 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         )
                     ),
 
+                    // Action Buttons moved near top for quick decision-making
+                    React.createElement('div', { className: 'product-actions product-actions-priority' },
+                        React.createElement('button', {
+                            className: 'btn btn-primary btn-large',
+                            onClick: handleBuyNow,
+                            disabled: listingStatus === 'sold' || isSellerOwner
+                        },
+                            React.createElement('i', { className: 'fas fa-shopping-cart' }),
+                            listingStatus === 'sold' ? 'Sold Out' : (isSellerOwner ? 'Your Listing' : 'Proceed to Purchase')
+                        ),
+                        React.createElement('button', {
+                            className: 'btn btn-secondary btn-large',
+                            onClick: handleChatWithSeller
+                        },
+                            React.createElement('i', { className: 'fas fa-comments' }),
+                            'Chat with Seller'
+                        ),
+                        React.createElement('button', {
+                            className: `btn btn-outline ${isSaved ? 'saved' : ''}`,
+                            onClick: handleToggleSave
+                        },
+                            React.createElement('i', { className: isSaved ? 'fas fa-heart' : 'far fa-heart' }),
+                            isSaved ? 'Saved' : 'Save'
+                        ),
+                        isSellerOwner && React.createElement('button', {
+                            className: `btn btn-outline ${listingStatus === 'sold' ? '' : 'btn-danger'}`,
+                            onClick: () => saveProductStatus(listingStatus === 'sold' ? 'active' : 'sold'),
+                            disabled: isSavingStatus
+                        },
+                            React.createElement('i', { className: listingStatus === 'sold' ? 'fas fa-rotate-left' : 'fas fa-check-circle' }),
+                            isSavingStatus
+                                ? 'Saving...'
+                                : (listingStatus === 'sold' ? 'Mark as Available' : 'Mark as Sold')
+                        )
+                    ),
+
                     React.createElement('div', { className: 'product-description' },
                         React.createElement('h3', null, 'Description'),
                         React.createElement('p', null, product.description)
@@ -367,10 +421,6 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                             React.createElement('div', { className: 'detail-item' },
                                 React.createElement('i', { className: 'fas fa-eye' }),
                                 React.createElement('span', null, 'Views: ', product.views || 0)
-                            ),
-                            product.contactInfo && React.createElement('div', { className: 'detail-item' },
-                                React.createElement('i', { className: 'fas fa-phone' }),
-                                React.createElement('span', null, 'Contact: ', product.contactInfo)
                             ),
                             React.createElement('div', { className: 'detail-item' },
                                 React.createElement('i', { className: 'fas fa-handshake' }),
@@ -409,7 +459,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                             ),
                             React.createElement('div', { className: 'seller-details' },
                                 React.createElement('h4', null, product.sellerName),
-                                React.createElement('p', null, product.sellerEmail || 'Student at University'),
+                                React.createElement('p', null, 'Verified DormGlide student seller'),
                                 React.createElement('div', { className: 'seller-rating' },
                                     React.createElement('i', { className: 'fas fa-star' }),
                                     React.createElement('span', null,
@@ -417,14 +467,6 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                                             ? `${sellerRatingSummary.average} (${sellerRatingSummary.count} review${sellerRatingSummary.count === 1 ? '' : 's'})`
                                             : 'No ratings yet'
                                     )
-                                ),
-                                product.contactInfo && React.createElement('p', { className: 'seller-contact' },
-                                    React.createElement('i', { className: 'fas fa-comment-dots' }),
-                                    ' Preferred contact: ', product.contactInfo
-                                ),
-                                chatParticipant?.phone && React.createElement('p', { className: 'seller-contact' },
-                                    React.createElement('i', { className: 'fas fa-phone' }),
-                                    ' Phone: ', window.DormGlideAuth?.formatPhoneNumberReadable?.(chatParticipant.phone) || chatParticipant.phone
                                 ),
                                 currentUser && currentUser.id !== product.sellerId && React.createElement('button', {
                                     className: 'btn btn-outline btn-sm',
@@ -434,42 +476,6 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                                     ' Rate Seller'
                                 )
                             )
-                        )
-                    ),
-
-                    // Action Buttons
-                    React.createElement('div', { className: 'product-actions' },
-                        React.createElement('button', {
-                            className: 'btn btn-primary btn-large',
-                            onClick: handleBuyNow,
-                            disabled: listingStatus === 'sold' || isSellerOwner
-                        },
-                            React.createElement('i', { className: 'fas fa-shopping-cart' }),
-                            listingStatus === 'sold' ? 'Sold Out' : (isSellerOwner ? 'Your Listing' : 'Proceed to Purchase')
-                        ),
-                        React.createElement('button', {
-                            className: 'btn btn-secondary btn-large',
-                            onClick: handleChatWithSeller
-                        },
-                            React.createElement('i', { className: 'fas fa-comments' }),
-                            'Chat with Seller'
-                        ),
-                        React.createElement('button', {
-                            className: `btn btn-outline ${isSaved ? 'saved' : ''}`,
-                            onClick: handleToggleSave
-                        },
-                            React.createElement('i', { className: isSaved ? 'fas fa-heart' : 'far fa-heart' }),
-                            isSaved ? 'Saved' : 'Save'
-                        ),
-                        isSellerOwner && React.createElement('button', {
-                            className: `btn btn-outline ${listingStatus === 'sold' ? '' : 'btn-danger'}`,
-                            onClick: () => saveProductStatus(listingStatus === 'sold' ? 'active' : 'sold'),
-                            disabled: isSavingStatus
-                        },
-                            React.createElement('i', { className: listingStatus === 'sold' ? 'fas fa-rotate-left' : 'fas fa-check-circle' }),
-                            isSavingStatus
-                                ? 'Saving...'
-                                : (listingStatus === 'sold' ? 'Mark as Available' : 'Mark as Sold')
                         )
                     )
                 )

@@ -1,17 +1,34 @@
-const Footer = () => {
+const Footer = ({ onNavigate }) => {
+    const handleNavClick = (event, page) => {
+        event.preventDefault();
+        if (onNavigate) onNavigate(page);
+    };
+
     return React.createElement('footer', { className: 'footer' },
         React.createElement('div', { className: 'footer-container' },
             React.createElement('div', { className: 'footer-section' },
                 React.createElement('h3', null, 'DormGlide'),
-                React.createElement('p', null, 'The trusted marketplace for students to buy and sell used goods safely and easily.')
+                React.createElement('p', null, 'Move in lighter, live smarter: trusted student-to-student buying and selling on campus.')
             ),
             React.createElement('div', { className: 'footer-section' },
                 React.createElement('h4', null, 'Quick Links'),
                 React.createElement('ul', null,
-                    React.createElement('li', null, React.createElement('a', { href: '#' }, 'How it Works')),
-                    React.createElement('li', null, React.createElement('a', { href: '#' }, 'Safety Tips')),
-                    React.createElement('li', null, React.createElement('a', { href: '#' }, 'FAQ')),
-                    React.createElement('li', null, React.createElement('a', { href: '#' }, 'Contact Us'))
+                    React.createElement('li', null, React.createElement('a', {
+                        href: '#',
+                        onClick: (event) => handleNavClick(event, 'how-it-works')
+                    }, 'How It Works')),
+                    React.createElement('li', null, React.createElement('a', {
+                        href: '#',
+                        onClick: (event) => handleNavClick(event, 'privacy-policy')
+                    }, 'Privacy Policy')),
+                    React.createElement('li', null, React.createElement('a', {
+                        href: '#',
+                        onClick: (event) => handleNavClick(event, 'how-it-works')
+                    }, 'Safety Tips')),
+                    React.createElement('li', null, React.createElement('a', {
+                        href: '#',
+                        onClick: (event) => handleNavClick(event, 'how-it-works')
+                    }, 'Risk Checklist'))
                 )
             ),
             React.createElement('div', { className: 'footer-section' },
@@ -39,7 +56,7 @@ const Footer = () => {
             )
         ),
         React.createElement('div', { className: 'footer-bottom' },
-            React.createElement('p', null, '© 2025 DormGlide. All rights reserved. Made for students, by students.')
+            React.createElement('p', null, '© 2026 DormGlide. Built for real campus life: clear deals, safer meetups, and respectful community trade.')
         )
     );
 };
