@@ -5,9 +5,31 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 serve(async (req) => {
   const { event, listingId, buyerId, sellerId } = await req.json()
 
+  const supabaseUrl =
+    Deno.env.get('SUPABASE_URL') ||
+    Deno.env.get('sUPABASE_URL') ||
+    Deno.env.get('DORMGLIDE_SUPABASE_URL')
+  const serviceRoleKey =
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ||
+    Deno.env.get('sUPABASE_SERVICE_ROLE_KEY') ||
+    Deno.env.get('DORMGLIDE_SUPABASE_SERVICE_ROLE_KEY')
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return new Response(
+      JSON.stringify({
+        error:
+          'Missing Supabase function secrets. Set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (or configured fallback names).'
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
+  }
+
   const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    supabaseUrl,
+    serviceRoleKey
   )
 
   // Fetch buyer and seller emails
