@@ -86,11 +86,16 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         let results = [...decoratedProducts];
         const normalizedSearch = searchTerm.trim().toLowerCase();
 
-        // Keep marketplace focused on available inventory for buyers.
+        // Keep browse inventory limited to listings that can still be transacted.
         results = results.filter((product) => {
-            const isSold = String(product.status || 'active').toLowerCase() === 'sold';
-            if (!isSold) return true;
-            return Boolean(currentUser?.id && product.sellerId === currentUser.id);
+            const statusRaw = String(product.status || 'available').toLowerCase();
+            const status = statusRaw === 'active' ? 'available' : statusRaw;
+            const hasSoldTimestamp = Boolean(product?.soldAt);
+
+            if (status === 'sold') return false;
+            if (statusRaw === 'active' && hasSoldTimestamp) return false;
+
+            return status === 'available' || status === 'pending';
         });
 
         if (normalizedSearch) {
@@ -130,7 +135,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         }
 
         return results;
-    }, [decoratedProducts, searchTerm, filters, currentUser?.id]);
+    }, [decoratedProducts, searchTerm, filters]);
 
     const sortedProducts = React.useMemo(() => {
         return [...filteredProducts].sort((a, b) => {

@@ -166,6 +166,33 @@ DormGlide prioritizes student safety:
 - **Trust Indicators**: User ratings and review system
 - **Report System**: Easy reporting of suspicious activity
 
+## ✉️ Supabase Purchase Emails
+
+DormGlide can send purchase-request and purchase-confirmation emails using a Supabase Edge Function.
+
+1. Create the function in your Supabase project:
+   - File already included: supabase/functions/notify-purchase/index.ts
+
+2. Log in and link your project:
+   - supabase login
+   - supabase link --project-ref <your-project-ref>
+
+3. Set required secrets for the function:
+   - supabase secrets set SUPABASE_URL=https://<your-project-ref>.supabase.co
+   - supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+
+4. Deploy the function:
+   - supabase functions deploy notify-purchase
+
+5. Verify invocation in app flow:
+   - requestPurchase triggers notify-purchase with event purchase_requested
+   - confirmPurchase triggers notify-purchase with event purchase_confirmed
+
+6. Optional local test:
+   - supabase functions serve notify-purchase --env-file ./supabase/.env
+
+Note: this implementation calls a helper function named send-email from notify-purchase. Ensure send-email exists in your Supabase project and is configured to deliver outbound email.
+
 ## 🚀 Usage Examples
 
 ### For Buyers:

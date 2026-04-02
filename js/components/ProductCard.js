@@ -21,13 +21,18 @@ const ProductCard = ({ product, onProductClick }) => {
     const isDemo = Boolean(product.isDemo);
     const isNearby = Boolean(product.isNearby);
     const sellerCampus = product.sellerCampus || product.location || '';
-    const listingStatus = String(product.status || 'active').toLowerCase();
+    const listingStatusRaw = String(product.status || 'active').toLowerCase();
+    const listingStatus = listingStatusRaw === 'active' ? 'available' : listingStatusRaw;
+    const isSold = listingStatus === 'sold' || Boolean(product?.soldAt);
+    const isAvailable = listingStatus === 'available' && !isSold;
+    const statusLabel = isSold ? 'Sold' : (listingStatus === 'pending' ? 'Pending' : 'Available');
 
     return React.createElement('div', {
         className: 'product-card',
         onClick: () => onProductClick(product.id)
     },
         React.createElement('div', { className: 'product-image' },
+            isSold && React.createElement('span', { className: 'sold-ribbon' }, 'SOLD'),
             (isDemo || isNearby) && React.createElement('div', { className: 'product-tags' },
                 isNearby && React.createElement('span', { className: 'product-tag nearby' },
                     React.createElement('i', { className: 'fas fa-location-dot' }),
@@ -49,7 +54,10 @@ const ProductCard = ({ product, onProductClick }) => {
             ,
             React.createElement('span', {
                 className: `listing-status-chip listing-status-${listingStatus}`
-            }, listingStatus === 'sold' ? 'Sold' : 'Available')
+            },
+                React.createElement('span', { className: `status-dot ${isAvailable ? 'pulse' : ''}` }),
+                statusLabel
+            )
         ),
         React.createElement('div', { className: 'product-info' },
             React.createElement('h3', { className: 'product-title' }, product.title),

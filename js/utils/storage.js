@@ -157,6 +157,15 @@ const normalizePurchaseRequestRecord = (record) => {
     };
 };
 
+const notifyPurchaseEvent = ({ event, listingId, buyerId, sellerId }) => {
+    if (!window.SupabaseClient || !listingId || !buyerId || !sellerId) return;
+    window.SupabaseClient.functions.invoke('notify-purchase', {
+        body: { event, listingId, buyerId, sellerId }
+    }).catch((error) => {
+        console.warn('[DormGlide] Notification not sent:', error);
+    });
+};
+
 // -----------------------------
 // Local storage adapter
 // -----------------------------
@@ -699,28 +708,58 @@ const requestPurchase = async ({ listingId, buyerId, sellerId }) => {
     const existing = await fetchPurchaseRequests(listingId);
     const existingForBuyer = (existing || []).find((entry) => entry?.buyerId === buyerId && ['pending', 'confirmed'].includes(entry?.status));
     const request = existingForBuyer || await createPurchaseRequest({ listingId, buyerId, sellerId });
+
+    const requestedAt = new Date().toISOString();
     await updateProduct(listingId, {
         status: 'pending',
         buyerId,
-        requestedAt: request?.createdAt || new Date().toISOString()
+        requestedAt
     });
+
+    notifyPurchaseEvent({
+        event: 'purchase_requested',
+        listingId,
+        buyerId,
+        sellerId
+    });
+
     const listing = await fetchListingById(listingId);
     return { request, listing };
 };
 
 const confirmPurchase = async ({ listingId, purchaseRequestId, buyerId }) => {
     const now = new Date().toISOString();
+    let buyerIdToUse = buyerId || null;
+    let sellerIdToUse = null;
 
     if (purchaseRequestId) {
-        await updatePurchaseRequestStatus(purchaseRequestId, 'confirmed');
+        const updatedRequest = await updatePurchaseRequestStatus(purchaseRequestId, 'confirmed');
+        if (updatedRequest?.buyerId) {
+            buyerIdToUse = updatedRequest.buyerId;
+        }
+        if (updatedRequest?.sellerId) {
+            sellerIdToUse = updatedRequest.sellerId;
+        }
+    }
+
+    if (!sellerIdToUse) {
+        const listingBeforeUpdate = await fetchListingById(listingId);
+        sellerIdToUse = listingBeforeUpdate?.sellerId || null;
     }
 
     await updateProduct(listingId, {
         status: 'sold',
-        buyerId: buyerId || null,
+        buyerId: buyerIdToUse,
         purchasedAt: now,
         soldAt: now,
         sellerConfirmedAt: now
+    });
+
+    notifyPurchaseEvent({
+        event: 'purchase_confirmed',
+        listingId,
+        buyerId: buyerIdToUse,
+        sellerId: sellerIdToUse
     });
 
     const listing = await fetchListingById(listingId);

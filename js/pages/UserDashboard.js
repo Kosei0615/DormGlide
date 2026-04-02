@@ -93,6 +93,15 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
         });
     };
 
+    const formatSoldDate = (dateString) => {
+        if (!dateString) return 'Sold recently';
+        return `Sold on ${new Date(dateString).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        })}`;
+    };
+
     const calculateTotalEarnings = () => {
         const completedSales = getCompletedSales();
         return completedSales.reduce((total, sale) => total + (sale.price || 0), 0);
@@ -180,7 +189,51 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
         }
     };
 
+    const handleRelistItem = async (product) => {
+        if (!product || !window.DormGlideStorage?.createProduct) {
+            toast.error('Relist service is unavailable right now.');
+            return;
+        }
+
+        setUpdatingListingId(product.id);
+        try {
+            const relisted = {
+                ...product,
+                id: undefined,
+                status: 'available',
+                requestedAt: null,
+                purchasedAt: null,
+                soldAt: null,
+                buyerId: null,
+                soldMethod: null,
+                buyerConfirmedAt: null,
+                sellerConfirmedAt: null,
+                createdAt: new Date().toISOString()
+            };
+            await window.DormGlideStorage.createProduct(relisted);
+            await refreshListings();
+            toast.success('Item relisted as a new available listing.');
+        } catch (error) {
+            console.error('[DormGlide] Failed to relist item:', error);
+            toast.error('Unable to relist this item right now.');
+        } finally {
+            setUpdatingListingId(null);
+        }
+    };
+
     const renderOverviewTab = () => {
+        const activeListings = products.filter((product) => {
+            const statusRaw = String(product?.status || 'available').toLowerCase();
+            const status = statusRaw === 'active' ? 'available' : statusRaw;
+            return status === 'available' || status === 'pending';
+        });
+
+        const soldListings = products.filter((product) => {
+            const statusRaw = String(product?.status || 'available').toLowerCase();
+            const status = statusRaw === 'active' ? 'available' : statusRaw;
+            return status === 'sold';
+        });
+
         return React.createElement('div', { className: 'dashboard-overview' },
             React.createElement('div', { className: 'stats-grid' },
                 React.createElement('div', { className: 'stat-card' },
@@ -304,14 +357,14 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
             ),
 
             React.createElement('div', { className: 'recent-activity' },
-                React.createElement('h3', null, 'Manage My Listings'),
-                products.length === 0
+                React.createElement('h3', null, 'Active Listings'),
+                activeListings.length === 0
                     ? React.createElement('div', { className: 'empty-state' },
                         React.createElement('i', { className: 'fas fa-tag' }),
                         React.createElement('p', null, 'You have no active listings yet.')
                     )
                     : React.createElement('div', { className: 'activity-list' },
-                        products.slice(0, 6).map((product) => {
+                        activeListings.slice(0, 6).map((product) => {
                             const statusRaw = String(product.status || 'available').toLowerCase();
                             const status = statusRaw === 'active' ? 'available' : statusRaw;
                             const isBusy = updatingListingId === product.id;
@@ -322,7 +375,10 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                                 React.createElement('div', { className: 'message-thread-content' },
                                     React.createElement('h4', null, product.title),
                                     React.createElement('p', { className: 'message-thread-product' }, `$${product.price || 0}`),
-                                    React.createElement('span', { className: `message-thread-badge listing-status-${status}` }, status === 'sold' ? 'Sold' : (status === 'pending' ? 'Pending' : 'Available')),
+                                    React.createElement('span', { className: `message-thread-badge listing-status-${status}` },
+                                        React.createElement('span', { className: 'status-dot' }),
+                                        status === 'pending' ? 'Pending' : 'Available'
+                                    ),
                                     React.createElement('div', { className: 'dashboard-timeline-mini' },
                                         React.createElement('span', { className: product?.requestedAt ? 'done' : '' }, `Requested: ${formatTimelineDate(product?.requestedAt)}`),
                                         React.createElement('span', { className: product?.buyerConfirmedAt ? 'done' : '' }, `Buyer confirmed: ${formatTimelineDate(product?.buyerConfirmedAt)}`),
@@ -333,12 +389,59 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                                     React.createElement('button', {
                                         className: 'btn btn-sm btn-secondary',
                                         onClick: () => onNavigate('product-detail', product.id)
-                                    }, 'Open'),
+                                    }, React.createElement('i', { className: 'fas fa-up-right-from-square' }), 'Open'),
                                     React.createElement('button', {
                                         className: `btn btn-sm ${status === 'sold' ? 'btn-outline' : 'btn-danger'}`,
                                         onClick: () => handleListingStatusUpdate(product, status === 'sold' ? 'available' : 'sold'),
                                         disabled: isBusy
-                                    }, isBusy ? 'Saving...' : (status === 'sold' ? 'Mark Available' : 'Confirm Purchase'))
+                                    },
+                                        React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fas fa-circle-check' }),
+                                        isBusy ? 'Saving...' : 'Confirm Purchase'
+                                    )
+                                )
+                            );
+                        })
+                    ),
+                React.createElement('h3', { className: 'sold-items-title' }, 'Sold Items'),
+                soldListings.length === 0
+                    ? React.createElement('div', { className: 'empty-state' },
+                        React.createElement('i', { className: 'fas fa-box-open' }),
+                        React.createElement('p', null, 'No sold items yet.')
+                    )
+                    : React.createElement('div', { className: 'sold-items-grid' },
+                        soldListings.map((product) => {
+                            const buyerName = product?.buyerId
+                                ? (window.DormGlideAuth?.getUserById?.(product.buyerId)?.name || 'Buyer info unavailable')
+                                : 'Buyer info unavailable';
+                            const isBusy = updatingListingId === product.id;
+                            return React.createElement('div', { key: `sold-${product.id}`, className: 'sold-item-card' },
+                                React.createElement('div', { className: 'sold-item-image-wrap' },
+                                    React.createElement('img', {
+                                        className: 'sold-item-image',
+                                        src: product.image || 'https://via.placeholder.com/300x200?text=No+Image',
+                                        alt: product.title
+                                    }),
+                                    React.createElement('span', { className: 'sold-item-banner' }, 'SOLD')
+                                ),
+                                React.createElement('div', { className: 'sold-item-body' },
+                                    React.createElement('h4', null, product.title),
+                                    React.createElement('p', { className: 'message-thread-product' }, `$${product.price || 0}`),
+                                    React.createElement('p', { className: 'sold-item-meta' }, formatSoldDate(product.purchasedAt || product.soldAt)),
+                                    React.createElement('p', { className: 'sold-item-meta' }, `Buyer: ${buyerName}`),
+                                    React.createElement('div', { className: 'sold-item-actions' },
+                                        React.createElement('button', {
+                                            className: 'btn btn-sm btn-secondary',
+                                            onClick: () => onNavigate('product-detail', product.id)
+                                        }, React.createElement('i', { className: 'fas fa-up-right-from-square' }), 'Open'),
+                                        React.createElement('button', {
+                                            className: 'btn btn-sm btn-primary',
+                                            onClick: () => handleRelistItem(product),
+                                            disabled: isBusy
+                                        },
+                                            React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fas fa-plus' }),
+                                            isBusy ? 'Relisting...' : 'Relist Item'
+                                        )
+                                    )
                                 )
                             );
                         })

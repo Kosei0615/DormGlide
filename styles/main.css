@@ -43,17 +43,23 @@ p {
 .btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     border: 1px solid transparent;
-    border-radius: 0.375rem;
+    border-radius: 50px;
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: all 0.15s ease-in-out;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     background: none;
+}
+
+.btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .btn:disabled {
@@ -1042,6 +1048,8 @@ p {
 
 .message-thread-badge {
     display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     margin-top: 0.45rem;
     font-size: 0.75rem;
     color: #3730a3;
@@ -1056,31 +1064,73 @@ p {
     top: 0.8rem;
     left: 0.8rem;
     z-index: 3;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.01em;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
     border-radius: 999px;
-    padding: 0.2rem 0.55rem;
+    padding: 4px 12px;
     border: 1px solid transparent;
     text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .listing-status-badge {
     display: inline-flex;
+    align-items: center;
+    gap: 6px;
     width: fit-content;
-    padding: 0.3rem 0.7rem;
+    padding: 4px 12px;
     border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 700;
+    font-size: 0.75rem;
+    font-weight: 600;
     margin: 0.5rem 0 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.05em;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    background: currentColor;
+}
+
+.status-dot.pulse {
+    animation: availabilityPulse 1.5s ease-in-out infinite;
+}
+
+.listing-status-available .status-dot,
+.listing-status-active .status-dot {
+    background: #16a34a;
+}
+
+.listing-status-pending .status-dot {
+    background: #d97706;
+}
+
+.listing-status-sold .status-dot {
+    background: #dc2626;
 }
 
 .listing-status-active {
     background: rgba(22, 163, 74, 0.14);
     color: #166534;
     border: 1px solid rgba(22, 163, 74, 0.28);
+}
+
+.listing-status-available {
+    background: rgba(22, 163, 74, 0.14);
+    color: #166534;
+    border: 1px solid rgba(22, 163, 74, 0.28);
+}
+
+.listing-status-pending {
+    background: rgba(245, 158, 11, 0.14);
+    color: #92400e;
+    border: 1px solid rgba(245, 158, 11, 0.32);
 }
 
 .listing-status-sold {
@@ -1108,29 +1158,48 @@ p {
 }
 
 .deal-timeline-item {
+    position: relative;
     display: flex;
     gap: 0.65rem;
     align-items: flex-start;
+    padding-bottom: 0.6rem;
+    transition: color 0.25s ease, opacity 0.25s ease;
+}
+
+.deal-timeline-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 24px;
+    width: 2px;
+    height: calc(100% - 8px);
+    background: rgba(148, 163, 184, 0.45);
+    transition: background-color 0.25s ease;
+}
+
+.deal-timeline-item.completed:not(:last-child)::after {
+    background: rgba(22, 163, 74, 0.75);
 }
 
 .deal-timeline-dot {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(99, 102, 241, 0.22);
-    color: #6366f1;
-    background: #eef2ff;
-    font-size: 0.68rem;
+    border: 1px solid #94a3b8;
+    color: #64748b;
+    background: #ffffff;
+    font-size: 0.72rem;
     margin-top: 0.1rem;
+    transition: all 0.25s ease;
 }
 
 .deal-timeline-item.completed .deal-timeline-dot {
-    color: #166534;
-    border-color: rgba(22, 163, 74, 0.35);
-    background: rgba(22, 163, 74, 0.16);
+    color: #ffffff;
+    border-color: #16a34a;
+    background: #16a34a;
 }
 
 .deal-timeline-content h4 {
@@ -1359,12 +1428,12 @@ p {
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
-    transition: all 0.15s ease-in-out;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .product-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
 .product-image {
@@ -1384,17 +1453,35 @@ p {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
-.condition-new { background-color: #28a745; color: white; }
-.condition-like-new { background-color: #17a2b8; color: white; }
-.condition-good { background-color: #ffc107; color: #212529; }
-.condition-fair { background-color: #fd7e14; color: white; }
+.condition-new,
+.condition-like-new { background-color: #059669; color: #ecfdf5; }
+.condition-good { background-color: #2563eb; color: #eff6ff; }
+.condition-fair { background-color: #d97706; color: #fffbeb; }
+
+.sold-ribbon {
+    position: absolute;
+    top: 14px;
+    right: -38px;
+    width: 140px;
+    text-align: center;
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    transform: rotate(45deg);
+    z-index: 4;
+    padding: 0.22rem 0;
+    box-shadow: 0 6px 16px rgba(127, 29, 29, 0.35);
+}
 
 .product-info {
     padding: 1rem;
@@ -1757,6 +1844,60 @@ p {
     padding-bottom: 1rem;
 }
 
+.safety-tips-card {
+    border: 1px solid #fbbf24;
+    background: #fffbeb;
+    border-radius: 0.9rem;
+    padding: 1rem;
+}
+
+.safety-tips-card h3 {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #92400e;
+    margin-bottom: 0.8rem;
+}
+
+.safety-tips-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+}
+
+.safety-tip-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    color: #78350f;
+    margin: 0;
+}
+
+.safety-tip-row p {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.safety-tip-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex: 0 0 40px;
+}
+
+.safety-tip-icon.tip-blue { background: #dbeafe; color: #1d4ed8; }
+.safety-tip-icon.tip-indigo { background: #e0e7ff; color: #4338ca; }
+.safety-tip-icon.tip-green { background: #dcfce7; color: #15803d; }
+.safety-tip-icon.tip-amber { background: #fef3c7; color: #b45309; }
+.safety-tip-icon.tip-red { background: #fee2e2; color: #b91c1c; }
+.safety-tip-icon.tip-rose { background: #ffe4e6; color: #be123c; }
+.safety-tip-icon.tip-slate { background: #e2e8f0; color: #334155; }
+
 .seller-card {
     display: flex;
     align-items: center;
@@ -1851,6 +1992,76 @@ p {
     .product-actions .btn {
         padding: 0.75rem;
     }
+}
+
+@media (min-width: 900px) {
+    .safety-tips-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.sold-items-title {
+    margin-top: 1.35rem;
+}
+
+.sold-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.sold-item-card {
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 0.9rem;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.sold-item-image-wrap {
+    position: relative;
+    height: 160px;
+}
+
+.sold-item-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sold-item-banner {
+    position: absolute;
+    top: 0.65rem;
+    left: 0.65rem;
+    background: rgba(220, 38, 38, 0.95);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+}
+
+.sold-item-body {
+    padding: 0.9rem;
+}
+
+.sold-item-meta {
+    margin: 0.15rem 0;
+    color: #4b5563;
+    font-size: 0.83rem;
+}
+
+.sold-item-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+@keyframes availabilityPulse {
+    0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
+    70% { box-shadow: 0 0 0 7px rgba(22, 163, 74, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
 }
 
 /* Error State */

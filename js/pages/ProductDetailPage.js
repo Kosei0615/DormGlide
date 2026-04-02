@@ -360,6 +360,44 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         }
     ];
 
+    const safetyTips = [
+        {
+            icon: 'fas fa-people-group',
+            bubble: 'tip-blue',
+            text: 'Meet in a public place on campus (library, student union, cafeteria)'
+        },
+        {
+            icon: 'fas fa-user-friends',
+            bubble: 'tip-indigo',
+            text: 'Bring a friend when meeting to exchange items'
+        },
+        {
+            icon: 'fas fa-mobile-screen',
+            bubble: 'tip-green',
+            text: 'Use digital payment (Zelle, Venmo) and avoid carrying large amounts of cash'
+        },
+        {
+            icon: 'fas fa-magnifying-glass',
+            bubble: 'tip-amber',
+            text: 'Inspect the item thoroughly before paying'
+        },
+        {
+            icon: 'fas fa-lock',
+            bubble: 'tip-red',
+            text: 'Never share your login credentials, SSN, or bank account details'
+        },
+        {
+            icon: 'fas fa-heart-pulse',
+            bubble: 'tip-rose',
+            text: 'If something feels off, trust your gut and back out of the deal'
+        },
+        {
+            icon: 'fas fa-flag',
+            bubble: 'tip-slate',
+            text: 'Report suspicious listings to DormGlide support'
+        }
+    ];
+
     const images = product.images && product.images.length > 0
         ? product.images
         : [product.image || 'https://via.placeholder.com/600x400?text=No+Image'];
@@ -412,6 +450,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         React.createElement('h1', null, product.title),
                         React.createElement('div', { className: 'product-price-large' }, formatPrice(product.price)),
                         React.createElement('div', { className: `listing-status-badge listing-status-${listingStatus}` },
+                            React.createElement('span', { className: 'status-dot' }),
                             listingStatus === 'sold' ? 'Sold' : (listingStatus === 'pending' ? 'Pending' : 'Available')
                         ),
                         React.createElement('div', { className: 'product-badges' },
@@ -507,7 +546,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                                     className: `deal-timeline-item ${completed ? 'completed' : ''}`
                                 },
                                     React.createElement('div', { className: 'deal-timeline-dot' },
-                                        React.createElement('i', { className: completed ? 'fas fa-check' : 'fas fa-circle' })
+                                        React.createElement('i', { className: completed ? 'fas fa-check' : 'fas fa-clock' })
                                     ),
                                     React.createElement('div', { className: 'deal-timeline-content' },
                                         React.createElement('h4', null, step.label),
@@ -515,6 +554,24 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                                     )
                                 );
                             })
+                        )
+                    ),
+
+                    React.createElement('div', { className: 'safety-tips-card' },
+                        React.createElement('h3', null,
+                            React.createElement('i', { className: 'fas fa-shield-halved' }),
+                            'Safety Tips'
+                        ),
+                        React.createElement('div', { className: 'safety-tips-grid' },
+                            safetyTips.map((tip, index) => React.createElement('div', {
+                                key: `${tip.icon}-${index}`,
+                                className: 'safety-tip-row'
+                            },
+                                React.createElement('span', { className: `safety-tip-icon ${tip.bubble}` },
+                                    React.createElement('i', { className: tip.icon })
+                                ),
+                                React.createElement('p', null, tip.text)
+                            ))
                         )
                     ),
 
