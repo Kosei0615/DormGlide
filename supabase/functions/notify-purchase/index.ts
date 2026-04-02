@@ -31,6 +31,8 @@ serve(async (req) => {
     supabaseUrl,
     serviceRoleKey
   )
+  const resendApiKey = Deno.env.get('RESEND_API_KEY') || Deno.env.get('resend_api_key')
+  const resendFrom = Deno.env.get('RESEND_FROM_EMAIL') || 'DormGlide <onboarding@resend.dev>'
 
   // Fetch buyer and seller emails
   const { data: buyer } = await supabase.auth.admin.getUserById(buyerId)
@@ -39,7 +41,7 @@ serve(async (req) => {
   // Fetch listing title
   const { data: listing } = await supabase
     .from('products')
-    .select('title, price')
+    .select('title, price, seller_email')
     .eq('id', listingId)
     .single()
 
@@ -50,9 +52,9 @@ serve(async (req) => {
 
   if (event === 'purchase_requested') {
     // Notify seller
-    if (seller?.user?.email) {
+    if (seller?.user?.email || listing?.seller_email) {
       emails.push({
-        to: seller.user.email,
+        to: seller?.user?.email || listing?.seller_email,
         subject: `DormGlide: New purchase request for "${title}"`,
         html: `
           <h2>You have a new purchase request!</h2>
@@ -117,9 +119,9 @@ serve(async (req) => {
       })
     }
     // Notify seller
-    if (seller?.user?.email) {
+    if (seller?.user?.email || listing?.seller_email) {
       emails.push({
-        to: seller.user.email,
+        to: seller?.user?.email || listing?.seller_email,
         subject: `DormGlide: Sale confirmed for "${title}"`,
         html: `
           <h2>Sale confirmed!</h2>
@@ -131,12 +133,41 @@ serve(async (req) => {
     }
   }
 
-  // Send all emails using Supabase function relay
-  for (const email of emails) {
-    await supabase.functions.invoke('send-email', { body: email }).catch(console.error)
+  if (!resendApiKey) {
+    return new Response(JSON.stringify({ error: 'Missing RESEND_API_KEY secret', queued: emails.length }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
 
-  return new Response(JSON.stringify({ sent: emails.length }), {
+  // Send all emails directly through Resend
+  let sent = 0
+  const errors: string[] = []
+  for (const email of emails) {
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: resendFrom,
+        to: [email.to],
+        subject: email.subject,
+        html: email.html
+      })
+    })
+
+    if (resp.ok) {
+      sent += 1
+      continue
+    }
+
+    const errorBody = await resp.text().catch(() => '')
+    errors.push(`to=${email.to} status=${resp.status} body=${errorBody}`)
+  }
+
+  return new Response(JSON.stringify({ queued: emails.length, sent, failed: errors.length, errors }), {
     headers: { 'Content-Type': 'application/json' }
   })
 })

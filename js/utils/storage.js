@@ -111,6 +111,42 @@ const productToSupabasePayload = (product) => ({
     views: product.views || 0
 });
 
+const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj || {}, key);
+
+const productUpdatesToSupabasePayload = (updates = {}) => {
+    const payload = {};
+
+    if (hasOwn(updates, 'title')) payload.title = updates.title;
+    if (hasOwn(updates, 'description')) payload.description = updates.description;
+    if (hasOwn(updates, 'price')) {
+        payload.price = typeof updates.price === 'number' ? updates.price : parseFloat(updates.price || 0);
+    }
+    if (hasOwn(updates, 'category')) payload.category = updates.category;
+    if (hasOwn(updates, 'condition')) payload.condition = updates.condition;
+    if (hasOwn(updates, 'location')) payload.location = updates.location || null;
+    if (hasOwn(updates, 'contactInfo')) payload.contact_info = updates.contactInfo || null;
+    if (hasOwn(updates, 'stripePaymentLink')) payload.payment_link = (updates.stripePaymentLink || '').trim() || null;
+    if (hasOwn(updates, 'images')) payload.images = Array.isArray(updates.images) ? updates.images : [];
+    if (hasOwn(updates, 'image')) payload.main_image = updates.image || null;
+    if (hasOwn(updates, 'sellerId')) payload.seller_id = updates.sellerId;
+    if (hasOwn(updates, 'sellerName')) payload.seller_name = updates.sellerName;
+    if (hasOwn(updates, 'sellerEmail')) payload.seller_email = updates.sellerEmail;
+    if (hasOwn(updates, 'sellerCampus')) payload.seller_campus = updates.sellerCampus || null;
+    if (hasOwn(updates, 'status')) payload.status = normalizeListingStatus(updates.status || 'available');
+    if (hasOwn(updates, 'requestedAt')) payload.requested_at = updates.requestedAt || null;
+    if (hasOwn(updates, 'purchasedAt')) payload.purchased_at = updates.purchasedAt || null;
+    if (hasOwn(updates, 'soldAt')) payload.sold_at = updates.soldAt || null;
+    if (hasOwn(updates, 'buyerId')) payload.buyer_id = updates.buyerId || null;
+    if (hasOwn(updates, 'soldMethod')) payload.sold_method = updates.soldMethod || null;
+    if (hasOwn(updates, 'buyerConfirmedAt')) payload.buyer_confirmed_at = updates.buyerConfirmedAt || null;
+    if (hasOwn(updates, 'sellerConfirmedAt')) payload.seller_confirmed_at = updates.sellerConfirmedAt || null;
+    if (hasOwn(updates, 'isDemo')) payload.is_demo = Boolean(updates.isDemo);
+    if (hasOwn(updates, 'createdAt')) payload.created_at = updates.createdAt || new Date().toISOString();
+    if (hasOwn(updates, 'views')) payload.views = updates.views || 0;
+
+    return payload;
+};
+
 const normalizeTransactionRecord = (record) => {
     if (!record) return null;
     return {
@@ -296,7 +332,12 @@ const supabaseProductAdapter = {
     async update(productId, updates) {
         const client = getStorageSupabaseClient();
         if (!client) throw new Error('Supabase client not available');
-        const payload = productToSupabasePayload({ ...updates, id: productId });
+        const payload = productUpdatesToSupabasePayload(updates);
+        if (Object.keys(payload).length === 0) {
+            const { data: current, error: currentError } = await client.from('products').select('*').eq('id', productId).single();
+            if (currentError) throw currentError;
+            return normalizeProductRecord(current);
+        }
         const { data, error } = await client.from('products').update(payload).eq('id', productId).select('*').maybeSingle();
         if (error) throw error;
         return normalizeProductRecord(data || { id: productId, ...updates });
