@@ -22,6 +22,7 @@ const ChatModal = ({
     const [isLoading, setIsLoading] = React.useState(true);
     const [isConfirming, setIsConfirming] = React.useState(false);
     const [isChecklistConfirmed, setIsChecklistConfirmed] = React.useState(false);
+    const [isDealToolsOpen, setIsDealToolsOpen] = React.useState(false);
     const listRef = React.useRef(null);
 
     const numericPrice = React.useMemo(() => {
@@ -131,6 +132,15 @@ const ChatModal = ({
             if (result?.conversation) {
                 setConversation(result.conversation);
                 onConversationActivity?.(result.conversation);
+            }
+
+            if (result?.message) {
+                setMessages((prev) => {
+                    if ((prev || []).some((entry) => entry?.id === result.message.id)) {
+                        return prev;
+                    }
+                    return [...(prev || []), result.message].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                });
             }
 
             return true;
@@ -500,85 +510,99 @@ const ChatModal = ({
                     `$${numericPrice.toLocaleString()}`
                 )
             ),
-            React.createElement('div', { className: 'chat-transaction-actions' },
+            product?.id && React.createElement('div', { className: 'chat-deal-tools' },
                 React.createElement('button', {
-                    className: 'chat-template-btn',
+                    className: 'chat-tools-toggle',
                     type: 'button',
-                    onClick: () => handleQuickTemplate('proceed')
-                }, 'Proceed Purchase'),
-                React.createElement('button', {
-                    className: 'chat-template-btn',
-                    type: 'button',
-                    onClick: () => handleQuickTemplate('zelle')
-                }, 'Zelle'),
-                React.createElement('button', {
-                    className: 'chat-template-btn',
-                    type: 'button',
-                    onClick: () => handleQuickTemplate('venmo')
-                }, 'Venmo'),
-                React.createElement('button', {
-                    className: 'chat-template-btn',
-                    type: 'button',
-                    onClick: () => handleQuickTemplate('cash')
-                }, 'Cash'),
-                React.createElement('button', {
-                    className: 'chat-template-btn',
-                    type: 'button',
-                    onClick: () => handleQuickTemplate('account-template')
-                }, 'Details Template')
-            ),
-            product?.id && React.createElement('div', { className: 'chat-safe-meetup-card' },
-                React.createElement('h4', null, 'Safe Meetup'),
-                React.createElement('div', { className: 'chat-safe-meetup-actions' },
-                    React.createElement('button', {
-                        className: 'chat-template-btn',
-                        type: 'button',
-                        onClick: () => applyMeetupPreset('library')
-                    }, 'Library lobby'),
-                    React.createElement('button', {
-                        className: 'chat-template-btn',
-                        type: 'button',
-                        onClick: () => applyMeetupPreset('student-center')
-                    }, 'Student center desk'),
-                    React.createElement('button', {
-                        className: 'chat-template-btn',
-                        type: 'button',
-                        onClick: () => applyMeetupPreset('daytime-only')
-                    }, 'Daytime only'),
-                    React.createElement('button', {
-                        className: 'chat-template-btn',
-                        type: 'button',
-                        onClick: () => applyMeetupPreset('checklist')
-                    }, 'Insert checklist')
-                )
-            ),
-            product?.id && React.createElement('div', { className: 'chat-confirm-actions' },
-                React.createElement('label', { className: 'chat-confirm-checkbox' },
-                    React.createElement('input', {
-                        type: 'checkbox',
-                        checked: isChecklistConfirmed,
-                        onChange: (event) => setIsChecklistConfirmed(Boolean(event.target.checked))
-                    }),
-                    React.createElement('span', null, 'I confirmed payment details, meetup plan, and item condition.')
+                    onClick: () => setIsDealToolsOpen((prev) => !prev),
+                    'aria-expanded': isDealToolsOpen,
+                    title: isDealToolsOpen ? 'Hide deal tools' : 'Show deal tools'
+                },
+                    React.createElement('i', { className: `fas ${isDealToolsOpen ? 'fa-chevron-up' : 'fa-chevron-down'}` }),
+                    isDealToolsOpen ? 'Hide Deal Tools' : 'Show Deal Tools'
                 ),
-                isBuyer && React.createElement('button', {
-                    className: 'chat-confirm-btn buyer',
-                    type: 'button',
-                    onClick: handleBuyerConfirmReceived,
-                    disabled: isConfirming || !isChecklistConfirmed
-                }, isConfirming ? 'Saving...' : 'Buyer: Confirm Received'),
-                isSeller && React.createElement('button', {
-                    className: 'chat-confirm-btn seller',
-                    type: 'button',
-                    onClick: handleSellerConfirmSold,
-                    disabled: isConfirming || listingStatus === 'sold' || !isChecklistConfirmed
-                }, listingStatus === 'sold' ? 'Already Sold' : (isConfirming ? 'Saving...' : 'Seller: Confirm Sold')),
-                isBuyer && isBuyerProtectionOpen && React.createElement('button', {
-                    className: 'chat-confirm-btn issue',
-                    type: 'button',
-                    onClick: handleBuyerProtectionReport,
-                    disabled: isConfirming
-                }, 'Problem with this transaction?')
+                isDealToolsOpen && React.createElement(React.Fragment, null,
+                    React.createElement('div', { className: 'chat-transaction-actions' },
+                        React.createElement('button', {
+                            className: 'chat-template-btn',
+                            type: 'button',
+                            onClick: () => handleQuickTemplate('proceed')
+                        }, 'Proceed Purchase'),
+                        React.createElement('button', {
+                            className: 'chat-template-btn',
+                            type: 'button',
+                            onClick: () => handleQuickTemplate('zelle')
+                        }, 'Zelle'),
+                        React.createElement('button', {
+                            className: 'chat-template-btn',
+                            type: 'button',
+                            onClick: () => handleQuickTemplate('venmo')
+                        }, 'Venmo'),
+                        React.createElement('button', {
+                            className: 'chat-template-btn',
+                            type: 'button',
+                            onClick: () => handleQuickTemplate('cash')
+                        }, 'Cash'),
+                        React.createElement('button', {
+                            className: 'chat-template-btn',
+                            type: 'button',
+                            onClick: () => handleQuickTemplate('account-template')
+                        }, 'Details Template')
+                    ),
+                    React.createElement('div', { className: 'chat-safe-meetup-card' },
+                        React.createElement('h4', null, 'Safe Meetup'),
+                        React.createElement('div', { className: 'chat-safe-meetup-actions' },
+                            React.createElement('button', {
+                                className: 'chat-template-btn',
+                                type: 'button',
+                                onClick: () => applyMeetupPreset('library')
+                            }, 'Library lobby'),
+                            React.createElement('button', {
+                                className: 'chat-template-btn',
+                                type: 'button',
+                                onClick: () => applyMeetupPreset('student-center')
+                            }, 'Student center desk'),
+                            React.createElement('button', {
+                                className: 'chat-template-btn',
+                                type: 'button',
+                                onClick: () => applyMeetupPreset('daytime-only')
+                            }, 'Daytime only'),
+                            React.createElement('button', {
+                                className: 'chat-template-btn',
+                                type: 'button',
+                                onClick: () => applyMeetupPreset('checklist')
+                            }, 'Insert checklist')
+                        )
+                    ),
+                    React.createElement('div', { className: 'chat-confirm-actions' },
+                        React.createElement('label', { className: 'chat-confirm-checkbox' },
+                            React.createElement('input', {
+                                type: 'checkbox',
+                                checked: isChecklistConfirmed,
+                                onChange: (event) => setIsChecklistConfirmed(Boolean(event.target.checked))
+                            }),
+                            React.createElement('span', null, 'I confirmed payment details, meetup plan, and item condition.')
+                        ),
+                        isBuyer && React.createElement('button', {
+                            className: 'chat-confirm-btn buyer',
+                            type: 'button',
+                            onClick: handleBuyerConfirmReceived,
+                            disabled: isConfirming || !isChecklistConfirmed
+                        }, isConfirming ? 'Saving...' : 'Buyer: Confirm Received'),
+                        isSeller && React.createElement('button', {
+                            className: 'chat-confirm-btn seller',
+                            type: 'button',
+                            onClick: handleSellerConfirmSold,
+                            disabled: isConfirming || listingStatus === 'sold' || !isChecklistConfirmed
+                        }, listingStatus === 'sold' ? 'Already Sold' : (isConfirming ? 'Saving...' : 'Seller: Confirm Sold')),
+                        isBuyer && isBuyerProtectionOpen && React.createElement('button', {
+                            className: 'chat-confirm-btn issue',
+                            type: 'button',
+                            onClick: handleBuyerProtectionReport,
+                            disabled: isConfirming
+                        }, 'Problem with this transaction?')
+                    )
+                )
             ),
             React.createElement('div', { className: 'chat-message-list', ref: listRef },
                 isLoading
