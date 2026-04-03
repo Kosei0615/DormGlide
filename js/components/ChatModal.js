@@ -22,7 +22,7 @@ const ChatModal = ({
     const [isLoading, setIsLoading] = React.useState(true);
     const [isConfirming, setIsConfirming] = React.useState(false);
     const [isChecklistConfirmed, setIsChecklistConfirmed] = React.useState(false);
-    const [isDealToolsOpen, setIsDealToolsOpen] = React.useState(false);
+    const [isDealToolsOpen, setIsDealToolsOpen] = React.useState(true);
     const listRef = React.useRef(null);
 
     const numericPrice = React.useMemo(() => {
