@@ -298,19 +298,19 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
                             ),
                             request.status === 'pending' && React.createElement('div', { className: 'seller-request-actions' },
                                 React.createElement('button', {
-                                    className: 'btn btn-sm btn-primary icon-action-btn',
+                                    className: 'btn btn-sm btn-primary icon-btn',
                                     title: 'Accept request',
                                     'aria-label': 'Accept purchase request',
                                     onClick: () => handleRequestDecision(request, 'accepted'),
                                     disabled: isBusy
-                                }, React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fas fa-check' })),
+                                }, React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fa-solid fa-check' })),
                                 React.createElement('button', {
-                                    className: 'btn btn-sm btn-danger icon-action-btn',
+                                    className: 'btn btn-sm btn-danger icon-btn danger',
                                     title: 'Decline request',
                                     'aria-label': 'Decline purchase request',
                                     onClick: () => handleRequestDecision(request, 'declined'),
                                     disabled: isBusy
-                                }, React.createElement('i', { className: 'fas fa-xmark' }))
+                                }, React.createElement('i', { className: 'fa-solid fa-xmark' }))
                             )
                         );
                     }),
@@ -329,7 +329,7 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
 
         filteredThreads.length === 0
             ? React.createElement('div', { className: 'empty-state' },
-                React.createElement('i', { className: 'fas fa-comments' }),
+                React.createElement('i', { className: 'fas fa-comment' }),
                 React.createElement('h3', null, searchQuery ? 'No matching conversations' : 'No conversations yet'),
                 React.createElement('p', null, searchQuery ? 'Try a different keyword.' : 'Start chatting from product pages to negotiate and close deals'),
                 React.createElement('button', {
@@ -367,7 +367,7 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
                                     className: 'btn btn-secondary btn-sm',
                                     onClick: () => handleOpenChat(thread)
                                 },
-                                    React.createElement('i', { className: 'fas fa-comments' }),
+                                    React.createElement('i', { className: 'fa-solid fa-comment' }),
                                     ' Open Unified Chat'
                                 )
                             )

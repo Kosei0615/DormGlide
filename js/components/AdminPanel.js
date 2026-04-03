@@ -41,9 +41,11 @@ const AdminPanel = ({ onClose }) => {
             React.createElement('div', { className: 'admin-header' },
                 React.createElement('h2', null, 'DormGlide Admin Panel'),
                 React.createElement('button', {
-                    className: 'close-admin',
+                    className: 'close-admin icon-btn',
+                    title: 'Close',
+                    'aria-label': 'Close',
                     onClick: onClose
-                }, '×')
+                }, React.createElement('i', { className: 'fa-solid fa-xmark' }))
             ),
 
             React.createElement('div', { className: 'admin-section' },

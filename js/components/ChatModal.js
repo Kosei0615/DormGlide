@@ -496,12 +496,12 @@ const ChatModal = ({
                     )
                 ),
                 React.createElement('button', {
-                    className: 'chat-close-btn icon-action-btn',
+                    className: 'chat-close-btn icon-btn',
                     onClick: onClose,
                     title: 'Close',
                     'aria-label': 'Close chat'
                 },
-                    React.createElement('i', { className: 'fas fa-xmark' })
+                    React.createElement('i', { className: 'fa-solid fa-xmark' })
                 )
             ),
             React.createElement('div', { className: 'chat-product-summary' },
@@ -612,7 +612,7 @@ const ChatModal = ({
                     )
                     : messages.length === 0
                         ? React.createElement('div', { className: 'chat-empty-state' },
-                            React.createElement('i', { className: 'fas fa-comments' }),
+                            React.createElement('i', { className: 'fas fa-comment' }),
                             React.createElement('p', null, 'No messages yet. Say hello!')
                         )
                         : messages.map((entry) => {
@@ -637,14 +637,14 @@ const ChatModal = ({
                     disabled: isSending
                 }),
                 React.createElement('button', {
-                    className: 'chat-send-btn icon-action-btn',
+                    className: 'chat-send-btn icon-btn',
                     onClick: handleSendMessage,
                     title: 'Send message',
                     disabled: isSending || !message.trim()
                 },
                     isSending
                         ? React.createElement('i', { className: 'fas fa-spinner fa-spin' })
-                        : React.createElement('i', { className: 'fas fa-paper-plane' })
+                        : React.createElement('i', { className: 'fa-solid fa-paper-plane' })
                 )
             )
         )

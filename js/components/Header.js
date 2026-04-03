@@ -103,7 +103,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,
                     onClick: () => handleNavigation('messages')
                 },
-                    React.createElement('i', { className: 'fas fa-comments' }),
+                    React.createElement('i', { className: 'fa-solid fa-comment' }),
                     React.createElement('span', null, 'Messages')
                 ),
                 
@@ -149,7 +149,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             React.createElement('button', {
                                 onClick: () => handleNavigation('messages')
                             },
-                                React.createElement('i', { className: 'fas fa-comments' }),
+                                React.createElement('i', { className: 'fa-solid fa-comment' }),
                                 'Messages'
                             ),
                             React.createElement('button', {
@@ -171,7 +171,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                                 onClick: handleLogout,
                                 className: 'logout-btn'
                             },
-                                React.createElement('i', { className: 'fas fa-sign-out-alt' }),
+                                React.createElement('i', { className: 'fa-solid fa-right-from-bracket' }),
                                 'Logout'
                             )
                         )
@@ -189,10 +189,12 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
 
             // Mobile menu toggle
             React.createElement('button', {
-                className: 'mobile-menu-toggle',
+                className: 'mobile-menu-toggle icon-btn',
+                title: isMenuOpen ? 'Close menu' : 'Open menu',
+                'aria-label': isMenuOpen ? 'Close menu' : 'Open menu',
                 onClick: toggleMenu
             },
-                React.createElement('i', { className: isMenuOpen ? 'fas fa-times' : 'fas fa-bars' })
+                React.createElement('i', { className: isMenuOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars' })
             )
         ),
 
@@ -240,7 +242,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,
                         onClick: () => handleNavigation('messages')
                     }, 
-                        React.createElement('i', { className: 'fas fa-comments' }),
+                        React.createElement('i', { className: 'fa-solid fa-comment' }),
                         React.createElement('span', null, 'Messages')
                     ),
                     React.createElement('button', {
@@ -263,7 +265,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         className: 'nav-btn logout-btn',
                         onClick: handleLogout
                     }, 
-                        React.createElement('i', { className: 'fas fa-sign-out-alt' }),
+                        React.createElement('i', { className: 'fa-solid fa-right-from-bracket' }),
                         React.createElement('span', null, 'Logout')
                     )
                 )

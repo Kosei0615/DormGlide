@@ -336,12 +336,12 @@ const AdminDashboard = ({ onNavigate, currentUser }) => {
                         ),
                         React.createElement('div', { className: 'product-actions' },
                             React.createElement('button', {
-                                className: 'btn btn-sm btn-danger icon-action-btn',
+                                className: 'btn btn-sm btn-danger icon-btn danger',
                                 title: 'Delete listing',
                                 'aria-label': 'Delete listing',
                                 onClick: () => handleDeleteProduct(product.id)
                             },
-                                React.createElement('i', { className: 'fas fa-trash' })
+                                React.createElement('i', { className: 'fa-solid fa-trash' })
                             )
                         )
                     )

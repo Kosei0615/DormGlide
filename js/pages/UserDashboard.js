@@ -297,7 +297,7 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
 
                 React.createElement('div', { className: 'stat-card' },
                     React.createElement('div', { className: 'stat-icon', style: { background: '#e3f2fd' } },
-                        React.createElement('i', { className: 'fas fa-comments', style: { color: '#1976d2' } })
+                        React.createElement('i', { className: 'fas fa-comment', style: { color: '#1976d2' } })
                     ),
                     React.createElement('div', { className: 'stat-info' },
                         React.createElement('h3', null, activity?.messages?.length || 0),
@@ -588,19 +588,19 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                                 }, request.status),
                                 request.status === 'pending' && React.createElement('div', { className: 'seller-request-actions' },
                                     React.createElement('button', {
-                                        className: 'btn btn-sm btn-primary icon-action-btn',
+                                        className: 'btn btn-sm btn-primary icon-btn',
                                         title: 'Accept request',
                                         'aria-label': 'Accept purchase request',
                                         onClick: () => handleRequestDecision(request, 'accepted'),
                                         disabled: isBusy
-                                    }, React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fas fa-check' })),
+                                    }, React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fa-solid fa-check' })),
                                     React.createElement('button', {
-                                        className: 'btn btn-sm btn-danger icon-action-btn',
+                                        className: 'btn btn-sm btn-danger icon-btn danger',
                                         title: 'Decline request',
                                         'aria-label': 'Decline purchase request',
                                         onClick: () => handleRequestDecision(request, 'declined'),
                                         disabled: isBusy
-                                    }, React.createElement('i', { className: 'fas fa-xmark' }))
+                                    }, React.createElement('i', { className: 'fa-solid fa-xmark' }))
                                 )
                             )
                         );
@@ -677,14 +677,14 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                             'Added ', formatDate(favorite.timestamp)
                         ),
                         React.createElement('button', {
-                            className: 'btn btn-sm btn-outline icon-action-btn',
+                            className: 'btn btn-sm btn-outline icon-btn danger',
                             title: 'Remove favorite',
                             'aria-label': 'Remove favorite',
                             onClick: () => {
                                 window.DormGlideAuth.removeFromFavorites(currentUser.id, favorite.productId);
                                 setActivity(window.DormGlideAuth.getUserActivity(currentUser.id));
                             }
-                        }, React.createElement('i', { className: 'fas fa-trash' }))
+                        }, React.createElement('i', { className: 'fa-solid fa-trash' }))
                     )
                 )
             )
@@ -730,7 +730,7 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
 
         if (conversations.length === 0) {
             return React.createElement('div', { className: 'empty-state' },
-                React.createElement('i', { className: 'fas fa-comments' }),
+                React.createElement('i', { className: 'fas fa-comment' }),
                 React.createElement('h3', null, 'No conversations yet'),
                 React.createElement('p', null, 'Start chatting with buyers and sellers from product pages'),
                 React.createElement('button', {
@@ -789,7 +789,7 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                                 className: 'btn btn-secondary btn-sm',
                                 onClick: () => handleOpenChat(conversation)
                             },
-                                React.createElement('i', { className: 'fas fa-comments' }),
+                                React.createElement('i', { className: 'fas fa-comment' }),
                                 ' Open Chat'
                             )
                         )

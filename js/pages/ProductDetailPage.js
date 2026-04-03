@@ -439,12 +439,12 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     return React.createElement('div', { className: 'product-detail-page' },
         React.createElement('div', { className: 'product-detail-container' },
             React.createElement('button', {
-                className: 'back-btn icon-action-btn',
+                className: 'back-btn icon-btn',
                 title: 'Back',
                 'aria-label': 'Back',
                 onClick: () => onNavigate('home')
             },
-                React.createElement('i', { className: 'fas fa-arrow-left' })
+                React.createElement('i', { className: 'fa-solid fa-arrow-left' })
             ),
 
             React.createElement('div', { className: 'product-detail-content' },
@@ -503,7 +503,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                             onClick: handleBuyNow,
                             disabled: listingStatus === 'sold' || isSellerOwner || isRequestingPurchase || isRequestAlreadySent
                         },
-                            React.createElement('i', { className: isRequestingPurchase ? 'fas fa-spinner fa-spin' : 'fas fa-shopping-cart' }),
+                            React.createElement('i', { className: isRequestingPurchase ? 'fas fa-spinner fa-spin' : 'fa-solid fa-bag-shopping' }),
                             isRequestingPurchase
                                 ? 'Sending Request...'
                                 : (isRequestAlreadySent ? 'Request Sent' : (listingStatus === 'sold' ? 'Sold Out' : (isSellerOwner ? 'Your Listing' : 'Request Purchase')))
@@ -512,16 +512,16 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                             className: 'btn btn-secondary btn-large',
                             onClick: handleChatWithSeller
                         },
-                            React.createElement('i', { className: 'fas fa-comments' }),
+                            React.createElement('i', { className: 'fa-solid fa-comment' }),
                             'Chat with Seller'
                         ),
                         React.createElement('button', {
-                            className: `btn btn-outline icon-action-btn ${isSaved ? 'saved' : ''}`,
+                            className: `btn btn-outline icon-btn ${isSaved ? 'saved' : ''}`,
                             title: isSaved ? 'Unfavorite' : 'Favorite',
                             'aria-label': isSaved ? 'Unfavorite listing' : 'Favorite listing',
                             onClick: handleToggleSave
                         },
-                            React.createElement('i', { className: isSaved ? 'fas fa-heart' : 'far fa-heart' })
+                            React.createElement('i', { className: isSaved ? 'fa-solid fa-heart' : 'fa-regular fa-heart' })
                         ),
                         isSellerOwner && React.createElement('button', {
                             className: `btn btn-outline ${listingStatus === 'sold' ? '' : 'btn-danger'}`,
@@ -560,19 +560,19 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                                 ),
                                 request.status === 'pending' && React.createElement('div', { className: 'seller-request-actions' },
                                     React.createElement('button', {
-                                        className: 'btn btn-sm btn-primary icon-action-btn',
+                                        className: 'btn btn-sm btn-primary icon-btn',
                                         title: 'Accept request',
                                         'aria-label': 'Accept purchase request',
                                         onClick: () => handleRespondToRequest(request, 'accepted'),
                                         disabled: isSavingStatus
-                                    }, React.createElement('i', { className: 'fas fa-check' })),
+                                    }, React.createElement('i', { className: 'fa-solid fa-check' })),
                                     React.createElement('button', {
-                                        className: 'btn btn-sm btn-danger icon-action-btn',
+                                        className: 'btn btn-sm btn-danger icon-btn danger',
                                         title: 'Decline request',
                                         'aria-label': 'Decline purchase request',
                                         onClick: () => handleRespondToRequest(request, 'declined'),
                                         disabled: isSavingStatus
-                                    }, React.createElement('i', { className: 'fas fa-xmark' }))
+                                    }, React.createElement('i', { className: 'fa-solid fa-xmark' }))
                                 )
                             );
                         })
@@ -681,11 +681,11 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         },
             React.createElement('div', { className: 'image-modal-content' },
                 React.createElement('button', {
-                    className: 'close-modal icon-action-btn',
+                    className: 'close-modal icon-btn',
                     title: 'Close image preview',
                     'aria-label': 'Close image preview',
                     onClick: () => setIsImageModalOpen(false)
-                }, React.createElement('i', { className: 'fas fa-xmark' })),
+                }, React.createElement('i', { className: 'fa-solid fa-xmark' })),
                 React.createElement('img', {
                     src: images[currentImageIndex],
                     alt: product.title

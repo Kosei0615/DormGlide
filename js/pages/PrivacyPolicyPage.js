@@ -4,12 +4,12 @@ const PrivacyPolicyPage = ({ onNavigate }) => {
     return React.createElement('div', { className: 'policy-page' },
         React.createElement('div', { className: 'policy-container' },
             React.createElement('button', {
-                className: 'back-btn icon-action-btn',
+                className: 'back-btn icon-btn',
                 title: 'Back',
                 'aria-label': 'Back',
                 onClick: () => onNavigate('home')
             },
-                React.createElement('i', { className: 'fas fa-arrow-left' })
+                React.createElement('i', { className: 'fa-solid fa-arrow-left' })
             ),
             React.createElement('h1', null, 'DormGlide Privacy Policy'),
             React.createElement('p', { className: 'policy-lead' },

@@ -169,12 +169,12 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
     },
         React.createElement('div', { className: 'auth-modal' },
             React.createElement('button', {
-                className: 'auth-modal-close icon-action-btn',
+                className: 'auth-modal-close icon-btn',
                 title: 'Close',
                 'aria-label': 'Close',
                 onClick: onClose
             },
-                React.createElement('i', { className: 'fas fa-xmark' })
+                React.createElement('i', { className: 'fa-solid fa-xmark' })
             ),
 
             React.createElement('div', { className: 'auth-modal-header' },

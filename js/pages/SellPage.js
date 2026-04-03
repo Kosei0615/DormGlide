@@ -208,12 +208,12 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                                     React.createElement('img', { src: image, alt: `Upload ${index + 1}` }),
                                     React.createElement('button', {
                                         type: 'button',
-                                        className: 'remove-image icon-action-btn',
+                                        className: 'remove-image icon-btn danger',
                                         title: 'Remove photo',
                                         'aria-label': 'Remove photo',
                                         onClick: () => removeImage(index)
                                     },
-                                        React.createElement('i', { className: 'fas fa-trash' })
+                                        React.createElement('i', { className: 'fa-solid fa-trash' })
                                     ),
                                     index === 0 && React.createElement('span', { className: 'main-image-badge' }, 'Main')
                                 )
@@ -221,10 +221,10 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                         ),
                         
                         formData.images.length < 5 && React.createElement('label', {
-                            className: 'image-upload-btn icon-action-btn',
+                            className: 'image-upload-btn icon-btn',
                             title: 'Upload photo'
                         },
-                            React.createElement('i', { className: 'fas fa-image' }),
+                            React.createElement('i', { className: 'fa-solid fa-image' }),
                             React.createElement('input', {
                                 type: 'file',
                                 accept: 'image/*',

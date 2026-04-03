@@ -99,7 +99,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
 
                 // Clear search button
                 searchTerm && React.createElement('button', {
-                    className: 'clear-search-btn icon-action-btn',
+                    className: 'clear-search-btn icon-btn',
                     onClick: () => {
                         setSearchTerm('');
                         onSearch('');
@@ -109,7 +109,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
                     title: 'Close search',
                     'aria-label': 'Close search'
                 },
-                    React.createElement('i', { className: 'fas fa-xmark' })
+                    React.createElement('i', { className: 'fa-solid fa-xmark' })
                 ),
 
                 // Search suggestions dropdown
@@ -131,22 +131,22 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
             ),
             React.createElement('div', { className: 'search-actions' },
                 React.createElement('button', {
-                    className: 'search-submit-btn icon-action-btn',
+                    className: 'search-submit-btn icon-btn',
                     onClick: handleSearchSubmit,
                     type: 'button',
                     title: 'Search',
                     'aria-label': 'Search DormGlide listings'
                 },
-                    React.createElement('i', { className: 'fas fa-magnifying-glass' })
+                    React.createElement('i', { className: 'fa-solid fa-magnifying-glass' })
                 ),
                 React.createElement('button', {
-                    className: `filter-toggle ${isFilterOpen ? 'active' : ''}`,
+                    className: `filter-toggle icon-btn ${isFilterOpen ? 'active' : ''}`,
                     onClick: toggleFilter,
                     type: 'button',
+                    title: 'Filter',
                     'aria-label': 'Open filters'
                 },
-                    React.createElement('i', { className: 'fas fa-sliders-h' }),
-                    React.createElement('span', null, 'Filters')
+                    React.createElement('i', { className: 'fa-solid fa-sliders' })
                 )
             )
         ),
