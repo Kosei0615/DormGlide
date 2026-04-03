@@ -28,11 +28,12 @@ const HowItWorksPage = ({ onNavigate }) => {
     return React.createElement('div', { className: 'policy-page' },
         React.createElement('div', { className: 'policy-container' },
             React.createElement('button', {
-                className: 'back-btn',
+                className: 'back-btn icon-action-btn',
+                title: 'Back',
+                'aria-label': 'Back',
                 onClick: () => onNavigate('home')
             },
-                React.createElement('i', { className: 'fas fa-arrow-left' }),
-                'Back to Home'
+                React.createElement('i', { className: 'fas fa-arrow-left' })
             ),
             React.createElement('h1', null, 'How DormGlide Works'),
             React.createElement('p', { className: 'policy-lead' },

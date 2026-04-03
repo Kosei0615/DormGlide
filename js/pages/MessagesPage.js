@@ -5,6 +5,8 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
     const [activity, setActivity] = React.useState(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [searchQuery, setSearchQuery] = React.useState('');
+    const [purchaseRequests, setPurchaseRequests] = React.useState([]);
+    const [updatingRequestId, setUpdatingRequestId] = React.useState(null);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -34,6 +36,13 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
                     const conversations = await window.DormGlideChat.fetchConversations(currentUser.id);
                     if (isMounted) {
                         setChatConversations(conversations || []);
+                    }
+                }
+
+                if (window.DormGlideStorage?.fetchPurchaseRequestsForUser) {
+                    const requests = await window.DormGlideStorage.fetchPurchaseRequestsForUser(currentUser.id);
+                    if (isMounted) {
+                        setPurchaseRequests(Array.isArray(requests) ? requests : []);
                     }
                 }
             } catch (error) {
@@ -174,6 +183,47 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
         });
     }, [threadsByUser, searchQuery]);
 
+    const incomingRequests = React.useMemo(() => {
+        return (purchaseRequests || [])
+            .filter((request) => request?.sellerId === currentUser?.id)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }, [purchaseRequests, currentUser?.id]);
+
+    const outgoingRequests = React.useMemo(() => {
+        return (purchaseRequests || [])
+            .filter((request) => request?.buyerId === currentUser?.id)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }, [purchaseRequests, currentUser?.id]);
+
+    const refreshRequests = async () => {
+        if (!currentUser?.id || !window.DormGlideStorage?.fetchPurchaseRequestsForUser) return;
+        const requests = await window.DormGlideStorage.fetchPurchaseRequestsForUser(currentUser.id);
+        setPurchaseRequests(Array.isArray(requests) ? requests : []);
+    };
+
+    const handleRequestDecision = async (request, decision) => {
+        if (!request?.id || !request?.listingId || !window.DormGlideStorage?.respondToPurchaseRequest) return;
+
+        setUpdatingRequestId(request.id);
+        try {
+            await window.DormGlideStorage.respondToPurchaseRequest({
+                listingId: request.listingId,
+                purchaseRequestId: request.id,
+                decision,
+                buyerId: request.buyerId || null
+            });
+            await refreshRequests();
+            if (typeof getProductsFromStorage !== 'undefined') {
+                const productsFromStorage = await getProductsFromStorage();
+                setAllProducts(productsFromStorage || []);
+            }
+        } catch (error) {
+            console.error('[DormGlide] Failed to update purchase request from messages page:', error);
+        } finally {
+            setUpdatingRequestId(null);
+        }
+    };
+
     const handleOpenChat = (thread) => {
         const directConversation = directConversationIdByUser.get(thread.otherUserId);
         const participant = window.DormGlideAuth?.getUserById
@@ -229,6 +279,52 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
                 value: searchQuery,
                 onChange: (event) => setSearchQuery(event.target.value)
             })
+        ),
+
+        React.createElement('div', { className: 'seller-request-panel' },
+            React.createElement('h3', null, 'Purchase Request Updates'),
+            incomingRequests.length === 0 && outgoingRequests.length === 0
+                ? React.createElement('p', null, 'No purchase request updates yet.')
+                : React.createElement('div', { className: 'message-thread-list' },
+                    incomingRequests.map((request) => {
+                        const listing = allProducts.find((item) => item.id === request.listingId);
+                        const buyer = request?.buyerId ? window.DormGlideAuth?.getUserById?.(request.buyerId) : null;
+                        const isBusy = updatingRequestId === request.id;
+                        return React.createElement('div', { key: `incoming_${request.id}`, className: 'seller-request-row' },
+                            React.createElement('div', { className: 'seller-request-meta' },
+                                React.createElement('strong', null, listing?.title || 'Listing'),
+                                React.createElement('span', null, `Buyer: ${buyer?.name || request.buyerId || 'Unknown'}`),
+                                React.createElement('span', null, `Status: ${request.status}`)
+                            ),
+                            request.status === 'pending' && React.createElement('div', { className: 'seller-request-actions' },
+                                React.createElement('button', {
+                                    className: 'btn btn-sm btn-primary icon-action-btn',
+                                    title: 'Accept request',
+                                    'aria-label': 'Accept purchase request',
+                                    onClick: () => handleRequestDecision(request, 'accepted'),
+                                    disabled: isBusy
+                                }, React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fas fa-check' })),
+                                React.createElement('button', {
+                                    className: 'btn btn-sm btn-danger icon-action-btn',
+                                    title: 'Decline request',
+                                    'aria-label': 'Decline purchase request',
+                                    onClick: () => handleRequestDecision(request, 'declined'),
+                                    disabled: isBusy
+                                }, React.createElement('i', { className: 'fas fa-xmark' }))
+                            )
+                        );
+                    }),
+                    outgoingRequests.map((request) => {
+                        const listing = allProducts.find((item) => item.id === request.listingId);
+                        return React.createElement('div', { key: `outgoing_${request.id}`, className: 'seller-request-row' },
+                            React.createElement('div', { className: 'seller-request-meta' },
+                                React.createElement('strong', null, listing?.title || 'Listing'),
+                                React.createElement('span', null, 'Role: Buyer request'),
+                                React.createElement('span', null, `Status: ${request.status}`)
+                            )
+                        );
+                    })
+                )
         ),
 
         filteredThreads.length === 0

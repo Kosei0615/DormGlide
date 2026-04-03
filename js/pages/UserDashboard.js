@@ -6,6 +6,7 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
     const [allProducts, setAllProducts] = React.useState([]);
     const [chatContext, setChatContext] = React.useState(null);
     const [chatConversations, setChatConversations] = React.useState([]);
+    const [purchaseRequests, setPurchaseRequests] = React.useState([]);
     const [updatingListingId, setUpdatingListingId] = React.useState(null);
     const toast = window.DormGlideToast || {
         success: () => {},
@@ -58,6 +59,13 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                         if (isMounted) {
                             setChatConversations([]);
                         }
+                    }
+                }
+
+                if (window.DormGlideStorage?.fetchPurchaseRequestsForUser) {
+                    const requests = await window.DormGlideStorage.fetchPurchaseRequestsForUser(currentUser.id);
+                    if (isMounted) {
+                        setPurchaseRequests(Array.isArray(requests) ? requests : []);
                     }
                 }
             } catch (error) {
@@ -126,6 +134,37 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
         const userProds = (productsFromStorage || []).filter((p) => p.sellerId === currentUser.id);
         setProducts(userProds);
         setAllProducts(productsFromStorage || []);
+    };
+
+    const refreshPurchaseRequests = async () => {
+        if (!currentUser?.id || !window.DormGlideStorage?.fetchPurchaseRequestsForUser) return;
+        const requests = await window.DormGlideStorage.fetchPurchaseRequestsForUser(currentUser.id);
+        setPurchaseRequests(Array.isArray(requests) ? requests : []);
+    };
+
+    const handleRequestDecision = async (request, decision) => {
+        if (!request?.id || !request?.listingId || !window.DormGlideStorage?.respondToPurchaseRequest) {
+            toast.error('Purchase request service is unavailable right now.');
+            return;
+        }
+
+        setUpdatingListingId(request.listingId);
+        try {
+            await window.DormGlideStorage.respondToPurchaseRequest({
+                listingId: request.listingId,
+                purchaseRequestId: request.id,
+                decision,
+                buyerId: request.buyerId || null
+            });
+            await refreshListings();
+            await refreshPurchaseRequests();
+            toast.success(decision === 'accepted' ? 'Purchase request accepted.' : 'Purchase request declined.');
+        } catch (error) {
+            console.error('[DormGlide] Failed responding to dashboard purchase request:', error);
+            toast.error('Unable to update this request right now.');
+        } finally {
+            setUpdatingListingId(null);
+        }
     };
 
     const handleListingStatusUpdate = async (product, nextStatus) => {
@@ -451,6 +490,36 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
     };
 
     const renderPurchasesTab = () => {
+        const outgoingRequests = (purchaseRequests || [])
+            .filter((entry) => entry?.buyerId === currentUser?.id)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        if (outgoingRequests.length > 0) {
+            return React.createElement('div', { className: 'purchases-list' },
+                React.createElement('h3', null, 'Purchase Requests'),
+                React.createElement('div', { className: 'activity-list' },
+                    outgoingRequests.map((request) => {
+                        const listing = allProducts.find((product) => product.id === request.listingId);
+                        return React.createElement('div', { key: request.id, className: 'purchase-item' },
+                            React.createElement('div', { className: 'purchase-icon' },
+                                React.createElement('i', { className: request.status === 'accepted' ? 'fas fa-circle-check' : (request.status === 'declined' ? 'fas fa-circle-xmark' : 'fas fa-hourglass-half') })
+                            ),
+                            React.createElement('div', { className: 'purchase-details' },
+                                React.createElement('h4', null, listing?.title || 'Listing'),
+                                React.createElement('p', { className: 'purchase-price' }, `$${listing?.price || 0}`),
+                                React.createElement('span', { className: 'purchase-date' }, formatDate(request.createdAt))
+                            ),
+                            React.createElement('div', { className: 'purchase-status' },
+                                React.createElement('span', {
+                                    className: `status-badge ${request.status}`
+                                }, request.status)
+                            )
+                        );
+                    })
+                )
+            );
+        }
+
         if (!activity?.purchases || activity.purchases.length === 0) {
             return React.createElement('div', { className: 'empty-state' },
                 React.createElement('i', { className: 'fas fa-shopping-bag' }),
@@ -492,6 +561,54 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
     };
 
     const renderSalesTab = () => {
+        const incomingRequests = (purchaseRequests || [])
+            .filter((entry) => entry?.sellerId === currentUser?.id)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        if (incomingRequests.length > 0) {
+            return React.createElement('div', { className: 'sales-list' },
+                React.createElement('h3', null, 'Incoming Purchase Requests'),
+                React.createElement('div', { className: 'activity-list' },
+                    incomingRequests.map((request) => {
+                        const listing = allProducts.find((product) => product.id === request.listingId);
+                        const buyer = request?.buyerId ? window.DormGlideAuth?.getUserById?.(request.buyerId) : null;
+                        const isBusy = updatingListingId === request.listingId;
+                        return React.createElement('div', { key: request.id, className: 'sale-item' },
+                            React.createElement('div', { className: 'sale-icon' },
+                                React.createElement('i', { className: request.status === 'accepted' ? 'fas fa-circle-check' : (request.status === 'declined' ? 'fas fa-circle-xmark' : 'fas fa-hourglass-half') })
+                            ),
+                            React.createElement('div', { className: 'sale-details' },
+                                React.createElement('h4', null, listing?.title || 'Listing'),
+                                React.createElement('p', { className: 'sale-price' }, `Buyer: ${buyer?.name || request.buyerId || 'Unknown'}`),
+                                React.createElement('span', { className: 'sale-date' }, formatDate(request.createdAt))
+                            ),
+                            React.createElement('div', { className: 'sale-status' },
+                                React.createElement('span', {
+                                    className: `status-badge ${request.status}`
+                                }, request.status),
+                                request.status === 'pending' && React.createElement('div', { className: 'seller-request-actions' },
+                                    React.createElement('button', {
+                                        className: 'btn btn-sm btn-primary icon-action-btn',
+                                        title: 'Accept request',
+                                        'aria-label': 'Accept purchase request',
+                                        onClick: () => handleRequestDecision(request, 'accepted'),
+                                        disabled: isBusy
+                                    }, React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fas fa-check' })),
+                                    React.createElement('button', {
+                                        className: 'btn btn-sm btn-danger icon-action-btn',
+                                        title: 'Decline request',
+                                        'aria-label': 'Decline purchase request',
+                                        onClick: () => handleRequestDecision(request, 'declined'),
+                                        disabled: isBusy
+                                    }, React.createElement('i', { className: 'fas fa-xmark' }))
+                                )
+                            )
+                        );
+                    })
+                )
+            );
+        }
+
         const completedSales = getCompletedSales();
 
         if (completedSales.length === 0) {
@@ -560,12 +677,14 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                             'Added ', formatDate(favorite.timestamp)
                         ),
                         React.createElement('button', {
-                            className: 'btn btn-sm btn-outline',
+                            className: 'btn btn-sm btn-outline icon-action-btn',
+                            title: 'Remove favorite',
+                            'aria-label': 'Remove favorite',
                             onClick: () => {
                                 window.DormGlideAuth.removeFromFavorites(currentUser.id, favorite.productId);
                                 setActivity(window.DormGlideAuth.getUserActivity(currentUser.id));
                             }
-                        }, 'Remove')
+                        }, React.createElement('i', { className: 'fas fa-trash' }))
                     )
                 )
             )

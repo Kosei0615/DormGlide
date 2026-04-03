@@ -210,6 +210,39 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         }
     };
 
+    const handleRespondToRequest = async (request, decision) => {
+        if (!isSellerOwner || !product?.id || !request?.id || isSavingStatus) return;
+
+        setIsSavingStatus(true);
+        try {
+            if (window.DormGlideStorage?.respondToPurchaseRequest) {
+                await window.DormGlideStorage.respondToPurchaseRequest({
+                    listingId: product.id,
+                    purchaseRequestId: request.id,
+                    decision,
+                    buyerId: request.buyerId || null
+                });
+            } else if (String(decision).toLowerCase() === 'accepted' && window.DormGlideStorage?.confirmPurchase) {
+                await window.DormGlideStorage.confirmPurchase({
+                    listingId: product.id,
+                    purchaseRequestId: request.id,
+                    buyerId: request.buyerId || null
+                });
+            }
+
+            await refreshPurchaseRequests();
+            await refreshListingState();
+            toast.success(String(decision).toLowerCase() === 'accepted'
+                ? 'Purchase request accepted and listing marked sold.'
+                : 'Purchase request declined. Buyer has been notified.');
+        } catch (error) {
+            console.error('[DormGlide] Failed responding to purchase request:', error);
+            toast.error('Unable to update this purchase request right now.');
+        } finally {
+            setIsSavingStatus(false);
+        }
+    };
+
     const saveProductStatus = async (nextStatus) => {
         if (!currentUser?.id || currentUser.id !== product?.sellerId || !product?.id) return;
 
@@ -336,11 +369,12 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     const listingStatus = listingStatusRaw === 'active' ? 'available' : listingStatusRaw;
     const isSellerOwner = Boolean(currentUser?.id && product?.sellerId && currentUser.id === product.sellerId);
     const myPurchaseRequest = purchaseRequests.find((request) => request?.buyerId === currentUser?.id) || null;
-    const sellerPendingRequest = purchaseRequests.find((request) => request?.sellerId === currentUser?.id && request?.status === 'pending') || null;
+    const sellerIncomingRequests = purchaseRequests.filter((request) => request?.sellerId === currentUser?.id);
+    const sellerPendingRequest = sellerIncomingRequests.find((request) => request?.status === 'pending') || null;
     const pendingBuyerName = sellerPendingRequest?.buyerId
         ? (window.DormGlideAuth?.getUserById?.(sellerPendingRequest.buyerId)?.name || sellerPendingRequest.buyerId)
         : '';
-    const isRequestAlreadySent = Boolean(myPurchaseRequest && ['pending', 'confirmed'].includes(myPurchaseRequest.status));
+    const isRequestAlreadySent = Boolean(myPurchaseRequest && ['pending', 'accepted'].includes(myPurchaseRequest.status));
 
     const dealTimeline = [
         {
@@ -405,11 +439,12 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     return React.createElement('div', { className: 'product-detail-page' },
         React.createElement('div', { className: 'product-detail-container' },
             React.createElement('button', {
-                className: 'back-btn',
+                className: 'back-btn icon-action-btn',
+                title: 'Back',
+                'aria-label': 'Back',
                 onClick: () => onNavigate('home')
             },
-                React.createElement('i', { className: 'fas fa-arrow-left' }),
-                'Back to Browse'
+                React.createElement('i', { className: 'fas fa-arrow-left' })
             ),
 
             React.createElement('div', { className: 'product-detail-content' },
@@ -481,11 +516,12 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                             'Chat with Seller'
                         ),
                         React.createElement('button', {
-                            className: `btn btn-outline ${isSaved ? 'saved' : ''}`,
+                            className: `btn btn-outline icon-action-btn ${isSaved ? 'saved' : ''}`,
+                            title: isSaved ? 'Unfavorite' : 'Favorite',
+                            'aria-label': isSaved ? 'Unfavorite listing' : 'Favorite listing',
                             onClick: handleToggleSave
                         },
-                            React.createElement('i', { className: isSaved ? 'fas fa-heart' : 'far fa-heart' }),
-                            isSaved ? 'Saved' : 'Save'
+                            React.createElement('i', { className: isSaved ? 'fas fa-heart' : 'far fa-heart' })
                         ),
                         isSellerOwner && React.createElement('button', {
                             className: `btn btn-outline ${listingStatus === 'sold' ? '' : 'btn-danger'}`,
@@ -502,11 +538,44 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                     myPurchaseRequest?.status === 'pending' && React.createElement('p', { className: 'message-thread-product' },
                         '⏳ Your purchase request is pending seller approval'
                     ),
-                    myPurchaseRequest?.status === 'confirmed' && React.createElement('p', { className: 'message-thread-product' },
-                        '✅ Purchase confirmed!'
+                    myPurchaseRequest?.status === 'accepted' && React.createElement('p', { className: 'message-thread-product' },
+                        '✅ Purchase accepted by seller!'
+                    ),
+                    myPurchaseRequest?.status === 'declined' && React.createElement('p', { className: 'message-thread-product' },
+                        '❌ Purchase declined by seller. You can continue browsing.'
                     ),
                     sellerPendingRequest && React.createElement('p', { className: 'message-thread-product' },
                         `Purchase request pending from buyer ${pendingBuyerName}`
+                    ),
+                    isSellerOwner && sellerIncomingRequests.length > 0 && React.createElement('div', { className: 'seller-request-panel' },
+                        React.createElement('h4', null, 'Incoming purchase requests'),
+                        sellerIncomingRequests.map((request) => {
+                            const buyer = request?.buyerId ? window.DormGlideAuth?.getUserById?.(request.buyerId) : null;
+                            const buyerLabel = buyer?.name || request?.buyerId || 'Buyer';
+                            return React.createElement('div', { key: request.id, className: 'seller-request-row' },
+                                React.createElement('div', { className: 'seller-request-meta' },
+                                    React.createElement('strong', null, buyerLabel),
+                                    React.createElement('span', null, `Status: ${request.status}`),
+                                    React.createElement('span', null, `Requested: ${new Date(request.createdAt).toLocaleString()}`)
+                                ),
+                                request.status === 'pending' && React.createElement('div', { className: 'seller-request-actions' },
+                                    React.createElement('button', {
+                                        className: 'btn btn-sm btn-primary icon-action-btn',
+                                        title: 'Accept request',
+                                        'aria-label': 'Accept purchase request',
+                                        onClick: () => handleRespondToRequest(request, 'accepted'),
+                                        disabled: isSavingStatus
+                                    }, React.createElement('i', { className: 'fas fa-check' })),
+                                    React.createElement('button', {
+                                        className: 'btn btn-sm btn-danger icon-action-btn',
+                                        title: 'Decline request',
+                                        'aria-label': 'Decline purchase request',
+                                        onClick: () => handleRespondToRequest(request, 'declined'),
+                                        disabled: isSavingStatus
+                                    }, React.createElement('i', { className: 'fas fa-xmark' }))
+                                )
+                            );
+                        })
                     ),
 
                     React.createElement('div', { className: 'product-description' },
@@ -612,9 +681,11 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         },
             React.createElement('div', { className: 'image-modal-content' },
                 React.createElement('button', {
-                    className: 'close-modal',
+                    className: 'close-modal icon-action-btn',
+                    title: 'Close image preview',
+                    'aria-label': 'Close image preview',
                     onClick: () => setIsImageModalOpen(false)
-                }, React.createElement('i', { className: 'fas fa-times' })),
+                }, React.createElement('i', { className: 'fas fa-xmark' })),
                 React.createElement('img', {
                     src: images[currentImageIndex],
                     alt: product.title

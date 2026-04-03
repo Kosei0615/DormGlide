@@ -99,16 +99,17 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
 
                 // Clear search button
                 searchTerm && React.createElement('button', {
-                    className: 'clear-search-btn',
+                    className: 'clear-search-btn icon-action-btn',
                     onClick: () => {
                         setSearchTerm('');
                         onSearch('');
                         setShowSuggestions(false);
                     },
                     type: 'button',
-                    'aria-label': 'Clear search'
+                    title: 'Close search',
+                    'aria-label': 'Close search'
                 },
-                    React.createElement('i', { className: 'fas fa-times' })
+                    React.createElement('i', { className: 'fas fa-xmark' })
                 ),
 
                 // Search suggestions dropdown
@@ -130,13 +131,13 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
             ),
             React.createElement('div', { className: 'search-actions' },
                 React.createElement('button', {
-                    className: 'search-submit-btn',
+                    className: 'search-submit-btn icon-action-btn',
                     onClick: handleSearchSubmit,
                     type: 'button',
+                    title: 'Search',
                     'aria-label': 'Search DormGlide listings'
                 },
-                    React.createElement('i', { className: 'fas fa-search' }),
-                    React.createElement('span', null, 'Search')
+                    React.createElement('i', { className: 'fas fa-magnifying-glass' })
                 ),
                 React.createElement('button', {
                     className: `filter-toggle ${isFilterOpen ? 'active' : ''}`,

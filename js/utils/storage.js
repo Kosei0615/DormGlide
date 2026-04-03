@@ -682,6 +682,27 @@ const fetchPurchaseRequests = async (listingId) => {
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
 
+const fetchPurchaseRequestsForUser = async (userId) => {
+    if (!userId) return [];
+    const client = getStorageSupabaseClient();
+
+    if (isSupabaseActive() && client) {
+        const { data, error } = await client
+            .from('purchase_requests')
+            .select('*')
+            .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(normalizePurchaseRequestRecord);
+    }
+
+    const raw = readLocal(LOCAL_PURCHASE_REQUESTS_KEY, []);
+    return (Array.isArray(raw) ? raw : [])
+        .map(normalizePurchaseRequestRecord)
+        .filter((request) => request?.buyerId === userId || request?.sellerId === userId)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+};
+
 const createPurchaseRequest = async ({ listingId, buyerId, sellerId }) => {
     if (!listingId || !buyerId || !sellerId) {
         throw new Error('Missing purchase request fields.');
@@ -747,7 +768,7 @@ const updatePurchaseRequestStatus = async (requestId, status) => {
 
 const requestPurchase = async ({ listingId, buyerId, sellerId }) => {
     const existing = await fetchPurchaseRequests(listingId);
-    const existingForBuyer = (existing || []).find((entry) => entry?.buyerId === buyerId && ['pending', 'confirmed'].includes(entry?.status));
+    const existingForBuyer = (existing || []).find((entry) => entry?.buyerId === buyerId && ['pending', 'accepted'].includes(entry?.status));
     const request = existingForBuyer || await createPurchaseRequest({ listingId, buyerId, sellerId });
 
     const requestedAt = new Date().toISOString();
@@ -774,12 +795,37 @@ const confirmPurchase = async ({ listingId, purchaseRequestId, buyerId }) => {
     let sellerIdToUse = null;
 
     if (purchaseRequestId) {
-        const updatedRequest = await updatePurchaseRequestStatus(purchaseRequestId, 'confirmed');
+        const updatedRequest = await updatePurchaseRequestStatus(purchaseRequestId, 'accepted');
         if (updatedRequest?.buyerId) {
             buyerIdToUse = updatedRequest.buyerId;
         }
         if (updatedRequest?.sellerId) {
             sellerIdToUse = updatedRequest.sellerId;
+        }
+
+        const client = getStorageSupabaseClient();
+        if (isSupabaseActive() && client) {
+            await client
+                .from('purchase_requests')
+                .update({ status: 'declined', updated_at: now })
+                .eq('listing_id', listingId)
+                .eq('status', 'pending')
+                .neq('id', purchaseRequestId);
+        } else {
+            const requests = readLocal(LOCAL_PURCHASE_REQUESTS_KEY, []);
+            const next = (Array.isArray(requests) ? requests : []).map((entry) => {
+                if (!entry || entry.id === purchaseRequestId) return entry;
+                const normalizedListingId = entry.listing_id || entry.listingId;
+                const normalizedStatus = String(entry.status || 'pending').toLowerCase();
+                if (normalizedListingId !== listingId || normalizedStatus !== 'pending') return entry;
+                return {
+                    ...entry,
+                    status: 'declined',
+                    updatedAt: now,
+                    updated_at: now
+                };
+            });
+            writeLocal(LOCAL_PURCHASE_REQUESTS_KEY, next);
         }
     }
 
@@ -797,7 +843,7 @@ const confirmPurchase = async ({ listingId, purchaseRequestId, buyerId }) => {
     });
 
     notifyPurchaseEvent({
-        event: 'purchase_confirmed',
+        event: 'purchase_accepted',
         listingId,
         buyerId: buyerIdToUse,
         sellerId: sellerIdToUse
@@ -805,6 +851,49 @@ const confirmPurchase = async ({ listingId, purchaseRequestId, buyerId }) => {
 
     const listing = await fetchListingById(listingId);
     return { listing };
+};
+
+const declinePurchase = async ({ listingId, purchaseRequestId }) => {
+    if (!listingId || !purchaseRequestId) {
+        throw new Error('Missing decline purchase fields.');
+    }
+
+    const declinedRequest = await updatePurchaseRequestStatus(purchaseRequestId, 'declined');
+    const listingBeforeUpdate = await fetchListingById(listingId);
+    const requests = await fetchPurchaseRequests(listingId);
+    const hasPendingRequest = (requests || []).some((entry) => entry?.status === 'pending');
+
+    if (!hasPendingRequest) {
+        await updateProduct(listingId, {
+            ...(listingBeforeUpdate || {}),
+            status: 'available',
+            requestedAt: null,
+            buyerId: null
+        });
+    }
+
+    if (declinedRequest?.buyerId && declinedRequest?.sellerId) {
+        notifyPurchaseEvent({
+            event: 'purchase_declined',
+            listingId,
+            buyerId: declinedRequest.buyerId,
+            sellerId: declinedRequest.sellerId
+        });
+    }
+
+    const listing = await fetchListingById(listingId);
+    return { listing, request: declinedRequest };
+};
+
+const respondToPurchaseRequest = async ({ listingId, purchaseRequestId, decision, buyerId }) => {
+    const normalizedDecision = String(decision || '').toLowerCase();
+    if (normalizedDecision === 'accepted' || normalizedDecision === 'accept') {
+        return confirmPurchase({ listingId, purchaseRequestId, buyerId });
+    }
+    if (normalizedDecision === 'declined' || normalizedDecision === 'decline') {
+        return declinePurchase({ listingId, purchaseRequestId });
+    }
+    throw new Error('Unsupported purchase request decision. Use accepted or declined.');
 };
 
 const getSearchHistory = async () => {
@@ -862,8 +951,11 @@ window.DormGlideStorage = {
     createSupportRequest,
     fetchListingById,
     fetchPurchaseRequests,
+    fetchPurchaseRequestsForUser,
     requestPurchase,
     confirmPurchase,
+    declinePurchase,
+    respondToPurchaseRequest,
     clearAllData,
     initializeDefaultData,
     isSupabaseConfigured,

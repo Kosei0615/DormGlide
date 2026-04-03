@@ -32,6 +32,15 @@ create table if not exists public.purchase_requests (
   updated_at timestamptz default now()
 );
 
+-- Backfill legacy status values before enforcing the new status check.
+update public.purchase_requests
+set status = 'accepted'
+where status = 'confirmed';
+
+alter table if exists public.purchase_requests drop constraint if exists purchase_requests_status_check;
+alter table if exists public.purchase_requests
+add constraint purchase_requests_status_check check (status in ('pending', 'accepted', 'declined'));
+
 create index if not exists purchase_requests_listing_id_idx on public.purchase_requests(listing_id);
 create index if not exists purchase_requests_buyer_id_idx on public.purchase_requests(buyer_id);
 create index if not exists purchase_requests_seller_id_idx on public.purchase_requests(seller_id);

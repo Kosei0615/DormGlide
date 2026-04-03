@@ -228,11 +228,12 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
                     )
                 ),
                 React.createElement('button', {
-                    className: 'btn btn-outline',
+                    className: 'btn btn-outline icon-action-btn',
+                    title: 'Edit profile',
+                    'aria-label': 'Edit profile',
                     onClick: () => setIsEditing(true)
                 },
-                    React.createElement('i', { className: 'fas fa-edit' }),
-                    'Edit Profile'
+                    React.createElement('i', { className: 'fas fa-pen' })
                 )
             ),
 
@@ -276,11 +277,12 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
             React.createElement('div', { className: 'danger-zone' },
                 React.createElement('h3', null, 'Danger Zone'),
                 React.createElement('button', {
-                    className: 'btn btn-danger',
+                    className: 'btn btn-danger icon-action-btn',
+                    title: 'Delete account',
+                    'aria-label': 'Delete account',
                     onClick: handleDeleteAccount
                 },
-                    React.createElement('i', { className: 'fas fa-trash' }),
-                    'Delete Account'
+                    React.createElement('i', { className: 'fas fa-trash' })
                 )
             )
         );
@@ -325,8 +327,16 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
                                 React.createElement('span', null, formatDate(product.createdAt))
                             ),
                             React.createElement('div', { className: 'listing-actions' },
-                                React.createElement('button', { className: 'btn btn-sm btn-outline' }, 'Edit'),
-                                React.createElement('button', { className: 'btn btn-sm btn-secondary' }, 'Delete')
+                                React.createElement('button', {
+                                    className: 'btn btn-sm btn-outline icon-action-btn',
+                                    title: 'Edit listing',
+                                    'aria-label': 'Edit listing'
+                                }, React.createElement('i', { className: 'fas fa-pen' })),
+                                React.createElement('button', {
+                                    className: 'btn btn-sm btn-secondary icon-action-btn',
+                                    title: 'Delete listing',
+                                    'aria-label': 'Delete listing'
+                                }, React.createElement('i', { className: 'fas fa-trash' }))
                             )
                         )
                     )

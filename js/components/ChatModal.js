@@ -486,11 +486,12 @@ const ChatModal = ({
                     )
                 ),
                 React.createElement('button', {
-                    className: 'chat-close-btn',
+                    className: 'chat-close-btn icon-action-btn',
                     onClick: onClose,
+                    title: 'Close',
                     'aria-label': 'Close chat'
                 },
-                    React.createElement('i', { className: 'fas fa-times' })
+                    React.createElement('i', { className: 'fas fa-xmark' })
                 )
             ),
             React.createElement('div', { className: 'chat-product-summary' },
@@ -612,8 +613,9 @@ const ChatModal = ({
                     disabled: isSending
                 }),
                 React.createElement('button', {
-                    className: 'chat-send-btn',
+                    className: 'chat-send-btn icon-action-btn',
                     onClick: handleSendMessage,
+                    title: 'Send message',
                     disabled: isSending || !message.trim()
                 },
                     isSending

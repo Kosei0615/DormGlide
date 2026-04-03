@@ -94,7 +94,7 @@ serve(async (req) => {
     }
   }
 
-  if (event === 'purchase_confirmed') {
+  if (event === 'purchase_accepted' || event === 'purchase_confirmed') {
     // Notify buyer
     if (buyer?.user?.email) {
       emails.push({
@@ -128,6 +128,37 @@ serve(async (req) => {
           <p>You confirmed the sale of <strong>${title}</strong> (${price}).</p>
           <p>Coordinate with the buyer to arrange pickup. 
              The item has been marked as sold on DormGlide.</p>
+        `
+      })
+    }
+  }
+
+  if (event === 'purchase_declined') {
+    if (buyer?.user?.email) {
+      emails.push({
+        to: buyer.user.email,
+        subject: `DormGlide: Update on your request for "${title}"`,
+        html: `
+          <h2>Purchase request declined</h2>
+          <p>The seller declined your purchase request for <strong>${title}</strong> (${price}).</p>
+          <p>The listing may still be available, and you can continue browsing other options.</p>
+          <a href="https://kosei0615.github.io/DormGlide/app.html"
+             style="background:#4f46e5;color:#fff;padding:12px 24px;border-radius:8px;
+                    text-decoration:none;display:inline-block;margin-top:16px">
+            View on DormGlide
+          </a>
+        `
+      })
+    }
+
+    if (seller?.user?.email || listing?.seller_email) {
+      emails.push({
+        to: seller?.user?.email || listing?.seller_email,
+        subject: `DormGlide: Request declined for "${title}"`,
+        html: `
+          <h2>Purchase request declined</h2>
+          <p>You declined a purchase request for <strong>${title}</strong> (${price}).</p>
+          <p>You can wait for another buyer or continue chats in DormGlide.</p>
         `
       })
     }
