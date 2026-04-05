@@ -1,4 +1,4 @@
-const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onProductUpdate }) => {
+const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onProductUpdate, allProducts = [] }) => {
     const [isImageModalOpen, setIsImageModalOpen] = React.useState(false);
     const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
     const [isSaved, setIsSaved] = React.useState(false);
@@ -436,6 +436,11 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         ? product.images
         : [product.image || 'https://via.placeholder.com/600x400?text=No+Image'];
 
+    const similarListings = (Array.isArray(allProducts) ? allProducts : [])
+        .filter((candidate) => candidate?.id !== product.id)
+        .filter((candidate) => String(candidate?.category || '').toLowerCase() === String(product?.category || '').toLowerCase())
+        .slice(0, 4);
+
     return React.createElement('div', { className: 'product-detail-page' },
         React.createElement('div', { className: 'product-detail-container' },
             React.createElement('button', {
@@ -669,6 +674,18 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                                     ' Rate Seller'
                                 )
                             )
+                        )
+                    ),
+
+                    similarListings.length > 0 && React.createElement('div', { className: 'similar-listings' },
+                        React.createElement('h3', null, 'Similar Listings'),
+                        React.createElement('div', { className: 'featured-grid' },
+                            similarListings.map((listing) => React.createElement(ProductCard, {
+                                key: `similar-${listing.id}`,
+                                product: listing,
+                                currentUser,
+                                onProductClick: (listingId) => onNavigate('product-detail', listingId)
+                            }))
                         )
                     )
                 )

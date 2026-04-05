@@ -1,4 +1,4 @@
-const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, onShowAuth }) => {
+const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, onShowAuth, onListingDeleted }) => {
     const toast = window.DormGlideToast || {
         success: () => {},
         error: () => {},
@@ -81,6 +81,53 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
 
     const calculateTotalEarnings = () => {
         return userProducts.reduce((total, product) => total + product.price, 0);
+    };
+
+    const handleDeleteListing = async (listingId) => {
+        if (!listingId || !currentUser?.id) return;
+
+        const confirmed = window.confirm('Are you sure you want to delete this listing? This cannot be undone.');
+        if (!confirmed) return;
+
+        try {
+            const client = window.SupabaseClient;
+            if (client) {
+                const tryListingsDelete = await client
+                    .from('listings')
+                    .delete()
+                    .eq('id', listingId)
+                    .eq('seller_id', currentUser.id);
+
+                let deleteError = tryListingsDelete.error || null;
+                if (deleteError) {
+                    const relationMissing = String(deleteError?.message || '').toLowerCase().includes('relation')
+                        && String(deleteError?.message || '').toLowerCase().includes('listings');
+
+                    if (relationMissing) {
+                        const tryProductsDelete = await client
+                            .from('products')
+                            .delete()
+                            .eq('id', listingId)
+                            .eq('seller_id', currentUser.id);
+                        deleteError = tryProductsDelete.error || null;
+                    }
+                }
+
+                if (deleteError) {
+                    throw deleteError;
+                }
+            } else if (window.DormGlideStorage?.deleteProduct) {
+                await window.DormGlideStorage.deleteProduct(listingId);
+            }
+
+            if (onListingDeleted) {
+                onListingDeleted(listingId);
+            }
+            toast.success('Listing deleted successfully');
+        } catch (error) {
+            console.error('[DormGlide] Failed deleting listing from profile page:', error);
+            toast.error('Unable to delete this listing right now.');
+        }
     };
 
     const renderProfileTab = () => {
@@ -335,7 +382,8 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
                                 React.createElement('button', {
                                     className: 'btn btn-sm btn-secondary icon-btn danger',
                                     title: 'Delete listing',
-                                    'aria-label': 'Delete listing'
+                                    'aria-label': 'Delete listing',
+                                    onClick: () => handleDeleteListing(product.id)
                                 }, React.createElement('i', { className: 'fa-solid fa-trash' }))
                             )
                         )

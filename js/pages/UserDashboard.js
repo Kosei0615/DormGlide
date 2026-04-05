@@ -1,5 +1,5 @@
 // User Dashboard Component - Shows user activity and history
-const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => {
+const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview', onListingDeleted }) => {
     const [activeTab, setActiveTab] = React.useState(initialTab);
     const [activity, setActivity] = React.useState(null);
     const [products, setProducts] = React.useState([]);
@@ -8,6 +8,10 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
     const [chatConversations, setChatConversations] = React.useState([]);
     const [purchaseRequests, setPurchaseRequests] = React.useState([]);
     const [updatingListingId, setUpdatingListingId] = React.useState(null);
+    const [wishlistListingIds, setWishlistListingIds] = React.useState([]);
+    const [keywordAlerts, setKeywordAlerts] = React.useState([]);
+    const [newKeyword, setNewKeyword] = React.useState('');
+    const [savingKeyword, setSavingKeyword] = React.useState(false);
     const toast = window.DormGlideToast || {
         success: () => {},
         error: () => {},
@@ -66,6 +70,34 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                     const requests = await window.DormGlideStorage.fetchPurchaseRequestsForUser(currentUser.id);
                     if (isMounted) {
                         setPurchaseRequests(Array.isArray(requests) ? requests : []);
+                    }
+                }
+
+                if (window.DormGlidePersonalization?.fetchWishlistListingIds) {
+                    try {
+                        const ids = await window.DormGlidePersonalization.fetchWishlistListingIds(currentUser.id);
+                        if (isMounted) {
+                            setWishlistListingIds(Array.isArray(ids) ? ids : []);
+                        }
+                    } catch (error) {
+                        console.warn('[DormGlide] Failed to load wishlist ids:', error);
+                        if (isMounted) {
+                            setWishlistListingIds([]);
+                        }
+                    }
+                }
+
+                if (window.DormGlidePersonalization?.fetchKeywordAlerts) {
+                    try {
+                        const alerts = await window.DormGlidePersonalization.fetchKeywordAlerts(currentUser.id);
+                        if (isMounted) {
+                            setKeywordAlerts(Array.isArray(alerts) ? alerts : []);
+                        }
+                    } catch (error) {
+                        console.warn('[DormGlide] Failed to load keyword alerts:', error);
+                        if (isMounted) {
+                            setKeywordAlerts([]);
+                        }
                     }
                 }
             } catch (error) {
@@ -134,6 +166,18 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
         const userProds = (productsFromStorage || []).filter((p) => p.sellerId === currentUser.id);
         setProducts(userProds);
         setAllProducts(productsFromStorage || []);
+    };
+
+    const refreshWishlist = async () => {
+        if (!currentUser?.id || !window.DormGlidePersonalization?.fetchWishlistListingIds) return;
+        const ids = await window.DormGlidePersonalization.fetchWishlistListingIds(currentUser.id);
+        setWishlistListingIds(Array.isArray(ids) ? ids : []);
+    };
+
+    const refreshKeywordAlerts = async () => {
+        if (!currentUser?.id || !window.DormGlidePersonalization?.fetchKeywordAlerts) return;
+        const alerts = await window.DormGlidePersonalization.fetchKeywordAlerts(currentUser.id);
+        setKeywordAlerts(Array.isArray(alerts) ? alerts : []);
     };
 
     const refreshPurchaseRequests = async () => {
@@ -257,6 +301,123 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
             toast.error('Unable to relist this item right now.');
         } finally {
             setUpdatingListingId(null);
+        }
+    };
+
+    const handleDeleteListing = async (listingId) => {
+        if (!listingId || !currentUser?.id) return;
+
+        const confirmed = window.confirm('Are you sure you want to delete this listing? This cannot be undone.');
+        if (!confirmed) return;
+
+        setUpdatingListingId(listingId);
+        try {
+            const client = window.SupabaseClient;
+            if (client) {
+                const tryListingsDelete = await client
+                    .from('listings')
+                    .delete()
+                    .eq('id', listingId)
+                    .eq('seller_id', currentUser.id);
+
+                let deleteError = tryListingsDelete.error || null;
+                if (deleteError) {
+                    const relationMissing = String(deleteError?.message || '').toLowerCase().includes('relation')
+                        && String(deleteError?.message || '').toLowerCase().includes('listings');
+
+                    if (relationMissing) {
+                        const tryProductsDelete = await client
+                            .from('products')
+                            .delete()
+                            .eq('id', listingId)
+                            .eq('seller_id', currentUser.id);
+                        deleteError = tryProductsDelete.error || null;
+                    }
+                }
+
+                if (deleteError) {
+                    throw deleteError;
+                }
+            } else if (window.DormGlideStorage?.deleteProduct) {
+                await window.DormGlideStorage.deleteProduct(listingId);
+            }
+
+            setProducts((prev) => prev.filter((product) => product.id !== listingId));
+            setAllProducts((prev) => prev.filter((product) => product.id !== listingId));
+            setWishlistListingIds((prev) => prev.filter((id) => id !== listingId));
+            if (onListingDeleted) {
+                onListingDeleted(listingId);
+            }
+
+            toast.success('Listing deleted successfully');
+        } catch (error) {
+            console.error('[DormGlide] Failed to delete listing from dashboard:', error);
+            toast.error('Unable to delete this listing right now.');
+        } finally {
+            setUpdatingListingId(null);
+        }
+    };
+
+    const wishlistProducts = React.useMemo(() => {
+        if (!Array.isArray(wishlistListingIds) || wishlistListingIds.length === 0) return [];
+        const lookup = new Map((allProducts || []).map((product) => [product.id, product]));
+        return wishlistListingIds.map((id) => lookup.get(id)).filter(Boolean);
+    }, [wishlistListingIds, allProducts]);
+
+    const handleRemoveFromWishlist = async (listingId) => {
+        if (!currentUser?.id || !listingId || !window.DormGlidePersonalization?.toggleWishlist) return;
+        try {
+            await window.DormGlidePersonalization.toggleWishlist(currentUser.id, listingId);
+            await refreshWishlist();
+            toast.success('Removed from wishlist.');
+        } catch (error) {
+            console.error('[DormGlide] Failed to remove from wishlist:', error);
+            toast.error('Unable to update wishlist right now.');
+        }
+    };
+
+    const handleAddKeywordAlert = async () => {
+        if (!currentUser?.id || !window.DormGlidePersonalization?.addKeywordAlert) return;
+        const keyword = String(newKeyword || '').trim();
+        if (!keyword) {
+            toast.warning('Please enter a keyword.');
+            return;
+        }
+
+        setSavingKeyword(true);
+        try {
+            const result = await window.DormGlidePersonalization.addKeywordAlert({
+                userId: currentUser.id,
+                keyword,
+                notifyInApp: true,
+                notifyEmail: true
+            });
+
+            if (!result?.success) {
+                toast.warning(result?.message || 'Unable to save keyword alert.');
+                return;
+            }
+
+            setNewKeyword('');
+            await refreshKeywordAlerts();
+            toast.success('Keyword alert saved.');
+        } catch (error) {
+            console.error('[DormGlide] Failed to create keyword alert:', error);
+            toast.error('Unable to save keyword alert right now.');
+        } finally {
+            setSavingKeyword(false);
+        }
+    };
+
+    const handleDeleteKeywordAlert = async (alertId) => {
+        if (!currentUser?.id || !alertId || !window.DormGlidePersonalization?.deleteKeywordAlert) return;
+        try {
+            await window.DormGlidePersonalization.deleteKeywordAlert({ userId: currentUser.id, alertId });
+            await refreshKeywordAlerts();
+            toast.success('Alert removed.');
+        } catch (error) {
+            console.error('[DormGlide] Failed deleting keyword alert:', error);
+            toast.error('Unable to remove alert right now.');
         }
     };
 
@@ -430,6 +591,13 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                                         onClick: () => onNavigate('product-detail', product.id)
                                     }, React.createElement('i', { className: 'fas fa-up-right-from-square' }), 'Open'),
                                     React.createElement('button', {
+                                        className: 'btn btn-sm btn-danger icon-btn danger',
+                                        title: 'Delete listing',
+                                        'aria-label': 'Delete listing',
+                                        onClick: () => handleDeleteListing(product.id),
+                                        disabled: isBusy
+                                    }, React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fa-solid fa-trash' })),
+                                    React.createElement('button', {
                                         className: `btn btn-sm ${status === 'sold' ? 'btn-outline' : 'btn-danger'}`,
                                         onClick: () => handleListingStatusUpdate(product, status === 'sold' ? 'available' : 'sold'),
                                         disabled: isBusy
@@ -472,6 +640,13 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                                             className: 'btn btn-sm btn-secondary',
                                             onClick: () => onNavigate('product-detail', product.id)
                                         }, React.createElement('i', { className: 'fas fa-up-right-from-square' }), 'Open'),
+                                        React.createElement('button', {
+                                            className: 'btn btn-sm btn-danger icon-btn danger',
+                                            title: 'Delete listing',
+                                            'aria-label': 'Delete listing',
+                                            onClick: () => handleDeleteListing(product.id),
+                                            disabled: isBusy
+                                        }, React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fa-solid fa-trash' })),
                                         React.createElement('button', {
                                             className: 'btn btn-sm btn-primary',
                                             onClick: () => handleRelistItem(product),
@@ -691,6 +866,108 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
         );
     };
 
+    const renderWishlistTab = () => {
+        if (wishlistProducts.length === 0) {
+            return React.createElement('div', { className: 'empty-state' },
+                React.createElement('i', { className: 'fa-regular fa-heart' }),
+                React.createElement('h3', null, 'Your wishlist is empty'),
+                React.createElement('p', null, 'Tap hearts on listings to save them for later.'),
+                React.createElement('button', {
+                    className: 'btn btn-primary',
+                    onClick: () => onNavigate('home')
+                }, 'Browse Listings')
+            );
+        }
+
+        return React.createElement('div', { className: 'favorites-list' },
+            React.createElement('h3', null, 'Wishlist'),
+            React.createElement('div', { className: 'favorites-grid' },
+                wishlistProducts.map((listing) =>
+                    React.createElement('div', { key: `wishlist-${listing.id}`, className: 'favorite-card' },
+                        React.createElement('div', { className: 'favorite-icon' },
+                            React.createElement('i', { className: 'fa-solid fa-heart' })
+                        ),
+                        React.createElement('h4', null, listing.title),
+                        React.createElement('p', { className: 'purchase-price' }, `$${listing.price || 0}`),
+                        React.createElement('div', { className: 'listing-actions' },
+                            React.createElement('button', {
+                                className: 'btn btn-sm btn-secondary',
+                                onClick: () => onNavigate('product-detail', listing.id)
+                            }, React.createElement('i', { className: 'fas fa-up-right-from-square' }), 'Open'),
+                            React.createElement('button', {
+                                className: 'btn btn-sm btn-outline icon-btn danger',
+                                title: 'Remove from wishlist',
+                                'aria-label': 'Remove from wishlist',
+                                onClick: () => handleRemoveFromWishlist(listing.id)
+                            }, React.createElement('i', { className: 'fa-solid fa-trash' }))
+                        )
+                    )
+                )
+            )
+        );
+    };
+
+    const renderAlertsTab = () => {
+        return React.createElement('div', { className: 'dashboard-alerts' },
+            React.createElement('h3', null, 'Keyword Alerts'),
+            React.createElement('p', { className: 'message-thread-product' }, 'Get notified when new listings match your keywords (e.g., mini fridge, desk lamp, MacBook).'),
+            React.createElement('div', { className: 'seller-request-actions', style: { marginBottom: '1rem', alignItems: 'center' } },
+                React.createElement('input', {
+                    type: 'text',
+                    value: newKeyword,
+                    placeholder: 'Type a keyword and press Add',
+                    onChange: (event) => setNewKeyword(event.target.value),
+                    onKeyDown: (event) => {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            handleAddKeywordAlert();
+                        }
+                    },
+                    style: {
+                        flex: 1,
+                        minWidth: '220px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '10px',
+                        padding: '10px 12px'
+                    }
+                }),
+                React.createElement('button', {
+                    className: 'btn btn-primary',
+                    onClick: handleAddKeywordAlert,
+                    disabled: savingKeyword
+                },
+                    React.createElement('i', { className: savingKeyword ? 'fas fa-spinner fa-spin' : 'fas fa-plus' }),
+                    savingKeyword ? 'Saving...' : 'Add Alert'
+                )
+            ),
+            keywordAlerts.length === 0
+                ? React.createElement('div', { className: 'empty-state', style: { padding: '2rem 1rem' } },
+                    React.createElement('i', { className: 'fa-solid fa-bell' }),
+                    React.createElement('p', null, 'No alerts yet. Add your first keyword above.')
+                )
+                : React.createElement('div', { className: 'activity-list' },
+                    keywordAlerts.map((alert) => React.createElement('div', { key: alert.id, className: 'message-thread' },
+                        React.createElement('div', { className: 'message-thread-avatar' },
+                            React.createElement('i', { className: 'fa-solid fa-bell' })
+                        ),
+                        React.createElement('div', { className: 'message-thread-content' },
+                            React.createElement('h4', null, alert.keyword),
+                            React.createElement('p', { className: 'message-thread-product' }, `In-app: ${alert.notify_in_app === false ? 'Off' : 'On'} | Email: ${alert.notify_email === false ? 'Off' : 'On'}`),
+                            React.createElement('span', { className: 'message-thread-time' }, formatDate(alert.created_at || new Date().toISOString()))
+                        ),
+                        React.createElement('div', { className: 'message-thread-meta' },
+                            React.createElement('button', {
+                                className: 'btn btn-sm btn-danger icon-btn danger',
+                                title: 'Delete alert',
+                                'aria-label': 'Delete alert',
+                                onClick: () => handleDeleteKeywordAlert(alert.id)
+                            }, React.createElement('i', { className: 'fa-solid fa-trash' }))
+                        )
+                    ))
+                )
+        );
+    };
+
     const renderMessagesTab = () => {
         const localConversations = [];
         if (activity?.messages && activity.messages.length > 0) {
@@ -853,14 +1130,29 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview' }) => 
                 React.createElement('i', { className: 'fas fa-heart' }),
                 'Favorites'
             ),
-            null
+            React.createElement('button', {
+                className: `tab ${activeTab === 'wishlist' ? 'active' : ''}`,
+                onClick: () => setActiveTab('wishlist')
+            },
+                React.createElement('i', { className: 'fa-regular fa-heart' }),
+                'Wishlist'
+            ),
+            React.createElement('button', {
+                className: `tab ${activeTab === 'alerts' ? 'active' : ''}`,
+                onClick: () => setActiveTab('alerts')
+            },
+                React.createElement('i', { className: 'fa-solid fa-bell' }),
+                'Alerts'
+            )
         ),
 
         React.createElement('div', { className: 'dashboard-content' },
             activeTab === 'overview' && renderOverviewTab(),
             activeTab === 'purchases' && renderPurchasesTab(),
             activeTab === 'sales' && renderSalesTab(),
-            activeTab === 'favorites' && renderFavoritesTab()
+            activeTab === 'favorites' && renderFavoritesTab(),
+            activeTab === 'wishlist' && renderWishlistTab(),
+            activeTab === 'alerts' && renderAlertsTab()
         ),
 
         chatContext && React.createElement(ChatModal, {

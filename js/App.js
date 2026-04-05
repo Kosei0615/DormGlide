@@ -3,6 +3,35 @@ const { useState, useEffect } = React;
 console.log('DormGlide App.js loading...');
 console.log('React version:', React.version);
 
+const hasSupabaseAuthCallback = () => {
+    const searchParams = new URLSearchParams(window.location.search || '');
+    const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+
+    return (
+        searchParams.has('code') ||
+        searchParams.has('token_hash') ||
+        hashParams.has('access_token') ||
+        hashParams.has('refresh_token') ||
+        hashParams.has('type') ||
+        searchParams.has('type')
+    );
+};
+
+const clearSupabaseAuthCallbackFromUrl = () => {
+    const url = new URL(window.location.href);
+    const authParams = ['code', 'token_hash', 'type', 'access_token', 'refresh_token', 'expires_at', 'expires_in', 'provider_token', 'provider_refresh_token'];
+
+    authParams.forEach((key) => {
+        if (url.searchParams.has(key)) {
+            url.searchParams.delete(key);
+        }
+    });
+
+    url.hash = '';
+    const nextUrl = `${url.pathname}${url.search ? `?${url.searchParams.toString()}` : ''}`;
+    window.history.replaceState({}, document.title, nextUrl || '/');
+};
+
 const App = () => {
     console.log('App component initializing...');
     const [currentPage, setCurrentPage] = useState('home');
@@ -13,6 +42,7 @@ const App = () => {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [homeInitialCategory, setHomeInitialCategory] = useState('');
+    const [dashboardInitialTab, setDashboardInitialTab] = useState('overview');
     const seenMessageIdsRef = React.useRef(new Set());
 
     useEffect(() => {
@@ -21,6 +51,20 @@ const App = () => {
         const bootstrapApp = async () => {
             console.log('App bootstrap starting...');
             try {
+                const authCallbackPresent = hasSupabaseAuthCallback();
+                if (authCallbackPresent && window.SupabaseClient?.auth?.getSession) {
+                    const { data, error } = await window.SupabaseClient.auth.getSession();
+                    if (error) {
+                        console.warn('[DormGlide] Supabase callback session check failed:', error);
+                    }
+
+                    if (data?.session?.user && window.DormGlideToast?.success) {
+                        window.DormGlideToast.success('Email confirmed. Welcome to DormGlide!');
+                    }
+
+                    clearSupabaseAuthCallbackFromUrl();
+                }
+
                 if (window.DormGlideStorage?.initializeDefaultData) {
                     await window.DormGlideStorage.initializeDefaultData();
                 } else if (typeof initializeSampleData !== 'undefined') {
@@ -85,6 +129,12 @@ const App = () => {
             setHomeInitialCategory('');
         }
 
+        if (page === 'dashboard') {
+            setDashboardInitialTab(String(options?.tab || 'overview'));
+        } else if (dashboardInitialTab !== 'overview') {
+            setDashboardInitialTab('overview');
+        }
+
         setCurrentPage(page);
         if (productId) {
             const product = products.find(p => p.id === productId);
@@ -97,8 +147,24 @@ const App = () => {
                     productId, 
                     product?.title || 'Unknown Product'
                 );
+
+                if (product && window.DormGlidePersonalization?.recordProductView) {
+                    window.DormGlidePersonalization.recordProductView({
+                        userId: currentUser.id,
+                        listing: product
+                    });
+                }
             }
         }
+    };
+
+    const handleListingDeleted = (listingId) => {
+        if (!listingId) return;
+        setProducts((prev) => prev.filter((item) => item.id !== listingId));
+        setSelectedProduct((prev) => {
+            if (!prev || prev.id !== listingId) return prev;
+            return null;
+        });
     };
 
     const addProduct = async (newProduct) => {
@@ -214,7 +280,8 @@ const App = () => {
                     onNavigate: navigateToPage,
                     currentUser: currentUser,
                     onShowAuth: () => setShowAuthModal(true),
-                    onProductUpdate: handleProductUpdate
+                    onProductUpdate: handleProductUpdate,
+                    allProducts: products
                 });
             case 'sell':
                 return React.createElement(SellPage, {
@@ -229,13 +296,15 @@ const App = () => {
                     currentUser: currentUser,
                     setCurrentUser: setCurrentUser,
                     userProducts: products.filter(p => p.sellerId === currentUser?.id),
-                    onShowAuth: () => setShowAuthModal(true)
+                    onShowAuth: () => setShowAuthModal(true),
+                    onListingDeleted: handleListingDeleted
                 });
             case 'dashboard':
                 return React.createElement(UserDashboard, {
                     currentUser: currentUser,
                     onNavigate: navigateToPage,
-                    initialTab: 'overview'
+                    initialTab: dashboardInitialTab,
+                    onListingDeleted: handleListingDeleted
                 });
             case 'messages':
                 return React.createElement(MessagesPage, {

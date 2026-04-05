@@ -6,6 +6,7 @@ const USERS_STORAGE_KEY = 'dormglide_users';
 const CURRENT_USER_KEY = 'dormglide_current_user';
 const USER_ACTIVITY_KEY = 'dormglide_user_activity';
 const SELLER_RATINGS_KEY = 'dormglide_seller_ratings';
+const EMAIL_REDIRECT_URL = window.DORMGLIDE_EMAIL_REDIRECT_URL || 'https://dormglide.com/app.html';
 
 const getSupabaseClient = () => window.SupabaseClient || null;
 let supabaseAuthAvailable = true;
@@ -303,6 +304,7 @@ const registerUser = async (userData) => {
                 email: userData.email,
                 password: userData.password,
                 options: {
+                    emailRedirectTo: EMAIL_REDIRECT_URL,
                     data: {
                         name: userData.name,
                         phone: sanitizedPhone,

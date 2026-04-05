@@ -1,4 +1,60 @@
-const ProductCard = ({ product, onProductClick }) => {
+const ProductCard = ({ product, onProductClick, currentUser }) => {
+    const [isWishlisted, setIsWishlisted] = React.useState(false);
+
+    React.useEffect(() => {
+        let isMounted = true;
+
+        const loadWishlistedState = async () => {
+            if (!currentUser?.id || !product?.id || !window.DormGlidePersonalization?.isListingWishlisted) {
+                if (isMounted) setIsWishlisted(false);
+                return;
+            }
+
+            try {
+                const saved = await window.DormGlidePersonalization.isListingWishlisted(currentUser.id, product.id);
+                if (isMounted) {
+                    setIsWishlisted(Boolean(saved));
+                }
+            } catch (error) {
+                console.warn('[DormGlide] Failed to resolve wishlist state:', error);
+                if (isMounted) setIsWishlisted(false);
+            }
+        };
+
+        loadWishlistedState();
+        return () => {
+            isMounted = false;
+        };
+    }, [currentUser?.id, product?.id]);
+
+    const handleWishlistToggle = async (event) => {
+        event.stopPropagation();
+
+        if (!currentUser?.id) {
+            window.DormGlideToast?.warning?.('Please log in to save listings to your wishlist.');
+            return;
+        }
+
+        if (!window.DormGlidePersonalization?.toggleWishlist) {
+            window.DormGlideToast?.error?.('Wishlist service is unavailable right now.');
+            return;
+        }
+
+        try {
+            const result = await window.DormGlidePersonalization.toggleWishlist(currentUser.id, product.id);
+            if (!result?.success) {
+                window.DormGlideToast?.error?.(result?.message || 'Unable to update wishlist right now.');
+                return;
+            }
+
+            setIsWishlisted(Boolean(result.saved));
+            window.DormGlideToast?.success?.(result.saved ? 'Saved to wishlist.' : 'Removed from wishlist.');
+        } catch (error) {
+            console.error('[DormGlide] Failed toggling wishlist:', error);
+            window.DormGlideToast?.error?.('Unable to update wishlist right now.');
+        }
+    };
+
     const formatPrice = (price) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -32,6 +88,14 @@ const ProductCard = ({ product, onProductClick }) => {
         onClick: () => onProductClick(product.id)
     },
         React.createElement('div', { className: 'product-image' },
+            React.createElement('button', {
+                className: `wishlist-icon-btn icon-btn ${isWishlisted ? 'active' : ''}`,
+                title: isWishlisted ? 'Remove from wishlist' : 'Save to wishlist',
+                'aria-label': isWishlisted ? 'Remove from wishlist' : 'Save to wishlist',
+                onClick: handleWishlistToggle
+            },
+                React.createElement('i', { className: isWishlisted ? 'fa-solid fa-heart' : 'fa-regular fa-heart' })
+            ),
             isSold && React.createElement('span', { className: 'sold-ribbon' }, 'SOLD'),
             (isDemo || isNearby) && React.createElement('div', { className: 'product-tags' },
                 isNearby && React.createElement('span', { className: 'product-tag nearby' },

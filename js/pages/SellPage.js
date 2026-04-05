@@ -151,6 +151,15 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
 
         try {
             const persisted = await onProductAdd(newProduct);
+
+            if (window.DormGlidePersonalization?.processListingKeywordAlerts) {
+                try {
+                    await window.DormGlidePersonalization.processListingKeywordAlerts(persisted || newProduct);
+                } catch (alertError) {
+                    console.warn('[DormGlide] Keyword alert processing failed:', alertError);
+                }
+            }
+
             toast.success('Your item has been listed successfully.');
             setFormData({
                 title: '',

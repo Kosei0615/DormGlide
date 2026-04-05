@@ -1216,6 +1216,14 @@ p {
     gap: 0.7rem;
 }
 
+.similar-listings {
+    margin-top: 1.5rem;
+}
+
+.similar-listings h3 {
+    margin-bottom: 1rem;
+}
+
 .deal-timeline-item {
     position: relative;
     display: flex;
@@ -1502,6 +1510,27 @@ p {
     overflow: hidden;
 }
 
+.wishlist-icon-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 6;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #475569;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+}
+
+.wishlist-icon-btn.active {
+    color: #e11d48;
+}
+
+.wishlist-icon-btn:hover {
+    background: rgba(255, 255, 255, 1);
+}
+
 .product-image img {
     width: 100%;
     height: 100%;
@@ -1591,6 +1620,14 @@ p {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+}
+
+.personalization-section {
+    margin-top: 2.25rem;
+}
+
+.recently-viewed-section {
+    margin-bottom: 2rem;
 }
 
 /* Empty State */
@@ -3174,6 +3211,73 @@ p {
    ======================================== */
 .user-menu-container {
     position: relative;
+}
+
+.notifications-menu-container {
+    position: relative;
+}
+
+.notification-btn {
+    position: relative;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+}
+
+.notifications-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    width: min(360px, 88vw);
+    max-height: 420px;
+    overflow-y: auto;
+    z-index: 110;
+    animation: dropdownSlideIn 0.2s ease;
+}
+
+.notification-item {
+    width: 100%;
+    text-align: left;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    display: flex;
+    gap: 0.65rem;
+    padding: 0.75rem 0.9rem;
+    color: #1f2937;
+    cursor: pointer;
+}
+
+.notification-item.unread {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.notification-item:hover {
+    background: #f8fafc;
+}
+
+.notifications-empty {
+    color: #64748b;
+    padding: 1rem;
+    text-align: center;
 }
 
 .user-menu-btn {

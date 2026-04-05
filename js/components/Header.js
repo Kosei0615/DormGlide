@@ -1,17 +1,42 @@
 const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const [showUserMenu, setShowUserMenu] = React.useState(false);
+    const [showNotificationMenu, setShowNotificationMenu] = React.useState(false);
+    const [unreadNotificationCount, setUnreadNotificationCount] = React.useState(0);
+    const [notificationItems, setNotificationItems] = React.useState([]);
     const [chatBackend, setChatBackend] = React.useState(null);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
     };
 
-    const handleNavigation = (page) => {
-        onNavigate(page);
+    const handleNavigation = (page, productId = null, options = {}) => {
+        onNavigate(page, productId, options);
         setIsMenuOpen(false);
         setShowUserMenu(false);
+        setShowNotificationMenu(false);
     };
+
+    const refreshNotifications = React.useCallback(async () => {
+        if (!currentUser?.id || !window.DormGlidePersonalization) {
+            setUnreadNotificationCount(0);
+            setNotificationItems([]);
+            return;
+        }
+
+        try {
+            const [count, items] = await Promise.all([
+                window.DormGlidePersonalization.getUnreadNotificationCount(currentUser.id),
+                window.DormGlidePersonalization.fetchNotifications({ userId: currentUser.id, limit: 8 })
+            ]);
+            setUnreadNotificationCount(Number(count || 0));
+            setNotificationItems(Array.isArray(items) ? items : []);
+        } catch (error) {
+            console.warn('[DormGlide] Failed to refresh notifications:', error);
+            setUnreadNotificationCount(0);
+            setNotificationItems([]);
+        }
+    }, [currentUser?.id]);
 
     const handleLogout = () => {
         if (confirm('Are you sure you want to logout?')) {
@@ -27,10 +52,13 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
             if (showUserMenu && !event.target.closest('.user-menu-container')) {
                 setShowUserMenu(false);
             }
+            if (showNotificationMenu && !event.target.closest('.notifications-menu-container')) {
+                setShowNotificationMenu(false);
+            }
         };
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
-    }, [showUserMenu]);
+    }, [showUserMenu, showNotificationMenu]);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -48,6 +76,36 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
             clearInterval(timer);
         };
     }, []);
+
+    React.useEffect(() => {
+        let timer = null;
+        refreshNotifications();
+        if (currentUser?.id) {
+            timer = setInterval(refreshNotifications, 8000);
+        }
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [currentUser?.id, refreshNotifications]);
+
+    const handleToggleNotifications = async (event) => {
+        event.stopPropagation();
+        const next = !showNotificationMenu;
+        setShowNotificationMenu(next);
+        if (next && currentUser?.id && window.DormGlidePersonalization?.markNotificationsRead) {
+            await window.DormGlidePersonalization.markNotificationsRead({ userId: currentUser.id });
+            refreshNotifications();
+        }
+    };
+
+    const handleNotificationClick = (item) => {
+        setShowNotificationMenu(false);
+        if (item?.listing_id) {
+            onNavigate('product-detail', item.listing_id);
+            return;
+        }
+        onNavigate('dashboard', null, { tab: 'alerts' });
+    };
 
     return React.createElement('header', { className: 'header' },
         React.createElement('div', { className: 'header-container' },
@@ -105,6 +163,34 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                 },
                     React.createElement('i', { className: 'fa-solid fa-comment' }),
                     React.createElement('span', null, 'Messages')
+                ),
+
+                currentUser && React.createElement('div', { className: 'notifications-menu-container' },
+                    React.createElement('button', {
+                        className: `nav-btn notification-btn ${showNotificationMenu ? 'active' : ''}`,
+                        title: 'Notifications',
+                        'aria-label': 'Notifications',
+                        onClick: handleToggleNotifications
+                    },
+                        React.createElement('i', { className: 'fa-solid fa-bell' }),
+                        unreadNotificationCount > 0 && React.createElement('span', { className: 'notification-badge' }, unreadNotificationCount > 9 ? '9+' : unreadNotificationCount)
+                    ),
+                    showNotificationMenu && React.createElement('div', { className: 'notifications-dropdown' },
+                        React.createElement('div', { className: 'user-dropdown-header' },
+                            React.createElement('p', null, 'Notifications'),
+                            React.createElement('small', null, unreadNotificationCount > 0 ? `${unreadNotificationCount} unread` : 'All caught up')
+                        ),
+                        notificationItems.length === 0
+                            ? React.createElement('div', { className: 'notifications-empty' }, 'No notifications yet.')
+                            : notificationItems.map((item) => React.createElement('button', {
+                                key: item.id,
+                                onClick: () => handleNotificationClick(item),
+                                className: `notification-item ${item.is_read ? '' : 'unread'}`
+                            },
+                                React.createElement('i', { className: 'fa-solid fa-bell' }),
+                                React.createElement('span', null, item.message || 'New DormGlide notification')
+                            ))
+                    )
                 ),
                 
                 currentUser ? (
@@ -244,6 +330,13 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     }, 
                         React.createElement('i', { className: 'fa-solid fa-comment' }),
                         React.createElement('span', null, 'Messages')
+                    ),
+                    React.createElement('button', {
+                        className: 'nav-btn',
+                        onClick: () => handleNavigation('dashboard', null, { tab: 'alerts' })
+                    },
+                        React.createElement('i', { className: 'fa-solid fa-bell' }),
+                        React.createElement('span', null, `Notifications${unreadNotificationCount > 0 ? ` (${unreadNotificationCount})` : ''}`)
                     ),
                     React.createElement('button', {
                         className: `nav-btn ${currentPage === 'profile' ? 'active' : ''}`,

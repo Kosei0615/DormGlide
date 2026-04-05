@@ -1,4 +1,4 @@
-const ProductGrid = ({ products, onProductClick, searchTerm = '' }) => {
+const ProductGrid = ({ products, onProductClick, searchTerm = '', currentUser = null }) => {
     if (products.length === 0) {
         return React.createElement('div', { className: 'empty-state' },
             React.createElement('i', { className: 'fas fa-search empty-icon' }),
@@ -25,7 +25,8 @@ const ProductGrid = ({ products, onProductClick, searchTerm = '' }) => {
             React.createElement(ProductCard, {
                 key: product.id,
                 product: product,
-                onProductClick: onProductClick
+                onProductClick: onProductClick,
+                currentUser
             })
         )
     );

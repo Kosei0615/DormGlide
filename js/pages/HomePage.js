@@ -220,6 +220,35 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
     const featuredProducts = decoratedProducts.slice(0, 6);
     const showFeaturedSection = featuredProducts.length > 0 && !hasActiveFilters;
 
+    const pickedForYouProducts = React.useMemo(() => {
+        if (!currentUser?.id || !window.DormGlidePersonalization?.getMostViewedCategories) return [];
+
+        const mostViewedCategories = window.DormGlidePersonalization.getMostViewedCategories({
+            userId: currentUser.id,
+            limit: 2
+        });
+
+        if (!Array.isArray(mostViewedCategories) || mostViewedCategories.length === 0) return [];
+
+        return sortedProducts
+            .filter((product) => mostViewedCategories.includes(product.category))
+            .slice(0, 6);
+    }, [currentUser?.id, sortedProducts]);
+
+    const recentlyViewedProducts = React.useMemo(() => {
+        if (!currentUser?.id || !window.DormGlidePersonalization?.getRecentlyViewedListingIds) return [];
+
+        const recentIds = window.DormGlidePersonalization.getRecentlyViewedListingIds({
+            userId: currentUser.id,
+            limit: 6
+        });
+
+        if (!Array.isArray(recentIds) || recentIds.length === 0) return [];
+
+        const lookup = new Map(decoratedProducts.map((product) => [product.id, product]));
+        return recentIds.map((id) => lookup.get(id)).filter(Boolean);
+    }, [currentUser?.id, decoratedProducts]);
+
     return React.createElement('div', { className: 'home-page' },
         // Hero Section
         React.createElement('section', { className: 'hero-section' },
@@ -291,6 +320,23 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
             )
         ),
 
+        currentUser && pickedForYouProducts.length > 0 && React.createElement('section', { className: 'featured-section personalization-section' },
+            React.createElement('div', { className: 'section-header featured-header' },
+                React.createElement('h2', null, 'Picked for You'),
+                React.createElement('span', { className: 'featured-hint' }, 'Based on categories you browse most')
+            ),
+            React.createElement('div', { className: 'featured-grid' },
+                pickedForYouProducts.map(product =>
+                    React.createElement(ProductCard, {
+                        key: `picked-${product.id}`,
+                        product: product,
+                        currentUser,
+                        onProductClick: onProductClick
+                    })
+                )
+            )
+        ),
+
         // All Products
         React.createElement('section', { className: 'products-section' },
             React.createElement('div', { className: 'section-header' },
@@ -337,7 +383,8 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                 React.createElement(ProductGrid, {
                     products: sortedProducts,
                     onProductClick: onProductClick,
-                    searchTerm: searchTerm
+                    searchTerm: searchTerm,
+                    currentUser
                 })
         ),
 
@@ -352,6 +399,24 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                     React.createElement(ProductCard, {
                         key: product.id,
                         product: product,
+                        currentUser,
+                        onProductClick: onProductClick
+                    })
+                )
+            )
+        ),
+
+        currentUser && recentlyViewedProducts.length > 0 && React.createElement('section', { className: 'featured-section personalization-section recently-viewed-section' },
+            React.createElement('div', { className: 'section-header featured-header' },
+                React.createElement('h2', null, 'Recently Viewed'),
+                React.createElement('span', { className: 'featured-hint' }, 'Your last 6 viewed listings')
+            ),
+            React.createElement('div', { className: 'featured-grid' },
+                recentlyViewedProducts.map(product =>
+                    React.createElement(ProductCard, {
+                        key: `recent-${product.id}`,
+                        product: product,
+                        currentUser,
                         onProductClick: onProductClick
                     })
                 )
