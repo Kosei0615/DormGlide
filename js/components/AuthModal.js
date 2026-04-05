@@ -1,6 +1,6 @@
 // Authentication Modal Component
 const AuthModal = ({ onClose, onAuthSuccess }) => {
-    const [mode, setMode] = React.useState('login'); // 'login' or 'signup'
+    const [mode, setMode] = React.useState('login'); // 'login', 'signup', or 'reset'
     const [formData, setFormData] = React.useState({
         email: '',
         password: '',
@@ -9,32 +9,46 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
         university: '',
         campusLocation: ''
     });
-    const [error, setError] = React.useState('');
+    const [errorMessage, setErrorMessage] = React.useState('');
+    const [successMessage, setSuccessMessage] = React.useState('');
     const [loading, setLoading] = React.useState(false);
-    const [cooldownUntil, setCooldownUntil] = React.useState(0);
-    const [cooldownRemaining, setCooldownRemaining] = React.useState(0);
+    const [failedAttempts, setFailedAttempts] = React.useState(0);
+    const [loginCooldownUntil, setLoginCooldownUntil] = React.useState(0);
+    const [loginCooldownRemaining, setLoginCooldownRemaining] = React.useState(0);
 
     React.useEffect(() => {
-        if (!cooldownUntil || Date.now() >= cooldownUntil) {
-            setCooldownRemaining(0);
+        if (!loginCooldownUntil || Date.now() >= loginCooldownUntil) {
+            setLoginCooldownRemaining(0);
             return undefined;
         }
 
         const tick = () => {
-            const remainingSeconds = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
-            setCooldownRemaining(remainingSeconds);
+            const remainingSeconds = Math.max(0, Math.ceil((loginCooldownUntil - Date.now()) / 1000));
+            setLoginCooldownRemaining(remainingSeconds);
         };
 
         tick();
         const timer = window.setInterval(tick, 1000);
         return () => window.clearInterval(timer);
-    }, [cooldownUntil]);
+    }, [loginCooldownUntil]);
 
-    const startCooldown = (seconds) => {
+    const startLoginCooldown = (seconds) => {
         const safeSeconds = Number.isFinite(Number(seconds)) && Number(seconds) > 0 ? Number(seconds) : 60;
         const until = Date.now() + (safeSeconds * 1000);
-        setCooldownUntil(until);
-        setCooldownRemaining(Math.ceil(safeSeconds));
+        setLoginCooldownUntil(until);
+        setLoginCooldownRemaining(Math.ceil(safeSeconds));
+    };
+
+    const isRateLimitError = (authError) => {
+        if (!authError) return false;
+        const status = Number(authError.status || authError.statusCode || 0);
+        const message = String(authError.message || authError.error_description || '').toLowerCase();
+        return (
+            authError.rateLimited === true ||
+            status === 429 ||
+            message.includes('too many requests') ||
+            message.includes('rate limit')
+        );
     };
 
     const handleInputChange = (e) => {
@@ -43,20 +57,22 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
             ...prev,
             [name]: value
         }));
-        setError('');
+        setErrorMessage('');
+        setSuccessMessage('');
     };
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        if (cooldownRemaining > 0) {
-            setError(`Too many attempts. Please wait ${cooldownRemaining}s before trying again.`);
+        if (loginCooldownRemaining > 0) {
+            setErrorMessage(`Too many login attempts. Try again in ${loginCooldownRemaining}s.`);
             return;
         }
         setLoading(true);
-        setError('');
+        setErrorMessage('');
+        setSuccessMessage('');
 
         if (!window.DormGlideAuth?.loginUser) {
-            setError('Authentication service is unavailable. Please refresh the page.');
+            setErrorMessage('Authentication service is unavailable. Please refresh the page.');
             setLoading(false);
             return;
         }
@@ -64,17 +80,75 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
         try {
             const result = await window.DormGlideAuth.loginUser(formData.email, formData.password);
             if (result.success) {
+                setFailedAttempts(0);
                 onAuthSuccess(result.user);
                 onClose();
             } else {
-                if (result.rateLimited) {
-                    startCooldown(result.retryAfterSeconds || 60);
+                const nextFailedAttempts = failedAttempts + 1;
+                setFailedAttempts(nextFailedAttempts);
+
+                if (isRateLimitError(result)) {
+                    startLoginCooldown(60);
+                    setErrorMessage("Too many login attempts. Please wait a few minutes and try again. If you forgot your password, use the 'Forgot Password' link below.");
+                } else if (nextFailedAttempts >= 3) {
+                    setErrorMessage('Multiple failed attempts detected. Please double-check your password or reset it to avoid being temporarily locked out.');
+                } else {
+                    setErrorMessage(result.message || 'Unable to log in');
                 }
-                setError(result.message || 'Unable to log in');
             }
         } catch (error) {
             console.error('[DormGlide] Login failed', error);
-            setError('Unexpected error logging in. Please try again.');
+            const nextFailedAttempts = failedAttempts + 1;
+            setFailedAttempts(nextFailedAttempts);
+
+            if (isRateLimitError(error)) {
+                startLoginCooldown(60);
+                setErrorMessage("Too many login attempts. Please wait a few minutes and try again. If you forgot your password, use the 'Forgot Password' link below.");
+            } else if (nextFailedAttempts >= 3) {
+                setErrorMessage('Multiple failed attempts detected. Please double-check your password or reset it to avoid being temporarily locked out.');
+            } else {
+                setErrorMessage('Unexpected error logging in. Please try again.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        const email = String(formData.email || '').trim();
+        if (!email) {
+            setErrorMessage('Please enter your email address first');
+            return;
+        }
+
+        if (!window.SupabaseClient?.auth?.resetPasswordForEmail) {
+            setErrorMessage('Password reset is currently unavailable. Please try again later.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const { error } = await window.SupabaseClient.auth.resetPasswordForEmail(email, {
+                redirectTo: 'https://dormglide.com/app.html'
+            });
+
+            if (error) {
+                if (isRateLimitError(error)) {
+                    setErrorMessage('Too many reset attempts. Please wait a few minutes before trying again.');
+                } else {
+                    setErrorMessage(error.message || 'Unable to send password reset email.');
+                }
+                return;
+            }
+
+            setSuccessMessage('Check your email for a password reset link!');
+        } catch (error) {
+            console.error('[DormGlide] Password reset request failed', error);
+            setErrorMessage('Unable to send password reset email. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -82,27 +156,24 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
 
     const handleSignup = async (e) => {
         e.preventDefault();
-        if (cooldownRemaining > 0) {
-            setError(`Too many attempts. Please wait ${cooldownRemaining}s before trying again.`);
-            return;
-        }
         setLoading(true);
-        setError('');
+        setErrorMessage('');
+        setSuccessMessage('');
 
         if (!formData.email || !formData.password || !formData.name) {
-            setError('Please fill in all required fields');
+            setErrorMessage('Please fill in all required fields');
             setLoading(false);
             return;
         }
 
         if (formData.password.length < 6) {
-            setError('Password must be at least 6 characters');
+            setErrorMessage('Password must be at least 6 characters');
             setLoading(false);
             return;
         }
 
         if (!window.DormGlideAuth?.registerUser) {
-            setError('Authentication service is unavailable. Please refresh and try again.');
+            setErrorMessage('Authentication service is unavailable. Please refresh and try again.');
             setLoading(false);
             return;
         }
@@ -127,8 +198,8 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
 
             if (result.success) {
                 if (result.requiresEmailConfirmation) {
-                    setMode('login');
-                    setError('Account created! Check your email to confirm before logging in.');
+                    switchMode('login');
+                    setSuccessMessage('Account created! Check your email to confirm before logging in.');
                 } else if (result.user) {
                     onAuthSuccess(result.user);
                     onClose();
@@ -139,19 +210,16 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                         onAuthSuccess(loginResult.user);
                         onClose();
                     } else {
-                        if (loginResult.rateLimited) {
-                            startCooldown(loginResult.retryAfterSeconds || 60);
-                        }
-                        setMode('login');
-                        setError(loginResult.message || 'Account created. Please log in.');
+                        switchMode('login');
+                        setErrorMessage(loginResult.message || 'Account created. Please log in.');
                     }
                 }
             } else {
-                setError(result.message || 'Unable to create account');
+                setErrorMessage(result.message || 'Unable to create account');
             }
         } catch (error) {
             console.error('[DormGlide] Signup failed', error);
-            setError('Unexpected error creating account. Please try again.');
+            setErrorMessage('Unexpected error creating account. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -161,6 +229,12 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
         if (e.target.className === 'auth-modal-overlay') {
             onClose();
         }
+    };
+
+    const switchMode = (nextMode) => {
+        setMode(nextMode);
+        setErrorMessage('');
+        setSuccessMessage('');
     };
 
     return React.createElement('div', { 
@@ -178,34 +252,39 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
             ),
 
             React.createElement('div', { className: 'auth-modal-header' },
-                React.createElement('h2', null, mode === 'login' ? 'Welcome Back!' : 'Join DormGlide'),
+                React.createElement('h2', null,
+                    mode === 'login' ? 'Welcome Back!' : (mode === 'signup' ? 'Join DormGlide' : 'Reset Password')
+                ),
                 React.createElement('p', null, 
-                    mode === 'login' 
-                        ? 'Login to continue buying and selling' 
-                        : 'Create an account to start your journey'
+                    mode === 'login'
+                        ? 'Login to continue buying and selling'
+                        : (mode === 'signup' ? 'Create an account to start your journey' : 'Enter your account email to receive a reset link')
                 )
             ),
 
-            React.createElement('div', { className: 'auth-tabs' },
+            mode !== 'reset' && React.createElement('div', { className: 'auth-tabs' },
                 React.createElement('button', {
                     className: `auth-tab ${mode === 'login' ? 'active' : ''}`,
                     onClick: () => {
-                        setMode('login');
-                        setError('');
+                        switchMode('login');
                     }
                 }, 'Login'),
                 React.createElement('button', {
                     className: `auth-tab ${mode === 'signup' ? 'active' : ''}`,
                     onClick: () => {
-                        setMode('signup');
-                        setError('');
+                        switchMode('signup');
                     }
                 }, 'Sign Up')
             ),
 
-            error && React.createElement('div', { className: 'auth-error' },
+            errorMessage && React.createElement('div', { className: 'auth-error' },
                 React.createElement('i', { className: 'fas fa-exclamation-circle' }),
-                error
+                errorMessage
+            ),
+
+            successMessage && React.createElement('div', { className: 'auth-success' },
+                React.createElement('i', { className: 'fas fa-check-circle' }),
+                successMessage
             ),
 
             mode === 'login' ? (
@@ -236,13 +315,26 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                         })
                     ),
 
+                    React.createElement('div', { className: 'auth-inline-actions' },
+                        React.createElement('a', {
+                            href: '#',
+                            className: 'auth-inline-link',
+                            onClick: (e) => {
+                                e.preventDefault();
+                                switchMode('reset');
+                            }
+                        }, 'Forgot Password?')
+                    ),
+
                     React.createElement('button', {
                         type: 'submit',
                         className: 'btn btn-primary btn-block',
-                        disabled: loading || cooldownRemaining > 0
+                        disabled: loading || loginCooldownRemaining > 0
                     },
                         loading && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
-                        loading ? 'Logging in...' : (cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s` : 'Login')
+                        loading
+                            ? 'Logging in...'
+                            : (loginCooldownRemaining > 0 ? `Try again in ${loginCooldownRemaining}s...` : 'Login')
                     ),
 
                     React.createElement('div', { className: 'auth-footer' },
@@ -252,13 +344,13 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                                 href: '#',
                                 onClick: (e) => {
                                     e.preventDefault();
-                                    setMode('signup');
+                                    switchMode('signup');
                                 }
                             }, 'Sign up')
                         )
                     )
                 )
-            ) : (
+            ) : mode === 'signup' ? (
                 React.createElement('form', { className: 'auth-form', onSubmit: handleSignup },
                     React.createElement('div', { className: 'form-group' },
                         React.createElement('label', null, 'Full Name *'),
@@ -336,10 +428,10 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                     React.createElement('button', {
                         type: 'submit',
                         className: 'btn btn-primary btn-block',
-                        disabled: loading || cooldownRemaining > 0
+                        disabled: loading
                     },
                         loading && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
-                        loading ? 'Creating account...' : (cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s` : 'Create account')
+                        loading ? 'Creating account...' : 'Create account'
                     ),
 
                     React.createElement('div', { className: 'auth-footer' },
@@ -349,9 +441,45 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
                                 href: '#',
                                 onClick: (e) => {
                                     e.preventDefault();
-                                    setMode('login');
+                                    switchMode('login');
                                 }
                             }, 'Login')
+                        )
+                    )
+                )
+            ) : (
+                React.createElement('form', { className: 'auth-form', onSubmit: handleResetPassword },
+                    React.createElement('div', { className: 'form-group' },
+                        React.createElement('label', null, 'Email'),
+                        React.createElement('input', {
+                            type: 'email',
+                            name: 'email',
+                            value: formData.email,
+                            onChange: handleInputChange,
+                            placeholder: 'you@example.com',
+                            required: true,
+                            autoComplete: 'email'
+                        })
+                    ),
+
+                    React.createElement('button', {
+                        type: 'submit',
+                        className: 'btn btn-primary btn-block',
+                        disabled: loading
+                    },
+                        loading && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
+                        loading ? 'Sending reset link...' : 'Send reset link'
+                    ),
+
+                    React.createElement('div', { className: 'auth-footer' },
+                        React.createElement('p', null,
+                            React.createElement('a', {
+                                href: '#',
+                                onClick: (e) => {
+                                    e.preventDefault();
+                                    switchMode('login');
+                                }
+                            }, 'Back to login')
                         )
                     )
                 )

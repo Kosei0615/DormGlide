@@ -17,6 +17,14 @@ const hasSupabaseAuthCallback = () => {
     );
 };
 
+const getSupabaseAuthCallbackType = () => {
+    const searchParams = new URLSearchParams(window.location.search || '');
+    const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+    return String(searchParams.get('type') || hashParams.get('type') || '').toLowerCase();
+};
+
+const hasSupabaseRecoveryCallback = () => getSupabaseAuthCallbackType() === 'recovery';
+
 const clearSupabaseAuthCallbackFromUrl = () => {
     const url = new URL(window.location.href);
     const authParams = ['code', 'token_hash', 'type', 'access_token', 'refresh_token', 'expires_at', 'expires_in', 'provider_token', 'provider_refresh_token'];
@@ -40,6 +48,10 @@ const App = () => {
     const [products, setProducts] = useState([]);
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [resetPasswordError, setResetPasswordError] = useState('');
+    const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [homeInitialCategory, setHomeInitialCategory] = useState('');
     const [dashboardInitialTab, setDashboardInitialTab] = useState('overview');
@@ -52,17 +64,26 @@ const App = () => {
             console.log('App bootstrap starting...');
             try {
                 const authCallbackPresent = hasSupabaseAuthCallback();
+                const authCallbackType = getSupabaseAuthCallbackType();
+
+                if (hasSupabaseRecoveryCallback() && isMounted) {
+                    setShowRecoveryModal(true);
+                    setShowAuthModal(false);
+                }
+
                 if (authCallbackPresent && window.SupabaseClient?.auth?.getSession) {
                     const { data, error } = await window.SupabaseClient.auth.getSession();
                     if (error) {
                         console.warn('[DormGlide] Supabase callback session check failed:', error);
                     }
 
-                    if (data?.session?.user && window.DormGlideToast?.success) {
+                    if (data?.session?.user && authCallbackType !== 'recovery' && window.DormGlideToast?.success) {
                         window.DormGlideToast.success('Email confirmed. Welcome to DormGlide!');
                     }
 
-                    clearSupabaseAuthCallbackFromUrl();
+                    if (authCallbackType !== 'recovery') {
+                        clearSupabaseAuthCallbackFromUrl();
+                    }
                 }
 
                 if (window.DormGlideStorage?.initializeDefaultData) {
@@ -202,6 +223,47 @@ const App = () => {
         setNotifications([]);
         seenMessageIdsRef.current.clear();
         console.log('User logged out');
+    };
+
+    const handleSetNewPassword = async (e) => {
+        e.preventDefault();
+        setResetPasswordError('');
+
+        const password = String(newPassword || '').trim();
+        if (password.length < 6) {
+            setResetPasswordError('Password must be at least 6 characters.');
+            return;
+        }
+
+        if (!window.SupabaseClient?.auth?.updateUser) {
+            setResetPasswordError('Password update is unavailable right now. Please try again later.');
+            return;
+        }
+
+        setResetPasswordLoading(true);
+        try {
+            const { error } = await window.SupabaseClient.auth.updateUser({ password });
+            if (error) {
+                setResetPasswordError(error.message || 'Unable to update password. Please try again.');
+                return;
+            }
+
+            window.history.replaceState({}, '', window.location.pathname);
+            if (window.SupabaseClient?.auth?.signOut) {
+                await window.SupabaseClient.auth.signOut();
+            }
+
+            setShowRecoveryModal(false);
+            setNewPassword('');
+            setCurrentUser(null);
+            setShowAuthModal(true);
+            window.DormGlideToast?.success('Password updated! Please log in.');
+        } catch (error) {
+            console.error('[DormGlide] Password update failed:', error);
+            setResetPasswordError('Unable to update password. Please try again.');
+        } finally {
+            setResetPasswordLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -358,6 +420,62 @@ const App = () => {
             onClose: () => setShowAuthModal(false),
             onAuthSuccess: handleAuthSuccess
         }),
+
+        // Password Recovery Modal
+        showRecoveryModal && React.createElement('div', {
+            className: 'auth-modal-overlay',
+            onClick: (event) => {
+                if (event.target.className === 'auth-modal-overlay') {
+                    setShowRecoveryModal(false);
+                }
+            }
+        },
+            React.createElement('div', { className: 'auth-modal' },
+                React.createElement('button', {
+                    className: 'auth-modal-close icon-btn',
+                    title: 'Close',
+                    'aria-label': 'Close',
+                    onClick: () => setShowRecoveryModal(false)
+                }, React.createElement('i', { className: 'fa-solid fa-xmark' })),
+
+                React.createElement('div', { className: 'auth-modal-header' },
+                    React.createElement('h2', null, 'Set New Password'),
+                    React.createElement('p', null, 'Create a new password for your DormGlide account.')
+                ),
+
+                resetPasswordError && React.createElement('div', { className: 'auth-error' },
+                    React.createElement('i', { className: 'fas fa-exclamation-circle' }),
+                    resetPasswordError
+                ),
+
+                React.createElement('form', { className: 'auth-form', onSubmit: handleSetNewPassword },
+                    React.createElement('div', { className: 'form-group' },
+                        React.createElement('label', null, 'New Password'),
+                        React.createElement('input', {
+                            type: 'password',
+                            value: newPassword,
+                            onChange: (event) => {
+                                setNewPassword(event.target.value);
+                                setResetPasswordError('');
+                            },
+                            placeholder: 'Enter a new password',
+                            minLength: 6,
+                            required: true,
+                            autoComplete: 'new-password'
+                        })
+                    ),
+
+                    React.createElement('button', {
+                        type: 'submit',
+                        className: 'btn btn-primary btn-block',
+                        disabled: resetPasswordLoading
+                    },
+                        resetPasswordLoading && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
+                        resetPasswordLoading ? 'Updating password...' : 'Update password'
+                    )
+                )
+            )
+        ),
         
         // Admin Panel (hidden by default, activated with Ctrl+Shift+A)
         showAdminPanel && React.createElement(AdminPanel, {
