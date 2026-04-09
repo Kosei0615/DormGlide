@@ -48,6 +48,7 @@ const App = () => {
     const [products, setProducts] = useState([]);
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [authModalMode, setAuthModalMode] = useState('login');
     const [showRecoveryModal, setShowRecoveryModal] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [resetPasswordError, setResetPasswordError] = useState('');
@@ -214,6 +215,12 @@ const App = () => {
         console.log('User logged in:', user);
     };
 
+    const openAuthModal = (mode = 'login') => {
+        const safeMode = mode === 'signup' ? 'signup' : 'login';
+        setAuthModalMode(safeMode);
+        setShowAuthModal(true);
+    };
+
     const handleLogout = async () => {
         if (window.DormGlideAuth && typeof window.DormGlideAuth.logoutUser === 'function') {
             await window.DormGlideAuth.logoutUser();
@@ -333,7 +340,7 @@ const App = () => {
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
                     onNavigate: navigateToPage,
                     currentUser: currentUser,
-                    onShowAuth: () => setShowAuthModal(true),
+                    onShowAuth: (mode) => openAuthModal(mode),
                     initialCategory: homeInitialCategory
                 });
             case 'product-detail':
@@ -341,7 +348,7 @@ const App = () => {
                     product: selectedProduct,
                     onNavigate: navigateToPage,
                     currentUser: currentUser,
-                    onShowAuth: () => setShowAuthModal(true),
+                    onShowAuth: (mode) => openAuthModal(mode),
                     onProductUpdate: handleProductUpdate,
                     allProducts: products
                 });
@@ -350,7 +357,7 @@ const App = () => {
                     onNavigate: navigateToPage,
                     onProductAdd: addProduct,
                     currentUser: currentUser,
-                    onShowAuth: () => setShowAuthModal(true)
+                    onShowAuth: (mode) => openAuthModal(mode)
                 });
             case 'profile':
                 return React.createElement(ProfilePage, {
@@ -358,7 +365,7 @@ const App = () => {
                     currentUser: currentUser,
                     setCurrentUser: setCurrentUser,
                     userProducts: products.filter(p => p.sellerId === currentUser?.id),
-                    onShowAuth: () => setShowAuthModal(true),
+                    onShowAuth: (mode) => openAuthModal(mode),
                     onListingDeleted: handleListingDeleted
                 });
             case 'dashboard':
@@ -394,7 +401,7 @@ const App = () => {
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
                     onNavigate: navigateToPage,
                     currentUser: currentUser,
-                    onShowAuth: () => setShowAuthModal(true),
+                    onShowAuth: (mode) => openAuthModal(mode),
                     initialCategory: homeInitialCategory
                 });
         }
@@ -405,7 +412,7 @@ const App = () => {
             currentPage: currentPage,
             onNavigate: navigateToPage,
             currentUser: currentUser,
-            onShowAuth: () => setShowAuthModal(true),
+            onShowAuth: (mode) => openAuthModal(mode),
             onLogout: handleLogout
         }),
         React.createElement('main', { className: 'main-content' },
@@ -418,7 +425,8 @@ const App = () => {
         // Auth Modal
         showAuthModal && React.createElement(AuthModal, {
             onClose: () => setShowAuthModal(false),
-            onAuthSuccess: handleAuthSuccess
+            onAuthSuccess: handleAuthSuccess,
+            initialMode: authModalMode
         }),
 
         // Password Recovery Modal

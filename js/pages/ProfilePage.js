@@ -375,16 +375,22 @@ const ProfilePage = ({ onNavigate, currentUser, setCurrentUser, userProducts, on
                             ),
                             React.createElement('div', { className: 'listing-actions' },
                                 React.createElement('button', {
-                                    className: 'btn btn-sm btn-outline icon-btn',
+                                    className: 'btn btn-sm btn-outline',
                                     title: 'Edit listing',
                                     'aria-label': 'Edit listing'
-                                }, React.createElement('i', { className: 'fa-solid fa-pen' })),
+                                },
+                                    React.createElement('i', { className: 'fa-solid fa-pen' }),
+                                    'Edit'
+                                ),
                                 React.createElement('button', {
-                                    className: 'btn btn-sm btn-secondary icon-btn danger',
+                                    className: 'btn btn-sm btn-danger btn-delete-listing',
                                     title: 'Delete listing',
                                     'aria-label': 'Delete listing',
                                     onClick: () => handleDeleteListing(product.id)
-                                }, React.createElement('i', { className: 'fa-solid fa-trash' }))
+                                },
+                                    React.createElement('i', { className: 'fa-solid fa-trash' }),
+                                    'Delete'
+                                )
                             )
                         )
                     )

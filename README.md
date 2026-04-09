@@ -1,6 +1,6 @@
 # DormGlide 🏠📱
 
-Campus student marketplace built with React 18, HTML, Java script, CSS, Supabase & PostgreSQL — buy/sell platform with real-time chat, auth, and role-based access control
+A modern marketplace platform where students can safely buy and sell their used goods. Built with React and designed to work seamlessly on both laptops and mobile devices.
 
 ## 🌟 Features
 

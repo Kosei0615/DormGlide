@@ -263,12 +263,21 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         )
                     )
                 ) : (
-                    React.createElement('button', {
-                        className: 'nav-btn btn-primary login-btn',
-                        onClick: onShowAuth
-                    }, 
-                        React.createElement('i', { className: 'fas fa-sign-in-alt' }),
-                        React.createElement('span', null, 'Login')
+                    React.createElement('div', { className: 'auth-actions-inline' },
+                        React.createElement('button', {
+                            className: 'nav-btn auth-cta-btn auth-cta-login',
+                            onClick: () => onShowAuth('login')
+                        },
+                            React.createElement('i', { className: 'fas fa-right-to-bracket' }),
+                            React.createElement('span', null, 'Log In')
+                        ),
+                        React.createElement('button', {
+                            className: 'nav-btn auth-cta-btn auth-cta-signup',
+                            onClick: () => onShowAuth('signup')
+                        },
+                            React.createElement('i', { className: 'fas fa-user-plus' }),
+                            React.createElement('span', null, 'Sign Up')
+                        )
                     )
                 )
             ),
@@ -363,15 +372,27 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     )
                 )
             ) : (
-                React.createElement('button', {
-                    className: 'nav-btn btn-primary',
-                    onClick: () => {
-                        onShowAuth();
-                        setIsMenuOpen(false);
-                    }
-                }, 
-                    React.createElement('i', { className: 'fas fa-sign-in-alt' }),
-                    React.createElement('span', null, 'Login / Sign Up')
+                React.createElement('div', { className: 'mobile-auth-actions' },
+                    React.createElement('button', {
+                        className: 'nav-btn auth-cta-btn auth-cta-login',
+                        onClick: () => {
+                            onShowAuth('login');
+                            setIsMenuOpen(false);
+                        }
+                    },
+                        React.createElement('i', { className: 'fas fa-right-to-bracket' }),
+                        React.createElement('span', null, 'Log In')
+                    ),
+                    React.createElement('button', {
+                        className: 'nav-btn auth-cta-btn auth-cta-signup',
+                        onClick: () => {
+                            onShowAuth('signup');
+                            setIsMenuOpen(false);
+                        }
+                    },
+                        React.createElement('i', { className: 'fas fa-user-plus' }),
+                        React.createElement('span', null, 'Sign Up')
+                    )
                 )
             )
         )

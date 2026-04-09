@@ -591,12 +591,15 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview', onLis
                                         onClick: () => onNavigate('product-detail', product.id)
                                     }, React.createElement('i', { className: 'fas fa-up-right-from-square' }), 'Open'),
                                     React.createElement('button', {
-                                        className: 'btn btn-sm btn-danger icon-btn danger',
+                                        className: 'btn btn-sm btn-danger btn-delete-listing',
                                         title: 'Delete listing',
                                         'aria-label': 'Delete listing',
                                         onClick: () => handleDeleteListing(product.id),
                                         disabled: isBusy
-                                    }, React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fa-solid fa-trash' })),
+                                    },
+                                        React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fa-solid fa-trash' }),
+                                        isBusy ? 'Deleting...' : 'Delete'
+                                    ),
                                     React.createElement('button', {
                                         className: `btn btn-sm ${status === 'sold' ? 'btn-outline' : 'btn-danger'}`,
                                         onClick: () => handleListingStatusUpdate(product, status === 'sold' ? 'available' : 'sold'),
@@ -641,12 +644,15 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview', onLis
                                             onClick: () => onNavigate('product-detail', product.id)
                                         }, React.createElement('i', { className: 'fas fa-up-right-from-square' }), 'Open'),
                                         React.createElement('button', {
-                                            className: 'btn btn-sm btn-danger icon-btn danger',
+                                            className: 'btn btn-sm btn-danger btn-delete-listing',
                                             title: 'Delete listing',
                                             'aria-label': 'Delete listing',
                                             onClick: () => handleDeleteListing(product.id),
                                             disabled: isBusy
-                                        }, React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fa-solid fa-trash' })),
+                                        },
+                                            React.createElement('i', { className: isBusy ? 'fas fa-spinner fa-spin' : 'fa-solid fa-trash' }),
+                                            isBusy ? 'Deleting...' : 'Delete'
+                                        ),
                                         React.createElement('button', {
                                             className: 'btn btn-sm btn-primary',
                                             onClick: () => handleRelistItem(product),

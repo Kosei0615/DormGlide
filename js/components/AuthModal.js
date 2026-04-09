@@ -1,6 +1,6 @@
 // Authentication Modal Component
-const AuthModal = ({ onClose, onAuthSuccess }) => {
-    const [mode, setMode] = React.useState('login'); // 'login', 'signup', or 'reset'
+const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
+    const [mode, setMode] = React.useState(initialMode === 'signup' ? 'signup' : 'login'); // 'login', 'signup', or 'reset'
     const [formData, setFormData] = React.useState({
         email: '',
         password: '',
@@ -31,6 +31,12 @@ const AuthModal = ({ onClose, onAuthSuccess }) => {
         const timer = window.setInterval(tick, 1000);
         return () => window.clearInterval(timer);
     }, [loginCooldownUntil]);
+
+    React.useEffect(() => {
+        setMode(initialMode === 'signup' ? 'signup' : 'login');
+        setErrorMessage('');
+        setSuccessMessage('');
+    }, [initialMode]);
 
     const startLoginCooldown = (seconds) => {
         const safeSeconds = Number.isFinite(Number(seconds)) && Number(seconds) > 0 ? Number(seconds) : 60;
