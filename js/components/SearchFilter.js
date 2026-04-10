@@ -79,6 +79,10 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
     };
 
     return React.createElement('div', { className: 'search-filter' },
+        React.createElement('div', { className: 'search-filter-header' },
+            React.createElement('h3', null, 'Search for items'),
+            React.createElement('p', { className: 'search-filter-help' }, 'Use Search to find matching words. Use Filters to narrow by category, price, and condition.')
+        ),
         React.createElement('div', { className: 'search-bar' },
             React.createElement('div', { className: 'search-input-container' },
                 React.createElement('input', {
@@ -137,17 +141,24 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
                     title: 'Search',
                     'aria-label': 'Search DormGlide listings'
                 },
-                    React.createElement('i', { className: 'fa-solid fa-magnifying-glass' })
+                    React.createElement('i', { className: 'fa-solid fa-magnifying-glass' }),
+                    React.createElement('span', null, 'Search')
                 ),
                 React.createElement('button', {
                     className: `filter-toggle icon-btn ${isFilterOpen ? 'active' : ''}`,
                     onClick: toggleFilter,
                     type: 'button',
-                    title: 'Filter',
-                    'aria-label': 'Open filters'
+                    title: isFilterOpen ? 'Hide filters' : 'Open filters',
+                    'aria-label': isFilterOpen ? 'Hide filters' : 'Open filters',
+                    'aria-expanded': isFilterOpen
                 },
-                    React.createElement('i', { className: 'fa-solid fa-sliders' })
+                    React.createElement('i', { className: 'fa-solid fa-sliders' }),
+                    React.createElement('span', null, isFilterOpen ? 'Hide Filters' : 'Filters')
                 )
+            ),
+            React.createElement('p', { className: 'search-actions-help' },
+                React.createElement('strong', null, 'Tip: '),
+                'Search runs keyword matching. Filters opens advanced options.'
             )
         ),
 

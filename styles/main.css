@@ -241,11 +241,46 @@ p {
 
 .mobile-menu-toggle {
     display: none;
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    color: #6c757d;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 92px;
+    height: 42px;
+    padding: 0 0.9rem;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    background: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
+    color: #1e3a8a;
+    font-size: 0.95rem;
+    font-weight: 700;
+    box-shadow: 0 8px 20px rgba(30, 64, 175, 0.15);
     cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.mobile-menu-toggle:hover {
+    transform: translateY(-1px);
+    border-color: #93c5fd;
+    box-shadow: 0 12px 22px rgba(30, 64, 175, 0.22);
+}
+
+.mobile-menu-toggle.open {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.mobile-menu-toggle .mobile-menu-label {
+    letter-spacing: 0.01em;
+}
+
+.mobile-nav-hint {
+    margin: 0 0 0.35rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #1e40af;
+    background: #eff6ff;
 }
 
 .mobile-nav {
@@ -524,6 +559,24 @@ p {
     overflow: hidden;
 }
 
+.search-filter-header {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 1rem;
+}
+
+.search-filter-header h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1.15rem;
+    color: #312e81;
+}
+
+.search-filter-help {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #4338ca;
+}
+
 .search-filter::after {
     content: '';
     position: absolute;
@@ -552,6 +605,14 @@ p {
     display: flex;
     gap: 0.75rem;
     align-items: stretch;
+}
+
+.search-actions-help {
+    position: relative;
+    z-index: 1;
+    margin: 0.8rem 0 0;
+    font-size: 0.82rem;
+    color: #4338ca;
 }
 
 .search-submit-btn {
@@ -1462,6 +1523,12 @@ p {
     .search-submit-btn,
     .filter-toggle {
         width: 100%;
+        justify-content: center;
+    }
+
+    .search-actions-help {
+        font-size: 0.8rem;
+        line-height: 1.35;
     }
 
     .filter-panel {

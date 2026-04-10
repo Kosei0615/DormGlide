@@ -86,15 +86,41 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     }, [product?.id]);
 
     React.useEffect(() => {
-        if (currentUser && product && window.DormGlideAuth) {
-            const favorited = window.DormGlideAuth.isProductFavorited
-                ? window.DormGlideAuth.isProductFavorited(currentUser.id, product.id)
-                : window.DormGlideAuth.getUserActivity(currentUser.id).favorites.some((f) => f.productId === product.id);
-            setIsSaved(favorited);
-        } else {
-            setIsSaved(false);
-        }
-    }, [currentUser, product?.id]);
+        let isMounted = true;
+
+        const loadSavedState = async () => {
+            if (!currentUser?.id || !product?.id) {
+                if (isMounted) setIsSaved(false);
+                return;
+            }
+
+            try {
+                if (window.DormGlidePersonalization?.isListingWishlisted) {
+                    const saved = await window.DormGlidePersonalization.isListingWishlisted(currentUser.id, product.id);
+                    if (isMounted) setIsSaved(Boolean(saved));
+                    return;
+                }
+
+                if (window.DormGlideAuth) {
+                    const favorited = window.DormGlideAuth.isProductFavorited
+                        ? window.DormGlideAuth.isProductFavorited(currentUser.id, product.id)
+                        : window.DormGlideAuth.getUserActivity(currentUser.id).favorites.some((f) => f.productId === product.id);
+                    if (isMounted) setIsSaved(Boolean(favorited));
+                    return;
+                }
+
+                if (isMounted) setIsSaved(false);
+            } catch (error) {
+                console.warn('[DormGlide] Failed to load saved state:', error);
+                if (isMounted) setIsSaved(false);
+            }
+        };
+
+        loadSavedState();
+        return () => {
+            isMounted = false;
+        };
+    }, [currentUser?.id, product?.id]);
 
     React.useEffect(() => {
         if (!product?.sellerId || !window.DormGlideAuth?.getUserById) {
@@ -296,30 +322,55 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         }
     };
 
-    const handleToggleSave = () => {
-        if (!ensureAuthenticated('Log in to mark this item as a favorite.')) return;
-        if (!window.DormGlideAuth) {
-            toast.error('Favorites are not available right now.');
-            return;
-        }
+    const handleToggleSave = async () => {
+        if (!ensureAuthenticated('Log in to save this item to your wishlist.')) return;
+        try {
+            if (window.DormGlidePersonalization?.toggleWishlist) {
+                const result = await window.DormGlidePersonalization.toggleWishlist(currentUser.id, product.id);
+                if (!result?.success) {
+                    toast.error(result?.message || 'Unable to update wishlist right now.');
+                    return;
+                }
 
-        if (isSaved) {
-            window.DormGlideAuth.removeFromFavorites(currentUser.id, product.id);
-            setIsSaved(false);
-            toast.info('Removed from your saved items.');
-            return;
-        }
+                const saved = Boolean(result.saved);
+                setIsSaved(saved);
 
-        const result = window.DormGlideAuth.addToFavorites(currentUser.id, product.id, product.title);
-        if (result.success) {
-            setIsSaved(true);
-            if (confirm('Saved to your favorites! Open your dashboard now?')) {
-                onNavigate('dashboard');
+                if (saved) {
+                    if (confirm('Saved to your wishlist! Open your wishlist now?')) {
+                        onNavigate('dashboard', null, { tab: 'wishlist' });
+                    }
+                } else {
+                    toast.info('Removed from your wishlist.');
+                }
+                return;
             }
-            return;
-        }
 
-        toast.error('Unable to save this item right now.');
+            if (!window.DormGlideAuth) {
+                toast.error('Wishlist is not available right now.');
+                return;
+            }
+
+            if (isSaved) {
+                window.DormGlideAuth.removeFromFavorites(currentUser.id, product.id);
+                setIsSaved(false);
+                toast.info('Removed from your saved items.');
+                return;
+            }
+
+            const result = window.DormGlideAuth.addToFavorites(currentUser.id, product.id, product.title);
+            if (result.success) {
+                setIsSaved(true);
+                if (confirm('Saved item! Open your wishlist now?')) {
+                    onNavigate('dashboard', null, { tab: 'wishlist' });
+                }
+                return;
+            }
+
+            toast.error('Unable to save this item right now.');
+        } catch (error) {
+            console.error('[DormGlide] Failed updating wishlist from detail page:', error);
+            toast.error('Unable to update wishlist right now.');
+        }
     };
 
     const handleRateSeller = async () => {
@@ -541,8 +592,8 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         ),
                         React.createElement('button', {
                             className: `btn btn-outline icon-btn ${isSaved ? 'saved' : ''}`,
-                            title: isSaved ? 'Unfavorite' : 'Favorite',
-                            'aria-label': isSaved ? 'Unfavorite listing' : 'Favorite listing',
+                            title: isSaved ? 'Remove from wishlist' : 'Save to wishlist',
+                            'aria-label': isSaved ? 'Remove from wishlist' : 'Save to wishlist',
                             onClick: handleToggleSave
                         },
                             React.createElement('i', { className: isSaved ? 'fa-solid fa-heart' : 'fa-regular fa-heart' })

@@ -284,17 +284,21 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
 
             // Mobile menu toggle
             React.createElement('button', {
-                className: 'mobile-menu-toggle icon-btn',
+                className: `mobile-menu-toggle ${isMenuOpen ? 'open' : ''}`,
                 title: isMenuOpen ? 'Close menu' : 'Open menu',
                 'aria-label': isMenuOpen ? 'Close menu' : 'Open menu',
+                'aria-expanded': isMenuOpen,
+                'aria-controls': 'dormglide-mobile-nav',
                 onClick: toggleMenu
             },
-                React.createElement('i', { className: isMenuOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars' })
+                React.createElement('i', { className: isMenuOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars' }),
+                React.createElement('span', { className: 'mobile-menu-label' }, isMenuOpen ? 'Close' : 'Menu')
             )
         ),
 
         // Mobile Navigation Menu
-        isMenuOpen && React.createElement('nav', { className: 'header-nav mobile-nav' },
+        isMenuOpen && React.createElement('nav', { className: 'header-nav mobile-nav', id: 'dormglide-mobile-nav' },
+            React.createElement('p', { className: 'mobile-nav-hint' }, 'Quick navigation'),
             React.createElement('button', {
                 className: `nav-btn ${currentPage === 'home' ? 'active' : ''}`,
                 onClick: () => handleNavigation('home')
