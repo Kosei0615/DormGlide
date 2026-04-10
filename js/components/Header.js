@@ -41,6 +41,15 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
         setShowNotificationMenu(false);
     };
 
+    const handleWishlistOpen = () => {
+        if (!currentUser) {
+            onShowAuth('login');
+            setIsMenuOpen(false);
+            return;
+        }
+        handleNavigation('wishlist');
+    };
+
     const refreshNotifications = React.useCallback(async () => {
         if (!currentUser?.id || !window.DormGlidePersonalization) {
             setUnreadNotificationCount(0);
@@ -247,9 +256,9 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     React.createElement('span', null, 'Messages')
                 ),
 
-                currentUser && React.createElement('button', {
+                React.createElement('button', {
                     className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
-                    onClick: () => handleNavigation('wishlist')
+                    onClick: handleWishlistOpen
                 },
                     React.createElement('i', { className: 'fa-solid fa-bell' }),
                     React.createElement('span', null, 'Wishlist')
@@ -456,7 +465,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     ),
                     React.createElement('button', {
                         className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
-                        onClick: () => handleNavigation('wishlist')
+                        onClick: handleWishlistOpen
                     },
                         React.createElement('i', { className: 'fa-solid fa-bell' }),
                         React.createElement('span', null, 'Wishlist')
