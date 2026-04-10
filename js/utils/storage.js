@@ -202,6 +202,69 @@ const notifyPurchaseEvent = ({ event, listingId, buyerId, sellerId }) => {
     });
 };
 
+const checkWishlistMatches = async (newListing) => {
+    if (!window.SupabaseClient || !newListing?.id) return;
+
+    try {
+        const { data: entries, error: entriesError } = await window.SupabaseClient
+            .from('wishlists')
+            .select('*')
+            .neq('user_id', newListing.sellerId || newListing.user_id || '');
+
+        if (entriesError) {
+            throw entriesError;
+        }
+
+        if (!entries || entries.length === 0) return;
+
+        const titleLower = String(newListing.title || '').toLowerCase();
+        const descLower = String(newListing.description || '').toLowerCase();
+        const listingCategory = String(newListing.category || '').toLowerCase();
+        const listingPrice = Number(newListing.price) || 0;
+        const matchedUsers = new Map();
+
+        for (const entry of entries) {
+            const keywordLower = String(entry?.keyword || '').toLowerCase().trim();
+            if (!keywordLower) continue;
+
+            const keywordMatches = titleLower.includes(keywordLower) || descLower.includes(keywordLower);
+            const categoryMatches = !entry?.category || listingCategory === String(entry.category).toLowerCase();
+            const priceMatches = !entry?.max_price || listingPrice <= Number(entry.max_price);
+
+            if (keywordMatches && categoryMatches && priceMatches && entry?.user_id) {
+                if (!matchedUsers.has(entry.user_id)) {
+                    matchedUsers.set(entry.user_id, entry.keyword);
+                }
+            }
+        }
+
+        for (const [userId, matchedKeyword] of matchedUsers) {
+            await window.SupabaseClient
+                .from('notifications')
+                .insert({
+                    user_id: userId,
+                    type: 'wishlist_match',
+                    title: 'New item matches your wishlist!',
+                    message: `"${newListing.title}" was just posted and matches your wishlist keyword "${matchedKeyword}".`,
+                    listing_id: newListing.id,
+                    is_read: false
+                });
+
+            window.SupabaseClient.functions.invoke('notify-wishlist', {
+                body: {
+                    userId,
+                    listingId: newListing.id,
+                    matchedKeyword
+                }
+            }).catch((error) => {
+                console.warn('[DormGlide] Wishlist email not sent:', error);
+            });
+        }
+    } catch (error) {
+        console.error('[DormGlide] Wishlist match check failed:', error);
+    }
+};
+
 // -----------------------------
 // Local storage adapter
 // -----------------------------
@@ -446,7 +509,9 @@ const createProduct = async (product) => {
         return await localProductAdapter.create(product);
     }
     try {
-        return await productAdapter().create(product);
+        const created = await productAdapter().create(product);
+        await checkWishlistMatches(created);
+        return created;
     } catch (error) {
         console.error('[DormGlide] Failed to create product:', error);
 

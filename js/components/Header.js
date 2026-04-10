@@ -5,9 +5,33 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
     const [unreadNotificationCount, setUnreadNotificationCount] = React.useState(0);
     const [notificationItems, setNotificationItems] = React.useState([]);
     const [chatBackend, setChatBackend] = React.useState(null);
+    const [isMarkingAllRead, setIsMarkingAllRead] = React.useState(false);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
+    };
+
+    const formatTimeAgo = (dateValue) => {
+        if (!dateValue) return 'Just now';
+        const diffMs = Date.now() - new Date(dateValue).getTime();
+        const minutes = Math.floor(diffMs / (1000 * 60));
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes} min ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+        const days = Math.floor(hours / 24);
+        return `${days} day${days === 1 ? '' : 's'} ago`;
+    };
+
+    const getNotificationMeta = (type) => {
+        const normalized = String(type || '').toLowerCase();
+        if (normalized === 'purchase_requested') {
+            return { iconClass: 'fa-solid fa-cart-shopping', colorClass: 'notification-type-requested' };
+        }
+        if (normalized === 'purchase_confirmed') {
+            return { iconClass: 'fa-solid fa-circle-check', colorClass: 'notification-type-confirmed' };
+        }
+        return { iconClass: 'fa-solid fa-bell', colorClass: 'notification-type-wishlist' };
     };
 
     const handleNavigation = (page, productId = null, options = {}) => {
@@ -27,7 +51,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
         try {
             const [count, items] = await Promise.all([
                 window.DormGlidePersonalization.getUnreadNotificationCount(currentUser.id),
-                window.DormGlidePersonalization.fetchNotifications({ userId: currentUser.id, limit: 8 })
+                window.DormGlidePersonalization.fetchNotifications({ userId: currentUser.id, limit: 10 })
             ]);
             setUnreadNotificationCount(Number(count || 0));
             setNotificationItems(Array.isArray(items) ? items : []);
@@ -43,10 +67,10 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
             onLogout();
             setShowUserMenu(false);
             setIsMenuOpen(false);
+            setShowNotificationMenu(false);
         }
     };
 
-    // Close user menu when clicking outside
     React.useEffect(() => {
         const handleClickOutside = (event) => {
             if (showUserMenu && !event.target.closest('.user-menu-container')) {
@@ -78,27 +102,85 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
     }, []);
 
     React.useEffect(() => {
-        let timer = null;
         refreshNotifications();
-        if (currentUser?.id) {
-            timer = setInterval(refreshNotifications, 8000);
-        }
-        return () => {
-            if (timer) clearInterval(timer);
-        };
     }, [currentUser?.id, refreshNotifications]);
 
-    const handleToggleNotifications = async (event) => {
+    React.useEffect(() => {
+        if (!currentUser?.id || !window.SupabaseClient?.channel) {
+            return;
+        }
+
+        const channelName = `notifications-${currentUser.id}`;
+        const channel = window.SupabaseClient
+            .channel(channelName)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'notifications',
+                filter: `user_id=eq.${currentUser.id}`
+            }, (payload) => {
+                const next = payload?.new;
+                if (!next) return;
+
+                setNotificationItems((prev) => [next, ...prev].slice(0, 10));
+                setUnreadNotificationCount((prev) => prev + 1);
+                if (window.DormGlideToast?.info && next?.message) {
+                    window.DormGlideToast.info(next.message);
+                }
+            })
+            .subscribe();
+
+        return () => {
+            try {
+                window.SupabaseClient.removeChannel(channel);
+            } catch (error) {
+                console.warn('[DormGlide] Failed to unsubscribe notifications channel:', error);
+            }
+        };
+    }, [currentUser?.id]);
+
+    const handleToggleNotifications = (event) => {
         event.stopPropagation();
         const next = !showNotificationMenu;
         setShowNotificationMenu(next);
-        if (next && currentUser?.id && window.DormGlidePersonalization?.markNotificationsRead) {
-            await window.DormGlidePersonalization.markNotificationsRead({ userId: currentUser.id });
+        if (next) {
             refreshNotifications();
         }
     };
 
-    const handleNotificationClick = (item) => {
+    const handleMarkAllAsRead = async (event) => {
+        event.stopPropagation();
+        if (!currentUser?.id || !window.DormGlidePersonalization?.markNotificationsRead) return;
+
+        setIsMarkingAllRead(true);
+        try {
+            await window.DormGlidePersonalization.markNotificationsRead({ userId: currentUser.id });
+            setNotificationItems((prev) => prev.map((item) => ({ ...item, is_read: true })));
+            setUnreadNotificationCount(0);
+        } catch (error) {
+            console.warn('[DormGlide] Failed marking notifications read:', error);
+            window.DormGlideToast?.error?.('Unable to mark notifications as read right now.');
+        } finally {
+            setIsMarkingAllRead(false);
+        }
+    };
+
+    const handleNotificationClick = async (item) => {
+        if (!item) return;
+
+        if (!item.is_read && currentUser?.id && window.DormGlidePersonalization?.markNotificationRead) {
+            try {
+                await window.DormGlidePersonalization.markNotificationRead({
+                    userId: currentUser.id,
+                    notificationId: item.id
+                });
+                setNotificationItems((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, is_read: true } : entry));
+                setUnreadNotificationCount((prev) => Math.max(0, prev - 1));
+            } catch (error) {
+                console.warn('[DormGlide] Failed marking notification read:', error);
+            }
+        }
+
         setShowNotificationMenu(false);
         if (item?.listing_id) {
             onNavigate('product-detail', item.listing_id);
@@ -165,6 +247,14 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     React.createElement('span', null, 'Messages')
                 ),
 
+                currentUser && React.createElement('button', {
+                    className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
+                    onClick: () => handleNavigation('wishlist')
+                },
+                    React.createElement('i', { className: 'fa-solid fa-bell' }),
+                    React.createElement('span', null, 'Wishlist')
+                ),
+
                 currentUser && React.createElement('div', { className: 'notifications-menu-container' },
                     React.createElement('button', {
                         className: `nav-btn notification-btn ${showNotificationMenu ? 'active' : ''}`,
@@ -176,19 +266,33 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         unreadNotificationCount > 0 && React.createElement('span', { className: 'notification-badge' }, unreadNotificationCount > 9 ? '9+' : unreadNotificationCount)
                     ),
                     showNotificationMenu && React.createElement('div', { className: 'notifications-dropdown' },
-                        React.createElement('div', { className: 'user-dropdown-header' },
-                            React.createElement('p', null, 'Notifications'),
-                            React.createElement('small', null, unreadNotificationCount > 0 ? `${unreadNotificationCount} unread` : 'All caught up')
+                        React.createElement('div', { className: 'notifications-dropdown-header' },
+                            React.createElement('div', null,
+                                React.createElement('p', null, 'Notifications'),
+                                React.createElement('small', null, unreadNotificationCount > 0 ? `${unreadNotificationCount} unread` : 'All caught up')
+                            ),
+                            React.createElement('button', {
+                                type: 'button',
+                                className: 'notifications-mark-read-btn',
+                                disabled: unreadNotificationCount === 0 || isMarkingAllRead,
+                                onClick: handleMarkAllAsRead
+                            }, isMarkingAllRead ? 'Marking...' : 'Mark all as read')
                         ),
                         notificationItems.length === 0
-                            ? React.createElement('div', { className: 'notifications-empty' }, 'No notifications yet.')
+                            ? React.createElement('div', { className: 'notifications-empty' }, 'You are all caught up!')
                             : notificationItems.map((item) => React.createElement('button', {
                                 key: item.id,
                                 onClick: () => handleNotificationClick(item),
                                 className: `notification-item ${item.is_read ? '' : 'unread'}`
                             },
-                                React.createElement('i', { className: 'fa-solid fa-bell' }),
-                                React.createElement('span', null, item.message || 'New DormGlide notification')
+                                React.createElement('span', {
+                                    className: `notification-type-icon ${getNotificationMeta(item?.type).colorClass}`
+                                }, React.createElement('i', { className: getNotificationMeta(item?.type).iconClass })),
+                                React.createElement('span', { className: 'notification-copy' },
+                                    React.createElement('strong', null, item.title || 'DormGlide update'),
+                                    React.createElement('span', null, item.message || 'New DormGlide notification'),
+                                    React.createElement('small', null, formatTimeAgo(item.created_at))
+                                )
                             ))
                     )
                 ),
@@ -237,6 +341,12 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             },
                                 React.createElement('i', { className: 'fa-solid fa-comment' }),
                                 'Messages'
+                            ),
+                            React.createElement('button', {
+                                onClick: () => handleNavigation('wishlist')
+                            },
+                                React.createElement('i', { className: 'fa-solid fa-bell' }),
+                                'Wishlist'
                             ),
                             React.createElement('button', {
                                 onClick: () => handleNavigation('profile')
@@ -343,6 +453,13 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     }, 
                         React.createElement('i', { className: 'fa-solid fa-comment' }),
                         React.createElement('span', null, 'Messages')
+                    ),
+                    React.createElement('button', {
+                        className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
+                        onClick: () => handleNavigation('wishlist')
+                    },
+                        React.createElement('i', { className: 'fa-solid fa-bell' }),
+                        React.createElement('span', null, 'Wishlist')
                     ),
                     React.createElement('button', {
                         className: 'nav-btn',

@@ -1,7 +1,8 @@
 (function () {
     if (window.DormGlidePersonalization) return;
 
-    const LOCAL_WISHLIST_KEY = 'dormglide_wishlists';
+    const LOCAL_LISTING_WISHLIST_KEY = 'dormglide_listing_wishlists';
+    const LOCAL_WISHLIST_ENTRIES_KEY = 'dormglide_wishlist_entries';
     const LOCAL_KEYWORD_ALERTS_KEY = 'dormglide_keyword_alerts';
     const LOCAL_NOTIFICATIONS_KEY = 'dormglide_notifications';
     const VIEW_HISTORY_KEY = 'dormglide_view_history';
@@ -50,7 +51,7 @@
             console.warn('[DormGlide] Falling back to local wishlist store:', error);
         }
 
-        const local = readLocal(LOCAL_WISHLIST_KEY, []);
+        const local = readLocal(LOCAL_LISTING_WISHLIST_KEY, []);
         return (Array.isArray(local) ? local : [])
             .filter((entry) => entry?.user_id === userId)
             .map((entry) => entry.listing_id)
@@ -98,13 +99,13 @@
             }
         }
 
-        const local = readLocal(LOCAL_WISHLIST_KEY, []);
+        const local = readLocal(LOCAL_LISTING_WISHLIST_KEY, []);
         const normalized = Array.isArray(local) ? local : [];
         const index = normalized.findIndex((entry) => entry?.user_id === userId && entry?.listing_id === listingId);
 
         if (index >= 0) {
             normalized.splice(index, 1);
-            writeLocal(LOCAL_WISHLIST_KEY, normalized);
+            writeLocal(LOCAL_LISTING_WISHLIST_KEY, normalized);
             return { success: true, saved: false };
         }
 
@@ -114,8 +115,102 @@
             listing_id: listingId,
             created_at: nowIso()
         });
-        writeLocal(LOCAL_WISHLIST_KEY, normalized);
+        writeLocal(LOCAL_LISTING_WISHLIST_KEY, normalized);
         return { success: true, saved: true };
+    };
+
+    const fetchWishlistEntries = async (userId) => {
+        if (!userId) return [];
+
+        if (canUseSupabase()) {
+            const client = getClient();
+            const { data, error } = await client
+                .from('wishlists')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+            if (!error) {
+                return data || [];
+            }
+            console.warn('[DormGlide] Falling back to local wishlist entries fetch:', error);
+        }
+
+        const local = readLocal(LOCAL_WISHLIST_ENTRIES_KEY, []);
+        return (Array.isArray(local) ? local : [])
+            .filter((entry) => entry?.user_id === userId)
+            .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    };
+
+    const addWishlistEntry = async ({ userId, keyword, category = '', maxPrice = null }) => {
+        const normalizedKeyword = String(keyword || '').trim();
+        const normalizedCategory = String(category || '').trim() || null;
+        const normalizedMaxPrice = maxPrice === null || maxPrice === undefined || maxPrice === ''
+            ? null
+            : Number(maxPrice);
+
+        if (!userId || !normalizedKeyword) {
+            return { success: false, message: 'Please add a keyword.' };
+        }
+
+        if (normalizedMaxPrice !== null && (Number.isNaN(normalizedMaxPrice) || normalizedMaxPrice < 0)) {
+            return { success: false, message: 'Please enter a valid max price.' };
+        }
+
+        if (canUseSupabase()) {
+            const client = getClient();
+            const { data, error } = await client
+                .from('wishlists')
+                .insert({
+                    user_id: userId,
+                    keyword: normalizedKeyword,
+                    category: normalizedCategory,
+                    max_price: normalizedMaxPrice
+                })
+                .select('*')
+                .single();
+            if (!error) {
+                return { success: true, entry: data };
+            }
+            console.warn('[DormGlide] Falling back to local wishlist entries insert:', error);
+        }
+
+        const local = readLocal(LOCAL_WISHLIST_ENTRIES_KEY, []);
+        const next = Array.isArray(local) ? local : [];
+        const entry = {
+            id: randomId('wishlist-entry'),
+            user_id: userId,
+            keyword: normalizedKeyword,
+            category: normalizedCategory,
+            max_price: normalizedMaxPrice,
+            created_at: nowIso()
+        };
+        next.push(entry);
+        writeLocal(LOCAL_WISHLIST_ENTRIES_KEY, next);
+        return { success: true, entry };
+    };
+
+    const deleteWishlistEntry = async ({ userId, entryId }) => {
+        if (!userId || !entryId) {
+            return { success: false, message: 'Missing wishlist entry.' };
+        }
+
+        if (canUseSupabase()) {
+            const client = getClient();
+            const { error } = await client
+                .from('wishlists')
+                .delete()
+                .eq('id', entryId)
+                .eq('user_id', userId);
+            if (!error) {
+                return { success: true };
+            }
+            console.warn('[DormGlide] Falling back to local wishlist entries delete:', error);
+        }
+
+        const local = readLocal(LOCAL_WISHLIST_ENTRIES_KEY, []);
+        const next = (Array.isArray(local) ? local : []).filter((entry) => !(entry?.id === entryId && entry?.user_id === userId));
+        writeLocal(LOCAL_WISHLIST_ENTRIES_KEY, next);
+        return { success: true };
     };
 
     const fetchWishlistListings = async (userId, allListings = []) => {
@@ -212,14 +307,21 @@
         return { success: true };
     };
 
-    const createNotification = async ({ userId, message, listingId, keyword = null }) => {
+    const createNotification = async ({ userId, type = 'wishlist_match', title = 'DormGlide notification', message, listingId, keyword = null }) => {
         if (!userId || !message) return null;
 
         if (canUseSupabase()) {
             const client = getClient();
             const { data, error } = await client
                 .from('notifications')
-                .insert({ user_id: userId, message, listing_id: listingId || null, is_read: false })
+                .insert({
+                    user_id: userId,
+                    type,
+                    title,
+                    message,
+                    listing_id: listingId || null,
+                    is_read: false
+                })
                 .select('*')
                 .single();
             if (!error) {
@@ -233,6 +335,8 @@
         const record = {
             id: randomId('notif'),
             user_id: userId,
+            type,
+            title,
             message,
             listing_id: listingId || null,
             keyword,
@@ -318,6 +422,11 @@
             return { ...entry, is_read: true };
         });
         writeLocal(LOCAL_NOTIFICATIONS_KEY, next);
+    };
+
+    const markNotificationRead = async ({ userId, notificationId }) => {
+        if (!userId || !notificationId) return;
+        return markNotificationsRead({ userId, notificationIds: [notificationId] });
     };
 
     const keywordMatchesListing = (keyword, listing) => {
@@ -465,12 +574,16 @@
         isListingWishlisted,
         toggleWishlist,
         fetchWishlistListings,
+        fetchWishlistEntries,
+        addWishlistEntry,
+        deleteWishlistEntry,
         fetchKeywordAlerts,
         addKeywordAlert,
         deleteKeywordAlert,
         fetchNotifications,
         getUnreadNotificationCount,
         markNotificationsRead,
+        markNotificationRead,
         createNotification,
         processListingKeywordAlerts,
         recordProductView,

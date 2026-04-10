@@ -410,6 +410,12 @@ const App = () => {
                     currentUser: currentUser,
                     onNavigate: navigateToPage
                 });
+            case 'wishlist':
+                return React.createElement(WishlistPage, {
+                    currentUser: currentUser,
+                    onNavigate: navigateToPage,
+                    onShowAuth: (mode) => openAuthModal(mode)
+                });
             case 'how-it-works':
                 return React.createElement(HowItWorksPage, {
                     onNavigate: navigateToPage,
