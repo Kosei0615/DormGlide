@@ -365,6 +365,25 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         }
     };
 
+    const handleDeleteListing = async () => {
+        if (!isSellerOwner || !product?.id || !window.DormGlideStorage?.deleteProduct) return;
+
+        const confirmed = window.confirm('Delete this listing? This action cannot be undone.');
+        if (!confirmed) return;
+
+        setIsSavingStatus(true);
+        try {
+            await window.DormGlideStorage.deleteProduct(product.id);
+            toast.success('Listing deleted successfully.');
+            onNavigate('dashboard', null, { tab: 'sales' });
+        } catch (error) {
+            console.error('[DormGlide] Failed to delete listing from detail page:', error);
+            toast.error('Unable to delete this listing right now.');
+        } finally {
+            setIsSavingStatus(false);
+        }
+    };
+
     const listingStatusRaw = String(product?.status || 'available').toLowerCase();
     const listingStatus = listingStatusRaw === 'active' ? 'available' : listingStatusRaw;
     const isSellerOwner = Boolean(currentUser?.id && product?.sellerId && currentUser.id === product.sellerId);
@@ -537,6 +556,14 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                             isSavingStatus
                                 ? 'Saving...'
                                 : (listingStatus === 'sold' ? 'Mark as Available' : 'Confirm Purchase')
+                        ),
+                        isSellerOwner && React.createElement('button', {
+                            className: 'btn btn-danger btn-delete-listing',
+                            onClick: handleDeleteListing,
+                            disabled: isSavingStatus
+                        },
+                            React.createElement('i', { className: isSavingStatus ? 'fas fa-spinner fa-spin' : 'fa-solid fa-trash' }),
+                            isSavingStatus ? 'Deleting...' : 'Delete Listing'
                         )
                     ),
 

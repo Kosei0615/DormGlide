@@ -2819,6 +2819,25 @@ p {
 .listing-actions {
     display: flex;
     gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.listing-actions .btn {
+    border-radius: 999px;
+    min-height: 38px;
+    padding: 0.45rem 0.8rem;
+    font-weight: 700;
+}
+
+.listing-actions .btn i {
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.74rem;
+    background: rgba(255, 255, 255, 0.3);
 }
 
 @media (max-width: 768px) {
@@ -4532,6 +4551,12 @@ p {
 .btn-delete-listing {
     font-weight: 700;
     min-width: 112px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    border-radius: 999px;
+    box-shadow: 0 10px 20px rgba(220, 38, 38, 0.22);
 }
 
 @media (max-width: 768px) {
@@ -4542,6 +4567,11 @@ p {
     .auth-cta-btn {
         min-height: 44px;
         padding: 0.62rem 0.86rem;
+    }
+
+    .listing-actions .btn,
+    .btn-delete-listing {
+        min-height: 42px;
     }
 }
 

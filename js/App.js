@@ -40,6 +40,26 @@ const clearSupabaseAuthCallbackFromUrl = () => {
     window.history.replaceState({}, document.title, nextUrl || '/');
 };
 
+const sanitizePlaceholderListings = (listings = []) => {
+    const normalized = Array.isArray(listings) ? listings : [];
+    const targets = new Set(['demo', 'food']);
+    let removedCount = 0;
+    const removedIds = [];
+
+    const keptListings = normalized.filter((listing) => {
+        if (removedCount >= 3) return true;
+        const title = String(listing?.title || '').trim().toLowerCase();
+        if (targets.has(title)) {
+            removedCount += 1;
+            if (listing?.id) removedIds.push(listing.id);
+            return false;
+        }
+        return true;
+    });
+
+    return { keptListings, removedIds };
+};
+
 const App = () => {
     console.log('App component initializing...');
     const [currentPage, setCurrentPage] = useState('home');
@@ -95,9 +115,19 @@ const App = () => {
 
                 if (typeof getProductsFromStorage !== 'undefined') {
                     const storedProducts = await getProductsFromStorage();
+                    const { keptListings, removedIds } = sanitizePlaceholderListings(storedProducts || []);
+
+                    if (removedIds.length > 0 && window.DormGlideStorage?.deleteProduct) {
+                        Promise.allSettled(
+                            removedIds.map((listingId) => window.DormGlideStorage.deleteProduct(listingId))
+                        ).catch((error) => {
+                            console.warn('[DormGlide] Could not fully remove placeholder listings from storage:', error);
+                        });
+                    }
+
                     if (isMounted) {
-                        setProducts(storedProducts);
-                        console.log('Loaded products:', storedProducts.length);
+                        setProducts(keptListings);
+                        console.log('Loaded products:', keptListings.length);
                     }
                 } else if (isMounted) {
                     console.warn('getProductsFromStorage not available; using fallback data.');
