@@ -80,14 +80,20 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
 
     return React.createElement('div', { className: 'search-filter' },
         React.createElement('div', { className: 'search-filter-header' },
-            React.createElement('h3', null, 'Search for items'),
-            React.createElement('p', { className: 'search-filter-help' }, 'Use Search to find matching words. Use Filters to narrow by category, price, and condition.')
+            React.createElement('h3', null,
+                React.createElement('i', { className: 'fa-solid fa-magnifying-glass' }),
+                ' Find items fast'
+            ),
+            React.createElement('p', { className: 'search-filter-help' }, 'Search by item name, seller, or category. Then narrow results with smart filters.')
         ),
         React.createElement('div', { className: 'search-bar' },
             React.createElement('div', { className: 'search-input-container' },
+                React.createElement('span', { className: 'search-leading-icon', 'aria-hidden': 'true' },
+                    React.createElement('i', { className: 'fa-solid fa-magnifying-glass' })
+                ),
                 React.createElement('input', {
                     type: 'text',
-                    placeholder: 'Search for items, categories, sellers...',
+                    placeholder: 'Search listings, categories, or seller name',
                     value: searchTerm,
                     onChange: handleSearch,
                     onFocus: handleSearchFocus,
@@ -103,7 +109,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
 
                 // Clear search button
                 searchTerm && React.createElement('button', {
-                    className: 'clear-search-btn icon-btn',
+                    className: 'clear-search-btn',
                     onClick: () => {
                         setSearchTerm('');
                         onSearch('');
@@ -135,7 +141,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
             ),
             React.createElement('div', { className: 'search-actions' },
                 React.createElement('button', {
-                    className: 'search-submit-btn icon-btn',
+                    className: 'search-submit-btn',
                     onClick: handleSearchSubmit,
                     type: 'button',
                     title: 'Search',
@@ -145,7 +151,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
                     React.createElement('span', null, 'Search')
                 ),
                 React.createElement('button', {
-                    className: `filter-toggle icon-btn ${isFilterOpen ? 'active' : ''}`,
+                    className: `filter-toggle ${isFilterOpen ? 'active' : ''}`,
                     onClick: toggleFilter,
                     type: 'button',
                     title: isFilterOpen ? 'Hide filters' : 'Open filters',
@@ -158,7 +164,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
             ),
             React.createElement('p', { className: 'search-actions-help' },
                 React.createElement('strong', null, 'Tip: '),
-                'Search runs keyword matching. Filters opens advanced options.'
+                'Search finds keyword matches. Use Filters for price, category, and condition.'
             )
         ),
 

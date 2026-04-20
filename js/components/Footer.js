@@ -21,19 +21,19 @@ const Footer = ({ onNavigate }) => {
                     React.createElement('li', null, React.createElement('a', {
                         href: '#',
                         onClick: (event) => handleNavClick(event, 'how-it-works')
-                    }, 'How It Works')),
+                    }, React.createElement('i', { className: 'fa-solid fa-compass' }), ' How It Works')),
                     React.createElement('li', null, React.createElement('a', {
                         href: '#',
                         onClick: (event) => handleNavClick(event, 'privacy-policy')
-                    }, 'Privacy Policy')),
+                    }, React.createElement('i', { className: 'fa-solid fa-shield-halved' }), ' Privacy Policy')),
                     React.createElement('li', null, React.createElement('a', {
                         href: '#',
                         onClick: (event) => handleNavClick(event, 'how-it-works')
-                    }, 'Safety Tips')),
+                    }, React.createElement('i', { className: 'fa-solid fa-user-shield' }), ' Safety Tips')),
                     React.createElement('li', null, React.createElement('a', {
                         href: '#',
                         onClick: (event) => handleNavClick(event, 'how-it-works')
-                    }, 'Risk Checklist'))
+                    }, React.createElement('i', { className: 'fa-solid fa-list-check' }), ' Risk Checklist'))
                 )
             ),
             React.createElement('div', { className: 'footer-section' },
@@ -42,19 +42,19 @@ const Footer = ({ onNavigate }) => {
                     React.createElement('li', null, React.createElement('a', {
                         href: '#',
                         onClick: (event) => handleCategoryClick(event, 'Electronics')
-                    }, 'Electronics')),
+                    }, React.createElement('i', { className: 'fa-solid fa-laptop' }), ' Electronics')),
                     React.createElement('li', null, React.createElement('a', {
                         href: '#',
                         onClick: (event) => handleCategoryClick(event, 'Textbooks')
-                    }, 'Textbooks')),
+                    }, React.createElement('i', { className: 'fa-solid fa-book' }), ' Textbooks')),
                     React.createElement('li', null, React.createElement('a', {
                         href: '#',
                         onClick: (event) => handleCategoryClick(event, 'Furniture')
-                    }, 'Furniture')),
+                    }, React.createElement('i', { className: 'fa-solid fa-couch' }), ' Furniture')),
                     React.createElement('li', null, React.createElement('a', {
                         href: '#',
                         onClick: (event) => handleCategoryClick(event, 'Clothing')
-                    }, 'Clothing'))
+                    }, React.createElement('i', { className: 'fa-solid fa-shirt' }), ' Clothing'))
                 )
             ),
             React.createElement('div', { className: 'footer-section' },

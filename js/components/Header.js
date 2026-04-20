@@ -205,8 +205,13 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                 className: 'header-brand',
                 onClick: () => handleNavigation('home')
             },
-                React.createElement('i', { className: 'fas fa-home' }),
-                React.createElement('span', null, 'DormGlide')
+                React.createElement('span', { className: 'brand-mark', 'aria-hidden': 'true' },
+                    React.createElement('i', { className: 'fa-solid fa-house-chimney-window' })
+                ),
+                React.createElement('span', { className: 'brand-copy' },
+                    React.createElement('strong', null, 'DormGlide'),
+                    React.createElement('small', null, 'Campus Marketplace')
+                )
             ),
 
             // Desktop Navigation
@@ -260,7 +265,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
                     onClick: handleWishlistOpen
                 },
-                    React.createElement('i', { className: 'fa-solid fa-bell' }),
+                    React.createElement('i', { className: 'fa-solid fa-heart' }),
                     React.createElement('span', null, 'Wishlist')
                 ),
 
@@ -354,7 +359,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             React.createElement('button', {
                                 onClick: () => handleNavigation('wishlist')
                             },
-                                React.createElement('i', { className: 'fa-solid fa-bell' }),
+                                React.createElement('i', { className: 'fa-solid fa-heart' }),
                                 'Wishlist'
                             ),
                             React.createElement('button', {
@@ -467,7 +472,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
                         onClick: handleWishlistOpen
                     },
-                        React.createElement('i', { className: 'fa-solid fa-bell' }),
+                        React.createElement('i', { className: 'fa-solid fa-heart' }),
                         React.createElement('span', null, 'Wishlist')
                     ),
                     React.createElement('button', {
