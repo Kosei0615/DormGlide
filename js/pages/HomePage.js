@@ -8,14 +8,14 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
     const [searchFilterVersion, setSearchFilterVersion] = React.useState(0);
 
     const CATEGORY_ICON_MAP = React.useMemo(() => ({
-        'Electronics': 'fas fa-laptop',
-        'Textbooks': 'fas fa-book',
-        'Furniture': 'fas fa-couch',
-        'Clothing': 'fas fa-tshirt',
-        'Sports': 'fas fa-football-ball',
-        'Kitchen': 'fas fa-utensils',
-        'Dorm Decor': 'fas fa-palette',
-        'Other': 'fas fa-box'
+        'Electronics': '💻',
+        'Textbooks': '📚',
+        'Furniture': '🛋️',
+        'Clothing': '👕',
+        'Sports': '🏀',
+        'Kitchen': '🍳',
+        'Dorm Decor': '🪴',
+        'Other': '📦'
     }), []);
 
     const normalizedUserCampus = React.useMemo(() => (
@@ -80,7 +80,10 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         return [];
     }, [decoratedProducts, CATEGORY_ICON_MAP]);
 
-    const quickCategories = React.useMemo(() => categoryMeta.slice(0, 8), [categoryMeta]);
+    const quickCategories = React.useMemo(() => {
+        const baseline = ['Electronics', 'Furniture', 'Textbooks', 'Clothing', 'Kitchen', 'Other'];
+        return baseline.map((name) => ({ name, icon: CATEGORY_ICON_MAP[name] || '📦' }));
+    }, [CATEGORY_ICON_MAP]);
 
     const filteredProducts = React.useMemo(() => {
         let results = [...decoratedProducts];
@@ -186,6 +189,21 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         }));
     }, [initialCategory]);
 
+    React.useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                }
+            });
+        }, { threshold: 0.12 });
+
+        const sections = document.querySelectorAll('.reveal-on-scroll');
+        sections.forEach((section) => observer.observe(section));
+
+        return () => observer.disconnect();
+    }, []);
+
     const handleStartSelling = () => {
         if (currentUser) {
             onNavigate('sell');
@@ -251,36 +269,45 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
 
     return React.createElement('div', { className: 'home-page' },
         // Hero Section
-        React.createElement('section', { className: 'hero-section' },
+        React.createElement('section', { className: 'hero-section reveal-on-scroll' },
             React.createElement('div', { className: 'hero-content' },
-                React.createElement('h1', null, 'Campus Marketplace, Built for Real Student Life'),
-                React.createElement('p', null, 'Buy and sell faster with clear chat confirmations, safer meetup guidance, and transparent listing status.'),
+                React.createElement('h1', null, 'Buy & sell on campus. Free.'),
+                React.createElement('p', null, 'The marketplace exclusively for Denison students.'),
                 React.createElement('div', { className: 'hero-stats' },
                     React.createElement('div', { className: 'stat' },
-                        React.createElement('i', { className: 'fas fa-users' }),
+                        React.createElement('span', { className: 'hero-glyph', 'aria-hidden': 'true' }, '🧑‍🎓'),
                         React.createElement('span', null, 'Trusted by Students')
                     ),
                     React.createElement('div', { className: 'stat' },
-                        React.createElement('i', { className: 'fas fa-box' }),
+                        React.createElement('span', { className: 'hero-glyph', 'aria-hidden': 'true' }, '📦'),
                         React.createElement('span', null, `${decoratedProducts.length} Items${decoratedProducts.length === 0 ? ' (Start Selling!)' : ''}`)
                     ),
                     React.createElement('div', { className: 'stat' },
-                        React.createElement('i', { className: 'fas fa-handshake' }),
+                        React.createElement('span', { className: 'hero-glyph', 'aria-hidden': 'true' }, '🤝'),
                         React.createElement('span', null, 'Safer Meetup Flow')
                     )
                 ),
-                React.createElement('button', {
-                    className: 'cta-button',
-                    onClick: handleStartSelling
-                },
-                    React.createElement('i', { className: 'fas fa-plus' }),
-                    decoratedProducts.length === 0 ? 'Be the First to Sell!' : 'Start Selling'
+                React.createElement('div', { className: 'hero-actions' },
+                    React.createElement('button', {
+                        className: 'cta-button cta-primary',
+                        onClick: handleStartSelling
+                    },
+                        React.createElement('span', { className: 'ui-glyph', 'aria-hidden': 'true' }, '＋'),
+                        decoratedProducts.length === 0 ? 'Be the First to Sell!' : 'Start Selling'
+                    ),
+                    React.createElement('button', {
+                        className: 'cta-button cta-secondary',
+                        onClick: () => onNavigate('home')
+                    },
+                        React.createElement('span', { className: 'ui-glyph', 'aria-hidden': 'true' }, '🛍️'),
+                        'Browse Items'
+                    )
                 )
             )
         ),
 
         // Quick Categories
-        React.createElement('section', { className: 'quick-categories' },
+        React.createElement('section', { className: 'quick-categories reveal-on-scroll' },
             React.createElement('h2', null, 'Shop by Category'),
             React.createElement('div', { className: 'category-grid' },
                 quickCategories.map((category) =>
@@ -289,7 +316,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                         className: `category-card ${filters.category === category.name ? 'active' : ''}`,
                         onClick: () => handleCategoryClick(category.name)
                     },
-                        React.createElement('i', { className: category.icon || CATEGORY_ICON_MAP['Other'] }),
+                        React.createElement('span', { className: 'category-glyph', 'aria-hidden': 'true' }, category.icon || CATEGORY_ICON_MAP['Other']),
                         React.createElement('span', null, category.name)
                     )
                 )
@@ -297,7 +324,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         ),
 
         // Search and Filter
-        React.createElement('section', { className: 'search-section' },
+        React.createElement('section', { className: 'search-section reveal-on-scroll' },
             React.createElement(SearchFilter, {
                 key: searchFilterVersion,
                 onSearch: handleSearch,
@@ -314,7 +341,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                     className: 'clear-filters-btn',
                     onClick: clearAllFilters
                 },
-                    React.createElement('i', { className: 'fas fa-times' }),
+                    React.createElement('span', { className: 'ui-glyph', 'aria-hidden': 'true' }, '✕'),
                     ' Clear all filters'
                 )
             )
@@ -338,7 +365,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         ),
 
         // All Products
-        React.createElement('section', { className: 'products-section' },
+        React.createElement('section', { className: 'products-section reveal-on-scroll' },
             React.createElement('div', { className: 'section-header' },
                 React.createElement('h2', null, hasActiveFilters ? 'Search Results' : 'All Items'),
                 React.createElement('span', { className: 'product-count' }, 
@@ -349,7 +376,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                 // Empty marketplace - encourage first listings
                 React.createElement('div', { className: 'empty-marketplace' },
                     React.createElement('div', { className: 'empty-content' },
-                        React.createElement('i', { className: 'fas fa-store empty-icon' }),
+                        React.createElement('span', { className: 'empty-icon', 'aria-hidden': 'true' }, '🛍️'),
                         React.createElement('h3', null, 'Be the First to Start Trading!'),
                         React.createElement('p', null, 'Your college marketplace is ready and waiting. List your first item and help build a thriving student community.'),
                         React.createElement('div', { className: 'empty-actions' },
@@ -357,14 +384,14 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                                 className: 'btn btn-primary btn-large',
                                 onClick: handleStartSelling
                             },
-                                React.createElement('i', { className: 'fas fa-plus' }),
+                                React.createElement('span', { className: 'ui-glyph', 'aria-hidden': 'true' }, '＋'),
                                 'List Your First Item'
                             ),
                             React.createElement('button', {
                                 className: 'btn btn-outline btn-large',
                                 onClick: () => onNavigate('profile')
                             },
-                                React.createElement('i', { className: 'fas fa-user' }),
+                                React.createElement('span', { className: 'ui-glyph', 'aria-hidden': 'true' }, '👤'),
                                 'Set Up Profile'
                             )
                         ),
@@ -389,7 +416,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         ),
 
         // Featured Products (shown when no active filters/search)
-        showFeaturedSection && React.createElement('section', { className: 'featured-section' },
+        showFeaturedSection && React.createElement('section', { className: 'featured-section reveal-on-scroll' },
             React.createElement('div', { className: 'section-header featured-header' },
                 React.createElement('h2', null, 'Featured Items'),
                 React.createElement('span', { className: 'featured-hint' }, 'Curated picks to explore')
@@ -406,7 +433,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
             )
         ),
 
-        currentUser && recentlyViewedProducts.length > 0 && React.createElement('section', { className: 'featured-section personalization-section recently-viewed-section' },
+        currentUser && recentlyViewedProducts.length > 0 && React.createElement('section', { className: 'featured-section personalization-section recently-viewed-section reveal-on-scroll' },
             React.createElement('div', { className: 'section-header featured-header' },
                 React.createElement('h2', null, 'Recently Viewed'),
                 React.createElement('span', { className: 'featured-hint' }, 'Your last 6 viewed listings')

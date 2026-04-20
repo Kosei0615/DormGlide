@@ -82,6 +82,7 @@ const ProductCard = ({ product, onProductClick, currentUser }) => {
     const isSold = listingStatus === 'sold' || Boolean(product?.soldAt);
     const isAvailable = listingStatus === 'available' && !isSold;
     const statusLabel = isSold ? 'Sold' : (listingStatus === 'pending' ? 'Pending' : 'Available');
+    const iconGlyph = (glyph, className = 'meta-glyph') => React.createElement('span', { className, 'aria-hidden': 'true' }, glyph);
 
     return React.createElement('div', {
         className: 'product-card',
@@ -94,16 +95,16 @@ const ProductCard = ({ product, onProductClick, currentUser }) => {
                 'aria-label': isWishlisted ? 'Remove from wishlist' : 'Save to wishlist',
                 onClick: handleWishlistToggle
             },
-                React.createElement('i', { className: isWishlisted ? 'fa-solid fa-heart' : 'fa-regular fa-heart' })
+                iconGlyph(isWishlisted ? '❤️' : '🤍', 'heart-glyph')
             ),
             isSold && React.createElement('span', { className: 'sold-ribbon' }, 'SOLD'),
             (isDemo || isNearby) && React.createElement('div', { className: 'product-tags' },
                 isNearby && React.createElement('span', { className: 'product-tag nearby' },
-                    React.createElement('i', { className: 'fas fa-location-dot' }),
+                    iconGlyph('📍', 'tag-glyph'),
                     'Near you'
                 ),
                 isDemo && React.createElement('span', { className: 'product-tag demo' },
-                    React.createElement('i', { className: 'fas fa-graduation-cap' }),
+                    iconGlyph('🎓', 'tag-glyph'),
                     'DormGlide demo'
                 )
             ),
@@ -115,33 +116,26 @@ const ProductCard = ({ product, onProductClick, currentUser }) => {
             product.condition && React.createElement('span', {
                 className: `condition-badge condition-${product.condition.toLowerCase()}`
             }, product.condition)
-            ,
-            React.createElement('span', {
-                className: `listing-status-chip listing-status-${listingStatus}`
-            },
-                React.createElement('span', { className: `status-dot ${isAvailable ? 'pulse' : ''}` }),
-                statusLabel
-            )
         ),
         React.createElement('div', { className: 'product-info' },
             React.createElement('h3', { className: 'product-title' }, product.title),
             React.createElement('p', { className: 'product-price' }, formatPrice(product.price)),
             React.createElement('div', { className: 'product-meta' },
                 React.createElement('span', { className: 'product-category' },
-                    React.createElement('i', { className: 'fas fa-tag' }),
+                    iconGlyph('🏷️'),
                     product.category
                 ),
                 React.createElement('span', { className: 'product-location' },
-                    React.createElement('i', { className: 'fas fa-map-marker-alt' }),
+                    iconGlyph('📍'),
                     product.location || sellerCampus || 'On campus'
                 )
             ),
             React.createElement('div', { className: 'product-footer' },
                 React.createElement('span', { className: 'product-seller' },
-                    React.createElement('i', { className: 'fas fa-user' }),
+                    iconGlyph('👤'),
                     product.sellerName
                 ),
-                React.createElement('span', { className: 'product-date' }, timeAgo(product.createdAt))
+                React.createElement('span', { className: 'product-date' }, `${timeAgo(product.createdAt)} • ${statusLabel}`)
             )
         )
     );

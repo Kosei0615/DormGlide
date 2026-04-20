@@ -4953,3 +4953,351 @@ body {
         width: 100%;
     }
 }
+
+/* ===== DormGlide 2026 polish v2 ===== */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: Inter, "Nunito Sans", "Avenir Next", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.home-page section {
+    padding: 3.8rem 0;
+}
+
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ui-glyph,
+.hero-glyph,
+.category-glyph,
+.meta-glyph,
+.tag-glyph,
+.heart-glyph {
+    font-style: normal;
+    line-height: 1;
+}
+
+.hero-section {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.24), transparent 45%),
+        radial-gradient(circle at 88% 15%, rgba(16, 185, 129, 0.18), transparent 40%),
+        linear-gradient(128deg, #0b5fff 0%, #1d4ed8 55%, #0f766e 100%);
+    background-size: 160% 160%;
+    animation: heroMesh 12s ease-in-out infinite;
+    border-radius: 1.25rem;
+}
+
+@keyframes heroMesh {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.hero-section::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: 0.3;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.cta-button.cta-primary {
+    min-height: 52px;
+    padding: 0.95rem 1.8rem;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #0b5fff;
+    box-shadow: 0 0 0 rgba(219, 234, 254, 0.2);
+    animation: ctaGlow 2.2s ease-in-out infinite;
+}
+
+@keyframes ctaGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(219, 234, 254, 0.18); }
+    50% { box-shadow: 0 10px 30px 3px rgba(191, 219, 254, 0.42); }
+}
+
+.cta-button.cta-secondary {
+    min-height: 52px;
+    padding: 0.95rem 1.35rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.hero-glyph {
+    font-size: 1.15rem;
+}
+
+.quick-categories {
+    margin: 0;
+}
+
+.category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.95rem;
+}
+
+.category-card {
+    border-radius: 0.95rem;
+    border: 1px solid #dbe7ff;
+    min-height: 128px;
+}
+
+.category-glyph {
+    font-size: 1.65rem;
+}
+
+.product-card {
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 36px rgba(15, 23, 42, 0.15);
+}
+
+.product-image {
+    aspect-ratio: 1 / 1;
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.wishlist-icon-btn {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(4px);
+    top: 0.65rem;
+    right: 0.65rem;
+}
+
+.heart-glyph {
+    font-size: 1.05rem;
+}
+
+.condition-badge {
+    top: 0.65rem;
+    left: 0.65rem;
+    width: auto;
+    display: inline-flex;
+    padding: 0.28rem 0.56rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+}
+
+.listing-status-chip {
+    display: none;
+}
+
+.product-price {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #0b5fff;
+}
+
+.product-meta {
+    font-size: 0.84rem;
+    color: #64748b;
+}
+
+.product-footer {
+    margin-top: 0.4rem;
+}
+
+.product-seller,
+.product-date {
+    font-size: 0.8rem;
+    color: #7b8798;
+    font-weight: 500;
+}
+
+.search-leading-icon,
+.suggestion-item .ui-glyph,
+.search-submit-btn .ui-glyph,
+.filter-toggle .ui-glyph {
+    font-size: 0.95rem;
+}
+
+.more-menu-container {
+    position: relative;
+}
+
+.more-dropdown {
+    min-width: 210px;
+}
+
+.caret-glyph {
+    font-size: 0.9rem;
+    color: #64748b;
+    transition: transform 0.2s ease;
+}
+
+.caret-glyph.rotated {
+    transform: rotate(180deg);
+}
+
+.footer {
+    background: linear-gradient(180deg, #1f2937 0%, #0f172a 100%);
+}
+
+.footer-brand h3 {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.footer-logo-mark {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0b5fff, #0f766e);
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.social-links a svg {
+    width: 1.15rem;
+    height: 1.15rem;
+}
+
+@media (max-width: 900px) {
+    .category-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .home-page section {
+        padding: 2.8rem 0;
+    }
+
+    .hero-section {
+        border-radius: 1rem;
+    }
+
+    .hero-content p {
+        font-size: 1rem;
+    }
+
+    .cta-button.cta-primary,
+    .cta-button.cta-secondary {
+        width: 100%;
+    }
+}
+
+/* Global FA fallback to avoid square glyphs on any remaining icon classes */
+i[class*="fa-"] {
+    font-style: normal;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+i[class*="fa-"]::before {
+    content: "•";
+}
+
+.fa-arrow-left::before { content: "←"; }
+.fa-bag-shopping::before, .fa-shopping-bag::before { content: "🛍️"; }
+.fa-ban::before { content: "⛔"; }
+.fa-bell::before { content: "🔔"; }
+.fa-book::before { content: "📚"; }
+.fa-box::before, .fa-box-open::before { content: "📦"; }
+.fa-calendar::before { content: "🗓️"; }
+.fa-chart-line::before { content: "📈"; }
+.fa-check::before, .fa-check-circle::before, .fa-circle-check::before { content: "✅"; }
+.fa-chevron-down::before { content: "▾"; }
+.fa-chevron-left::before { content: "◂"; }
+.fa-chevron-right::before { content: "▸"; }
+.fa-chevron-up::before { content: "▴"; }
+.fa-circle-xmark::before, .fa-xmark::before { content: "✕"; }
+.fa-clock::before { content: "🕒"; }
+.fa-coins::before { content: "🪙"; }
+.fa-comment::before { content: "💬"; }
+.fa-couch::before { content: "🛋️"; }
+.fa-credit-card::before { content: "💳"; }
+.fa-dollar-sign::before { content: "$"; }
+.fa-envelope::before { content: "✉️"; }
+.fa-exclamation-circle::before, .fa-exclamation-triangle::before { content: "⚠️"; }
+.fa-eye::before { content: "👁️"; }
+.fa-flag::before { content: "🚩"; }
+.fa-football-ball::before { content: "🏈"; }
+.fa-graduation-cap::before { content: "🎓"; }
+.fa-handshake::before { content: "🤝"; }
+.fa-heart::before, .fa-heart-pulse::before { content: "❤️"; }
+.fa-history::before { content: "🕘"; }
+.fa-home::before { content: "🏠"; }
+.fa-hourglass-half::before { content: "⏳"; }
+.fa-id-card::before { content: "🪪"; }
+.fa-image::before { content: "🖼️"; }
+.fa-info-circle::before { content: "ℹ️"; }
+.fa-laptop::before { content: "💻"; }
+.fa-list::before { content: "☰"; }
+.fa-lock::before { content: "🔒"; }
+.fa-magnifying-glass::before, .fa-search::before { content: "🔎"; }
+.fa-map-marker-alt::before { content: "📍"; }
+.fa-mobile-screen::before { content: "📱"; }
+.fa-palette::before { content: "🎨"; }
+.fa-paper-plane::before { content: "📨"; }
+.fa-pen::before { content: "✏️"; }
+.fa-people-group::before, .fa-users::before, .fa-user-friends::before { content: "👥"; }
+.fa-phone::before { content: "📞"; }
+.fa-plus::before, .fa-user-plus::before { content: "＋"; }
+.fa-rotate-left::before { content: "↺"; }
+.fa-shield-alt::before, .fa-shield-halved::before { content: "🛡️"; }
+.fa-spinner::before { content: "⏳"; }
+.fa-star::before { content: "⭐"; }
+.fa-tag::before { content: "🏷️"; }
+.fa-trash::before { content: "🗑️"; }
+.fa-tshirt::before { content: "👕"; }
+.fa-up-right-from-square::before { content: "↗"; }
+.fa-user::before, .fa-user-check::before, .fa-user-circle::before { content: "👤"; }
+.fa-utensils::before { content: "🍴"; }
+
+.fa-spin::before {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}

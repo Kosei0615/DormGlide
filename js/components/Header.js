@@ -2,6 +2,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const [showUserMenu, setShowUserMenu] = React.useState(false);
     const [showNotificationMenu, setShowNotificationMenu] = React.useState(false);
+    const [showMoreMenu, setShowMoreMenu] = React.useState(false);
     const [unreadNotificationCount, setUnreadNotificationCount] = React.useState(0);
     const [notificationItems, setNotificationItems] = React.useState([]);
     const [chatBackend, setChatBackend] = React.useState(null);
@@ -26,12 +27,12 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
     const getNotificationMeta = (type) => {
         const normalized = String(type || '').toLowerCase();
         if (normalized === 'purchase_requested') {
-            return { iconClass: 'fa-solid fa-cart-shopping', colorClass: 'notification-type-requested' };
+            return { iconGlyph: '🛒', colorClass: 'notification-type-requested' };
         }
         if (normalized === 'purchase_confirmed') {
-            return { iconClass: 'fa-solid fa-circle-check', colorClass: 'notification-type-confirmed' };
+            return { iconGlyph: '✅', colorClass: 'notification-type-confirmed' };
         }
-        return { iconClass: 'fa-solid fa-bell', colorClass: 'notification-type-wishlist' };
+        return { iconGlyph: '🔔', colorClass: 'notification-type-wishlist' };
     };
 
     const navGlyph = (symbol) => React.createElement('span', { className: 'nav-glyph', 'aria-hidden': 'true' }, symbol);
@@ -41,6 +42,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
         setIsMenuOpen(false);
         setShowUserMenu(false);
         setShowNotificationMenu(false);
+        setShowMoreMenu(false);
     };
 
     const handleWishlistOpen = () => {
@@ -90,10 +92,13 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
             if (showNotificationMenu && !event.target.closest('.notifications-menu-container')) {
                 setShowNotificationMenu(false);
             }
+            if (showMoreMenu && !event.target.closest('.more-menu-container')) {
+                setShowMoreMenu(false);
+            }
         };
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
-    }, [showUserMenu, showNotificationMenu]);
+    }, [showUserMenu, showNotificationMenu, showMoreMenu]);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -208,7 +213,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                 onClick: () => handleNavigation('home')
             },
                 React.createElement('span', { className: 'brand-mark', 'aria-hidden': 'true' },
-                    React.createElement('i', { className: 'fa-solid fa-house-chimney-window' })
+                    navGlyph('🏠')
                 ),
                 React.createElement('span', { className: 'brand-copy' },
                     React.createElement('strong', null, 'DormGlide'),
@@ -232,28 +237,6 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     navGlyph('➕'),
                     React.createElement('span', null, 'Sell')
                 ),
-                React.createElement('button', {
-                    className: `nav-btn ${currentPage === 'how-it-works' ? 'active' : ''}`,
-                    onClick: () => handleNavigation('how-it-works')
-                },
-                    navGlyph('🧭'),
-                    React.createElement('span', null, 'How It Works')
-                ),
-                React.createElement('button', {
-                    className: `nav-btn ${currentPage === 'privacy-policy' ? 'active' : ''}`,
-                    onClick: () => handleNavigation('privacy-policy')
-                },
-                    navGlyph('🛡️'),
-                    React.createElement('span', null, 'Policy')
-                ),
-
-                currentUser && React.createElement('button', {
-                    className: `nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`,
-                    onClick: () => handleNavigation('dashboard')
-                },
-                    navGlyph('📊'),
-                    React.createElement('span', null, 'Dashboard')
-                ),
 
                 currentUser && React.createElement('button', {
                     className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,
@@ -263,12 +246,53 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     React.createElement('span', null, 'Messages')
                 ),
 
-                React.createElement('button', {
-                    className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
-                    onClick: handleWishlistOpen
+                currentUser && React.createElement('button', {
+                    className: `nav-btn ${currentPage === 'profile' ? 'active' : ''}`,
+                    onClick: () => handleNavigation('profile')
                 },
-                    navGlyph('❤️'),
-                    React.createElement('span', null, 'Wishlist')
+                    navGlyph('👤'),
+                    React.createElement('span', null, 'Profile')
+                ),
+
+                React.createElement('div', { className: 'more-menu-container' },
+                    React.createElement('button', {
+                        className: `nav-btn ${showMoreMenu ? 'active' : ''}`,
+                        title: 'More links',
+                        'aria-label': 'More links',
+                        onClick: (e) => {
+                            e.stopPropagation();
+                            setShowMoreMenu((prev) => !prev);
+                        }
+                    },
+                        navGlyph('⋯'),
+                        React.createElement('span', null, 'More')
+                    ),
+                    showMoreMenu && React.createElement('div', { className: 'user-dropdown more-dropdown' },
+                        React.createElement('button', {
+                            onClick: () => handleNavigation('how-it-works')
+                        },
+                            navGlyph('🧭'),
+                            'How It Works'
+                        ),
+                        React.createElement('button', {
+                            onClick: () => handleNavigation('privacy-policy')
+                        },
+                            navGlyph('🛡️'),
+                            'Policy'
+                        ),
+                        currentUser && React.createElement('button', {
+                            onClick: () => handleNavigation('dashboard')
+                        },
+                            navGlyph('📊'),
+                            'Dashboard'
+                        ),
+                        React.createElement('button', {
+                            onClick: handleWishlistOpen
+                        },
+                            navGlyph('❤️'),
+                            'Wishlist'
+                        )
+                    )
                 ),
 
                 currentUser && React.createElement('div', { className: 'notifications-menu-container' },
@@ -278,7 +302,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         'aria-label': 'Notifications',
                         onClick: handleToggleNotifications
                     },
-                        React.createElement('i', { className: 'fa-solid fa-bell' }),
+                        navGlyph('🔔'),
                         unreadNotificationCount > 0 && React.createElement('span', { className: 'notification-badge' }, unreadNotificationCount > 9 ? '9+' : unreadNotificationCount)
                     ),
                     showNotificationMenu && React.createElement('div', { className: 'notifications-dropdown' },
@@ -303,7 +327,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             },
                                 React.createElement('span', {
                                     className: `notification-type-icon ${getNotificationMeta(item?.type).colorClass}`
-                                }, React.createElement('i', { className: getNotificationMeta(item?.type).iconClass })),
+                                }, getNotificationMeta(item?.type).iconGlyph),
                                 React.createElement('span', { className: 'notification-copy' },
                                     React.createElement('strong', null, item.title || 'DormGlide update'),
                                     React.createElement('span', null, item.message || 'New DormGlide notification'),
@@ -324,7 +348,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             }
                         },
                             React.createElement('div', { className: 'user-avatar' },
-                                React.createElement('i', { className: 'fas fa-user-circle' })
+                                navGlyph('👤')
                             ),
                             React.createElement('div', { className: 'user-info-compact' },
                                 React.createElement('span', { className: 'user-name' }, currentUser.name),
@@ -333,13 +357,13 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                                     `Chat: ${chatBackend === 'supabase' ? 'Live' : 'Local'}`
                                 )
                             ),
-                            React.createElement('i', { className: `fas fa-chevron-down ${showUserMenu ? 'rotated' : ''}` })
+                            React.createElement('span', { className: `caret-glyph ${showUserMenu ? 'rotated' : ''}` }, '▾')
                         ),
                         
                         showUserMenu && React.createElement('div', { className: 'user-dropdown' },
                             React.createElement('div', { className: 'user-dropdown-header' },
                                 React.createElement('div', { className: 'user-avatar-large' },
-                                    React.createElement('i', { className: 'fas fa-user-circle' })
+                                    navGlyph('👤')
                                 ),
                                 React.createElement('div', null,
                                     React.createElement('p', null, currentUser.name),
@@ -349,32 +373,32 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             React.createElement('button', {
                                 onClick: () => handleNavigation('dashboard')
                             },
-                                React.createElement('i', { className: 'fas fa-chart-line' }),
+                                navGlyph('📊'),
                                 'My Dashboard'
                             ),
                             React.createElement('button', {
                                 onClick: () => handleNavigation('messages')
                             },
-                                React.createElement('i', { className: 'fa-solid fa-comment' }),
+                                navGlyph('💬'),
                                 'Messages'
                             ),
                             React.createElement('button', {
                                 onClick: () => handleNavigation('wishlist')
                             },
-                                React.createElement('i', { className: 'fa-solid fa-heart' }),
+                                navGlyph('❤️'),
                                 'Wishlist'
                             ),
                             React.createElement('button', {
                                 onClick: () => handleNavigation('profile')
                             },
-                                React.createElement('i', { className: 'fas fa-user' }),
+                                navGlyph('👤'),
                                 'My Profile'
                             ),
                             window.DormGlideAuth && window.DormGlideAuth.isAdmin(currentUser) && (
                                 React.createElement('button', {
                                     onClick: () => handleNavigation('admin')
                                 },
-                                    React.createElement('i', { className: 'fas fa-shield-alt' }),
+                                    navGlyph('🛠️'),
                                     'Admin Panel'
                                 )
                             ),
@@ -383,7 +407,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                                 onClick: handleLogout,
                                 className: 'logout-btn'
                             },
-                                React.createElement('i', { className: 'fa-solid fa-right-from-bracket' }),
+                                navGlyph('↩️'),
                                 'Logout'
                             )
                         )
@@ -394,14 +418,14 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             className: 'nav-btn auth-cta-btn auth-cta-login',
                             onClick: () => onShowAuth('login')
                         },
-                            React.createElement('i', { className: 'fas fa-right-to-bracket' }),
+                            navGlyph('🔓'),
                             React.createElement('span', null, 'Log In')
                         ),
                         React.createElement('button', {
                             className: 'nav-btn auth-cta-btn auth-cta-signup',
                             onClick: () => onShowAuth('signup')
                         },
-                            React.createElement('i', { className: 'fas fa-user-plus' }),
+                            navGlyph('📝'),
                             React.createElement('span', null, 'Sign Up')
                         )
                     )
@@ -417,7 +441,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                 'aria-controls': 'dormglide-mobile-nav',
                 onClick: toggleMenu
             },
-                React.createElement('i', { className: isMenuOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars' }),
+                navGlyph(isMenuOpen ? '✕' : '☰'),
                 React.createElement('span', { className: 'mobile-menu-label' }, isMenuOpen ? 'Close' : 'Menu')
             )
         ),
@@ -464,18 +488,18 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         React.createElement('span', null, 'Dashboard')
                     ),
                     React.createElement('button', {
-                        className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,
-                        onClick: () => handleNavigation('messages')
-                    }, 
-                        navGlyph('💬'),
-                        React.createElement('span', null, 'Messages')
-                    ),
-                    React.createElement('button', {
                         className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
                         onClick: handleWishlistOpen
                     },
                         navGlyph('❤️'),
                         React.createElement('span', null, 'Wishlist')
+                    ),
+                    React.createElement('button', {
+                        className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,
+                        onClick: () => handleNavigation('messages')
+                    }, 
+                        navGlyph('💬'),
+                        React.createElement('span', null, 'Messages')
                     ),
                     React.createElement('button', {
                         className: 'nav-btn',

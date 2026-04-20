@@ -78,10 +78,12 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
         onFilter({ category: '', priceRange: {}, condition: '' });
     };
 
+    const glyph = (value, className = 'ui-glyph') => React.createElement('span', { className, 'aria-hidden': 'true' }, value);
+
     return React.createElement('div', { className: 'search-filter' },
         React.createElement('div', { className: 'search-filter-header' },
             React.createElement('h3', null,
-                React.createElement('i', { className: 'fa-solid fa-magnifying-glass' }),
+                glyph('🔎'),
                 ' Find items fast'
             ),
             React.createElement('p', { className: 'search-filter-help' }, 'Search by item name, seller, or category. Then narrow results with smart filters.')
@@ -89,7 +91,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
         React.createElement('div', { className: 'search-bar' },
             React.createElement('div', { className: 'search-input-container' },
                 React.createElement('span', { className: 'search-leading-icon', 'aria-hidden': 'true' },
-                    React.createElement('i', { className: 'fa-solid fa-magnifying-glass' })
+                    glyph('🔍')
                 ),
                 React.createElement('input', {
                     type: 'text',
@@ -119,7 +121,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
                     title: 'Close search',
                     'aria-label': 'Close search'
                 },
-                    React.createElement('i', { className: 'fa-solid fa-xmark' })
+                    glyph('✕')
                 ),
 
                 // Search suggestions dropdown
@@ -133,7 +135,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
                             className: 'suggestion-item',
                             onClick: () => handleSuggestionClick(suggestion)
                         },
-                            React.createElement('i', { className: 'fas fa-search' }),
+                            glyph('🔍'),
                             suggestion
                         )
                     )
@@ -147,7 +149,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
                     title: 'Search',
                     'aria-label': 'Search DormGlide listings'
                 },
-                    React.createElement('i', { className: 'fa-solid fa-magnifying-glass' }),
+                    glyph('🔎'),
                     React.createElement('span', null, 'Search')
                 ),
                 React.createElement('button', {
@@ -158,7 +160,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
                     'aria-label': isFilterOpen ? 'Hide filters' : 'Open filters',
                     'aria-expanded': isFilterOpen
                 },
-                    React.createElement('i', { className: 'fa-solid fa-sliders' }),
+                    glyph('⚙️'),
                     React.createElement('span', null, isFilterOpen ? 'Hide Filters' : 'Filters')
                 )
             ),
