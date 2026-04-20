@@ -34,6 +34,8 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
         return { iconClass: 'fa-solid fa-bell', colorClass: 'notification-type-wishlist' };
     };
 
+    const navGlyph = (symbol) => React.createElement('span', { className: 'nav-glyph', 'aria-hidden': 'true' }, symbol);
+
     const handleNavigation = (page, productId = null, options = {}) => {
         onNavigate(page, productId, options);
         setIsMenuOpen(false);
@@ -220,28 +222,28 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     className: `nav-btn ${currentPage === 'home' ? 'active' : ''}`,
                     onClick: () => handleNavigation('home')
                 }, 
-                    React.createElement('i', { className: 'fas fa-store' }),
+                    navGlyph('🛍️'),
                     React.createElement('span', null, 'Browse')
                 ),
                 React.createElement('button', {
                     className: `nav-btn ${currentPage === 'sell' ? 'active' : ''}`,
                     onClick: () => handleNavigation('sell')
                 }, 
-                    React.createElement('i', { className: 'fas fa-plus-circle' }),
+                    navGlyph('➕'),
                     React.createElement('span', null, 'Sell')
                 ),
                 React.createElement('button', {
                     className: `nav-btn ${currentPage === 'how-it-works' ? 'active' : ''}`,
                     onClick: () => handleNavigation('how-it-works')
                 },
-                    React.createElement('i', { className: 'fas fa-compass' }),
+                    navGlyph('🧭'),
                     React.createElement('span', null, 'How It Works')
                 ),
                 React.createElement('button', {
                     className: `nav-btn ${currentPage === 'privacy-policy' ? 'active' : ''}`,
                     onClick: () => handleNavigation('privacy-policy')
                 },
-                    React.createElement('i', { className: 'fas fa-shield-halved' }),
+                    navGlyph('🛡️'),
                     React.createElement('span', null, 'Policy')
                 ),
 
@@ -249,7 +251,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     className: `nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`,
                     onClick: () => handleNavigation('dashboard')
                 },
-                    React.createElement('i', { className: 'fas fa-chart-line' }),
+                    navGlyph('📊'),
                     React.createElement('span', null, 'Dashboard')
                 ),
 
@@ -257,7 +259,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,
                     onClick: () => handleNavigation('messages')
                 },
-                    React.createElement('i', { className: 'fa-solid fa-comment' }),
+                    navGlyph('💬'),
                     React.createElement('span', null, 'Messages')
                 ),
 
@@ -265,7 +267,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
                     onClick: handleWishlistOpen
                 },
-                    React.createElement('i', { className: 'fa-solid fa-heart' }),
+                    navGlyph('❤️'),
                     React.createElement('span', null, 'Wishlist')
                 ),
 
@@ -427,28 +429,28 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                 className: `nav-btn ${currentPage === 'home' ? 'active' : ''}`,
                 onClick: () => handleNavigation('home')
             }, 
-                React.createElement('i', { className: 'fas fa-store' }),
+                navGlyph('🛍️'),
                 React.createElement('span', null, 'Browse')
             ),
             React.createElement('button', {
                 className: `nav-btn ${currentPage === 'sell' ? 'active' : ''}`,
                 onClick: () => handleNavigation('sell')
             }, 
-                React.createElement('i', { className: 'fas fa-plus-circle' }),
+                navGlyph('➕'),
                 React.createElement('span', null, 'Sell')
             ),
             React.createElement('button', {
                 className: `nav-btn ${currentPage === 'how-it-works' ? 'active' : ''}`,
                 onClick: () => handleNavigation('how-it-works')
             },
-                React.createElement('i', { className: 'fas fa-compass' }),
+                navGlyph('🧭'),
                 React.createElement('span', null, 'How It Works')
             ),
             React.createElement('button', {
                 className: `nav-btn ${currentPage === 'privacy-policy' ? 'active' : ''}`,
                 onClick: () => handleNavigation('privacy-policy')
             },
-                React.createElement('i', { className: 'fas fa-shield-halved' }),
+                navGlyph('🛡️'),
                 React.createElement('span', null, 'Policy')
             ),
             
@@ -458,35 +460,35 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         className: `nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`,
                         onClick: () => handleNavigation('dashboard')
                     }, 
-                        React.createElement('i', { className: 'fas fa-chart-line' }),
+                        navGlyph('📊'),
                         React.createElement('span', null, 'Dashboard')
                     ),
                     React.createElement('button', {
                         className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,
                         onClick: () => handleNavigation('messages')
                     }, 
-                        React.createElement('i', { className: 'fa-solid fa-comment' }),
+                        navGlyph('💬'),
                         React.createElement('span', null, 'Messages')
                     ),
                     React.createElement('button', {
                         className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
                         onClick: handleWishlistOpen
                     },
-                        React.createElement('i', { className: 'fa-solid fa-heart' }),
+                        navGlyph('❤️'),
                         React.createElement('span', null, 'Wishlist')
                     ),
                     React.createElement('button', {
                         className: 'nav-btn',
                         onClick: () => handleNavigation('dashboard', null, { tab: 'alerts' })
                     },
-                        React.createElement('i', { className: 'fa-solid fa-bell' }),
+                        navGlyph('🔔'),
                         React.createElement('span', null, `Notifications${unreadNotificationCount > 0 ? ` (${unreadNotificationCount})` : ''}`)
                     ),
                     React.createElement('button', {
                         className: `nav-btn ${currentPage === 'profile' ? 'active' : ''}`,
                         onClick: () => handleNavigation('profile')
                     }, 
-                        React.createElement('i', { className: 'fas fa-user' }),
+                        navGlyph('👤'),
                         React.createElement('span', null, 'Profile')
                     ),
                     window.DormGlideAuth && window.DormGlideAuth.isAdmin(currentUser) && (
@@ -494,7 +496,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             className: `nav-btn ${currentPage === 'admin' ? 'active' : ''}`,
                             onClick: () => handleNavigation('admin')
                         }, 
-                            React.createElement('i', { className: 'fas fa-shield-alt' }),
+                            navGlyph('🛠️'),
                             React.createElement('span', null, 'Admin')
                         )
                     ),
@@ -502,7 +504,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         className: 'nav-btn logout-btn',
                         onClick: handleLogout
                     }, 
-                        React.createElement('i', { className: 'fa-solid fa-right-from-bracket' }),
+                        navGlyph('↩️'),
                         React.createElement('span', null, 'Logout')
                     )
                 )
@@ -515,7 +517,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             setIsMenuOpen(false);
                         }
                     },
-                        React.createElement('i', { className: 'fas fa-right-to-bracket' }),
+                        navGlyph('🔓'),
                         React.createElement('span', null, 'Log In')
                     ),
                     React.createElement('button', {
@@ -525,7 +527,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             setIsMenuOpen(false);
                         }
                     },
-                        React.createElement('i', { className: 'fas fa-user-plus' }),
+                        navGlyph('📝'),
                         React.createElement('span', null, 'Sign Up')
                     )
                 )

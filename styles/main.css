@@ -4791,6 +4791,15 @@ body {
     color: #334155;
 }
 
+.nav-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.15rem;
+    line-height: 1;
+    font-size: 0.95rem;
+}
+
 .nav-btn:hover,
 .nav-btn.active {
     background: #eef4ff;

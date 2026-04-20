@@ -1,5 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-	<rect width="64" height="64" rx="12" fill="#0b5fff"/>
-	<path d="M10 30L32 12L54 30V52H38V38H26V52H10Z" fill="#ffffff"/>
-	<circle cx="45" cy="20" r="4" fill="#ffd34d"/>
+	<defs>
+		<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#0f766e"/>
+			<stop offset="1" stop-color="#16a34a"/>
+		</linearGradient>
+	</defs>
+	<circle cx="32" cy="32" r="30" fill="url(#bg)"/>
+	<path d="M18 32L32 20L46 32V46H36V36H28V46H18Z" fill="#ffffff"/>
+	<text x="32" y="58" text-anchor="middle" font-size="10" font-family="Arial, sans-serif" font-weight="700" fill="#ffffff">DG</text>
 </svg>
