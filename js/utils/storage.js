@@ -207,7 +207,7 @@ const checkWishlistMatches = async (newListing) => {
 
     try {
         const { data: entries, error: entriesError } = await window.SupabaseClient
-            .from('wishlists')
+            .from('keyword_alerts')
             .select('*')
             .neq('user_id', newListing.sellerId || newListing.user_id || '');
 

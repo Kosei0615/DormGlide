@@ -101,14 +101,6 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                     return;
                 }
 
-                if (window.DormGlideAuth) {
-                    const favorited = window.DormGlideAuth.isProductFavorited
-                        ? window.DormGlideAuth.isProductFavorited(currentUser.id, product.id)
-                        : window.DormGlideAuth.getUserActivity(currentUser.id).favorites.some((f) => f.productId === product.id);
-                    if (isMounted) setIsSaved(Boolean(favorited));
-                    return;
-                }
-
                 if (isMounted) setIsSaved(false);
             } catch (error) {
                 console.warn('[DormGlide] Failed to load saved state:', error);
@@ -325,48 +317,27 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     const handleToggleSave = async () => {
         if (!ensureAuthenticated('Log in to save this item to your wishlist.')) return;
         try {
-            if (window.DormGlidePersonalization?.toggleWishlist) {
-                const result = await window.DormGlidePersonalization.toggleWishlist(currentUser.id, product.id);
-                if (!result?.success) {
-                    toast.error(result?.message || 'Unable to update wishlist right now.');
-                    return;
-                }
-
-                const saved = Boolean(result.saved);
-                setIsSaved(saved);
-
-                if (saved) {
-                    if (confirm('Saved to your wishlist! Open your wishlist now?')) {
-                        onNavigate('dashboard', null, { tab: 'wishlist' });
-                    }
-                } else {
-                    toast.info('Removed from your wishlist.');
-                }
-                return;
-            }
-
-            if (!window.DormGlideAuth) {
+            if (!window.DormGlidePersonalization?.toggleWishlist) {
                 toast.error('Wishlist is not available right now.');
                 return;
             }
 
-            if (isSaved) {
-                window.DormGlideAuth.removeFromFavorites(currentUser.id, product.id);
-                setIsSaved(false);
-                toast.info('Removed from your saved items.');
+            const result = await window.DormGlidePersonalization.toggleWishlist(currentUser.id, product.id);
+            if (!result?.success) {
+                toast.error(result?.message || 'Unable to update wishlist right now.');
                 return;
             }
 
-            const result = window.DormGlideAuth.addToFavorites(currentUser.id, product.id, product.title);
-            if (result.success) {
-                setIsSaved(true);
-                if (confirm('Saved item! Open your wishlist now?')) {
+            const saved = Boolean(result.saved);
+            setIsSaved(saved);
+
+            if (saved) {
+                if (confirm('Saved to your wishlist! Open your wishlist now?')) {
                     onNavigate('dashboard', null, { tab: 'wishlist' });
                 }
-                return;
+            } else {
+                toast.info('Removed from your wishlist.');
             }
-
-            toast.error('Unable to save this item right now.');
         } catch (error) {
             console.error('[DormGlide] Failed updating wishlist from detail page:', error);
             toast.error('Unable to update wishlist right now.');

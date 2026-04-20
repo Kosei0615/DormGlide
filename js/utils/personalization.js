@@ -34,6 +34,11 @@
     const randomId = (prefix) => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
     const normalizeKeyword = (keyword) => String(keyword || '').trim().toLowerCase();
+    const normalizeComparableId = (value) => {
+        if (value === null || value === undefined) return '';
+        return String(value).trim();
+    };
+    const isSameId = (left, right) => normalizeComparableId(left) === normalizeComparableId(right);
 
     const fetchWishlistListingIds = async (userId) => {
         if (!userId) return [];
@@ -53,7 +58,7 @@
 
         const local = readLocal(LOCAL_LISTING_WISHLIST_KEY, []);
         return (Array.isArray(local) ? local : [])
-            .filter((entry) => entry?.user_id === userId)
+            .filter((entry) => isSameId(entry?.user_id, userId))
             .map((entry) => entry.listing_id)
             .filter(Boolean);
     };
@@ -61,7 +66,7 @@
     const isListingWishlisted = async (userId, listingId) => {
         if (!userId || !listingId) return false;
         const ids = await fetchWishlistListingIds(userId);
-        return ids.includes(listingId);
+        return ids.some((id) => isSameId(id, listingId));
     };
 
     const toggleWishlist = async (userId, listingId) => {
@@ -101,7 +106,7 @@
 
         const local = readLocal(LOCAL_LISTING_WISHLIST_KEY, []);
         const normalized = Array.isArray(local) ? local : [];
-        const index = normalized.findIndex((entry) => entry?.user_id === userId && entry?.listing_id === listingId);
+        const index = normalized.findIndex((entry) => isSameId(entry?.user_id, userId) && isSameId(entry?.listing_id, listingId));
 
         if (index >= 0) {
             normalized.splice(index, 1);
@@ -122,101 +127,38 @@
     const fetchWishlistEntries = async (userId) => {
         if (!userId) return [];
 
-        if (canUseSupabase()) {
-            const client = getClient();
-            const { data, error } = await client
-                .from('wishlists')
-                .select('*')
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false });
-            if (!error) {
-                return data || [];
-            }
-            console.warn('[DormGlide] Falling back to local wishlist entries fetch:', error);
-        }
-
-        const local = readLocal(LOCAL_WISHLIST_ENTRIES_KEY, []);
-        return (Array.isArray(local) ? local : [])
-            .filter((entry) => entry?.user_id === userId)
-            .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        // Legacy API kept for backward compatibility with WishlistPage; this is backed by keyword alerts.
+        return fetchKeywordAlerts(userId);
     };
 
     const addWishlistEntry = async ({ userId, keyword, category = '', maxPrice = null }) => {
-        const normalizedKeyword = String(keyword || '').trim();
-        const normalizedCategory = String(category || '').trim() || null;
-        const normalizedMaxPrice = maxPrice === null || maxPrice === undefined || maxPrice === ''
-            ? null
-            : Number(maxPrice);
+        // Legacy API kept for backward compatibility with WishlistPage; this is backed by keyword alerts.
+        const result = await addKeywordAlert({
+            userId,
+            keyword,
+            notifyInApp: true,
+            notifyEmail: true
+        });
 
-        if (!userId || !normalizedKeyword) {
-            return { success: false, message: 'Please add a keyword.' };
+        if (!result?.success) {
+            return result;
         }
 
-        if (normalizedMaxPrice !== null && (Number.isNaN(normalizedMaxPrice) || normalizedMaxPrice < 0)) {
-            return { success: false, message: 'Please enter a valid max price.' };
-        }
-
-        if (canUseSupabase()) {
-            const client = getClient();
-            const { data, error } = await client
-                .from('wishlists')
-                .insert({
-                    user_id: userId,
-                    keyword: normalizedKeyword,
-                    category: normalizedCategory,
-                    max_price: normalizedMaxPrice
-                })
-                .select('*')
-                .single();
-            if (!error) {
-                return { success: true, entry: data };
-            }
-            console.warn('[DormGlide] Falling back to local wishlist entries insert:', error);
-        }
-
-        const local = readLocal(LOCAL_WISHLIST_ENTRIES_KEY, []);
-        const next = Array.isArray(local) ? local : [];
-        const entry = {
-            id: randomId('wishlist-entry'),
-            user_id: userId,
-            keyword: normalizedKeyword,
-            category: normalizedCategory,
-            max_price: normalizedMaxPrice,
-            created_at: nowIso()
-        };
-        next.push(entry);
-        writeLocal(LOCAL_WISHLIST_ENTRIES_KEY, next);
-        return { success: true, entry };
+        const nextEntry = result.alert || result.entry || null;
+        return { success: true, entry: nextEntry };
     };
 
     const deleteWishlistEntry = async ({ userId, entryId }) => {
-        if (!userId || !entryId) {
-            return { success: false, message: 'Missing wishlist entry.' };
-        }
-
-        if (canUseSupabase()) {
-            const client = getClient();
-            const { error } = await client
-                .from('wishlists')
-                .delete()
-                .eq('id', entryId)
-                .eq('user_id', userId);
-            if (!error) {
-                return { success: true };
-            }
-            console.warn('[DormGlide] Falling back to local wishlist entries delete:', error);
-        }
-
-        const local = readLocal(LOCAL_WISHLIST_ENTRIES_KEY, []);
-        const next = (Array.isArray(local) ? local : []).filter((entry) => !(entry?.id === entryId && entry?.user_id === userId));
-        writeLocal(LOCAL_WISHLIST_ENTRIES_KEY, next);
-        return { success: true };
+        // Legacy API kept for backward compatibility with WishlistPage; this is backed by keyword alerts.
+        return deleteKeywordAlert({ userId, alertId: entryId });
     };
 
     const fetchWishlistListings = async (userId, allListings = []) => {
         const listingIds = await fetchWishlistListingIds(userId);
-        const lookup = new Map((Array.isArray(allListings) ? allListings : []).map((listing) => [listing.id, listing]));
-        return listingIds.map((id) => lookup.get(id)).filter(Boolean);
+        const lookup = new Map(
+            (Array.isArray(allListings) ? allListings : []).map((listing) => [normalizeComparableId(listing?.id), listing])
+        );
+        return listingIds.map((id) => lookup.get(normalizeComparableId(id))).filter(Boolean);
     };
 
     const fetchKeywordAlerts = async (userId) => {

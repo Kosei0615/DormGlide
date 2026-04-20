@@ -51,7 +51,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
             setIsMenuOpen(false);
             return;
         }
-        handleNavigation('wishlist');
+        handleNavigation('dashboard', null, { tab: 'wishlist' });
     };
 
     const refreshNotifications = React.useCallback(async () => {
@@ -383,7 +383,7 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                                 'Messages'
                             ),
                             React.createElement('button', {
-                                onClick: () => handleNavigation('wishlist')
+                                onClick: handleWishlistOpen
                             },
                                 navGlyph('❤️'),
                                 'Wishlist'
