@@ -2,17 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DormGlide</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg?v=3">
     <link rel="shortcut icon" href="favicon.svg?v=3">
+    <meta http-equiv="refresh" content="0; url=https://dormglide.com/app.html">
     <script>
-        window.location.replace('app.html');
+        (function () {
+            var target = 'https://dormglide.com/app.html';
+            if (window.location.href !== target) {
+                window.location.replace(target);
+            }
+        })();
     </script>
 </head>
 <body>
     <noscript>
-        JavaScript is required to redirect automatically. Continue to <a href="app.html">DormGlide app</a>.
+        JavaScript is required to redirect automatically. Continue to <a href="https://dormglide.com/app.html">DormGlide app</a>.
     </noscript>
-    <p>Loading DormGlide... If nothing happens automatically, <a href="app.html">click here</a>.</p>
+    <p>Loading DormGlide... If nothing happens automatically, <a href="https://dormglide.com/app.html">open the app</a>.</p>
 </body>
 </html>
