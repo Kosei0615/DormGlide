@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "npx http-server -p 3000",
-    "dev": "npx http-server -p 3000"
+    "dev": "npx http-server -p 3000",
+    "diagnose:domain": "bash scripts/diagnose-domain.sh dormglide.com"
   },
   "keywords": ["marketplace", "students", "secondhand", "trading"],
   "author": "",

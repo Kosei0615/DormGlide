@@ -210,15 +210,8 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
                     onAuthSuccess(result.user);
                     onClose();
                 } else {
-                    // Fallback: attempt explicit login
-                    const loginResult = await window.DormGlideAuth.loginUser(formData.email, formData.password);
-                    if (loginResult.success) {
-                        onAuthSuccess(loginResult.user);
-                        onClose();
-                    } else {
-                        switchMode('login');
-                        setErrorMessage(loginResult.message || 'Account created. Please log in.');
-                    }
+                    switchMode('login');
+                    setSuccessMessage('Account created. Please log in to continue.');
                 }
             } else {
                 setErrorMessage(result.message || 'Unable to create account');
