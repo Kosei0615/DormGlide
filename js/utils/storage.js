@@ -69,6 +69,7 @@ const normalizeProductRecord = (record) => {
         sellerName: record.seller_name || record.sellerName,
         sellerEmail: record.seller_email || record.sellerEmail,
         sellerCampus: record.seller_campus || record.sellerCampus || record.location || '',
+        schoolId: record.school_id || record.schoolId || null,
         status: normalizeListingStatus(record.status || 'available'),
         requestedAt: record.requested_at || record.requestedAt || null,
         purchasedAt: record.purchased_at || record.purchasedAt || null,

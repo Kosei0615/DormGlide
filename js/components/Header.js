@@ -217,7 +217,8 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                 ),
                 React.createElement('span', { className: 'brand-copy' },
                     React.createElement('strong', null, 'DormGlide'),
-                    React.createElement('small', null, 'Campus Marketplace')
+                    // Multi-campus: show which school market the user is in.
+                    React.createElement('small', null, currentUser?.schoolName || 'Campus Marketplace')
                 )
             ),
 
@@ -367,7 +368,10 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                                 ),
                                 React.createElement('div', null,
                                     React.createElement('p', null, currentUser.name),
-                                    React.createElement('small', null, currentUser.email)
+                                    React.createElement('small', null, currentUser.email),
+                                    currentUser.schoolName && React.createElement('small', {
+                                        style: { display: 'block', marginTop: '2px', fontWeight: 600 }
+                                    }, `🏫 ${currentUser.schoolName} market`)
                                 )
                             ),
                             React.createElement('button', {

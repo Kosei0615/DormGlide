@@ -15,6 +15,51 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
     const [failedAttempts, setFailedAttempts] = React.useState(0);
     const [loginCooldownUntil, setLoginCooldownUntil] = React.useState(0);
     const [loginCooldownRemaining, setLoginCooldownRemaining] = React.useState(0);
+    // Multi-campus: which school market does the signup email map to?
+    // status: 'idle' | 'checking' | 'supported' | 'unsupported'
+    const [signupSchool, setSignupSchool] = React.useState(null);
+    const [signupSchoolStatus, setSignupSchoolStatus] = React.useState('idle');
+
+    React.useEffect(() => {
+        if (mode !== 'signup') return undefined;
+
+        const email = String(formData.email || '').trim();
+        const domain = email.split('@')[1] || '';
+        const canLookup = Boolean(window.SupabaseClient && window.DormGlideAuth?.getSchoolForEmail);
+
+        if (!domain || !domain.includes('.') || !canLookup) {
+            setSignupSchool(null);
+            setSignupSchoolStatus('idle');
+            return undefined;
+        }
+
+        let cancelled = false;
+        setSignupSchoolStatus('checking');
+        const timer = window.setTimeout(async () => {
+            try {
+                const school = await window.DormGlideAuth.getSchoolForEmail(email);
+                if (cancelled) return;
+                setSignupSchool(school || null);
+                // undefined = lookup unavailable (network/outage): stay neutral
+                // rather than wrongly claiming the school is unsupported.
+                if (school === undefined) {
+                    setSignupSchoolStatus('idle');
+                } else {
+                    setSignupSchoolStatus(school ? 'supported' : 'unsupported');
+                }
+            } catch (_error) {
+                if (!cancelled) {
+                    setSignupSchool(null);
+                    setSignupSchoolStatus('idle');
+                }
+            }
+        }, 450);
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timer);
+        };
+    }, [mode, formData.email]);
 
     React.useEffect(() => {
         if (!loginCooldownUntil || Date.now() >= loginCooldownUntil) {
@@ -184,6 +229,21 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
             return;
         }
 
+        // Multi-campus: require a supported school (.edu) email before hitting Supabase.
+        if (window.SupabaseClient) {
+            const emailDomain = String(formData.email || '').trim().toLowerCase().split('@')[1] || '';
+            if (!emailDomain.endsWith('.edu')) {
+                setErrorMessage('Please sign up with your school email address (ending in .edu).');
+                setLoading(false);
+                return;
+            }
+            if (signupSchoolStatus === 'unsupported') {
+                setErrorMessage(`DormGlide isn't at your school yet (${emailDomain}). We're expanding — check back soon!`);
+                setLoading(false);
+                return;
+            }
+        }
+
         const digitsOnly = (formData.phone || '').replace(/\D/g, '');
         const sanitizedPhone = digitsOnly
             ? (window.DormGlideAuth?.sanitizePhoneNumber?.(formData.phone) || `+${digitsOnly}`)
@@ -203,9 +263,12 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
             });
 
             if (result.success) {
+                const marketName = result.school?.name || signupSchool?.name;
                 if (result.requiresEmailConfirmation) {
                     switchMode('login');
-                    setSuccessMessage('Account created! Check your email to confirm before logging in.');
+                    setSuccessMessage(marketName
+                        ? `Welcome to the ${marketName} market! Check your email to confirm your account before logging in.`
+                        : 'Account created! Check your email to confirm before logging in.');
                 } else if (result.user) {
                     onAuthSuccess(result.user);
                     onClose();
@@ -364,7 +427,7 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
                     ),
 
                     React.createElement('div', { className: 'form-group' },
-                        React.createElement('label', null, 'Email *'),
+                        React.createElement('label', null, 'School Email * (.edu)'),
                         React.createElement('input', {
                             type: 'email',
                             name: 'email',
@@ -373,7 +436,19 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
                             placeholder: 'your.email@university.edu',
                             required: true,
                             autoComplete: 'email'
-                        })
+                        }),
+                        signupSchoolStatus === 'supported' && signupSchool && React.createElement('small', {
+                            style: { color: '#059669', display: 'block', marginTop: '4px' }
+                        },
+                            React.createElement('i', { className: 'fas fa-check-circle' }),
+                            ` You'll join the ${signupSchool.name} market`
+                        ),
+                        signupSchoolStatus === 'unsupported' && React.createElement('small', {
+                            style: { color: '#b45309', display: 'block', marginTop: '4px' }
+                        },
+                            React.createElement('i', { className: 'fas fa-circle-info' }),
+                            " DormGlide isn't at this school yet — we're expanding!"
+                        )
                     ),
 
                     React.createElement('div', { className: 'form-group' },

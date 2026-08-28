@@ -168,6 +168,74 @@ const resolveEmailFromIdentifier = (identifier) => {
     return raw;
 };
 
+// ---- Multi-campus (school) helpers ----
+const schoolCacheByUserId = new Map();
+
+// Look up the supported school for an email address (exact domain match).
+// Returns { id, name, slug } on a match, null when the domain is confirmed
+// unsupported, or undefined when the lookup itself failed (network/outage) —
+// callers must not treat a failed lookup as "school not supported".
+const getSchoolForEmail = async (email) => {
+    const client = getSupabaseClient();
+    const domain = String(email || '').trim().toLowerCase().split('@')[1] || '';
+    if (!client || !domain) return undefined;
+
+    try {
+        const { data, error } = await client
+            .from('school_domains')
+            .select('domain, school_id, schools(id, name, slug, status)')
+            .eq('domain', domain)
+            .maybeSingle();
+        if (error) throw error;
+
+        const school = data?.schools;
+        if (!school || school.status !== 'active') return null;
+        return { id: school.id, name: school.name, slug: school.slug };
+    } catch (error) {
+        console.warn('[DormGlide] School lookup failed:', error);
+        return undefined;
+    }
+};
+
+// Fetch the logged-in user's campus from their profile (server-managed).
+const fetchSchoolForUser = async (userId) => {
+    if (!userId) return null;
+    if (schoolCacheByUserId.has(userId)) return schoolCacheByUserId.get(userId);
+
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    try {
+        const { data, error } = await client
+            .from('profiles')
+            .select('school_id, schools(id, name, slug)')
+            .eq('id', userId)
+            .maybeSingle();
+        if (error) throw error;
+
+        const school = data?.schools
+            ? { id: data.schools.id, name: data.schools.name, slug: data.schools.slug }
+            : null;
+        schoolCacheByUserId.set(userId, school);
+        return school;
+    } catch (error) {
+        console.warn('[DormGlide] Failed to load user school:', error);
+        return null;
+    }
+};
+
+// Attach schoolId / schoolName to a normalized user object (mutates + returns it).
+const attachSchoolInfo = async (user) => {
+    if (!user?.id) return user;
+    const school = await fetchSchoolForUser(user.id);
+    if (school) {
+        user.schoolId = school.id;
+        user.schoolName = school.name;
+        user.schoolSlug = school.slug;
+    }
+    return user;
+};
+
 const sanitizePhoneNumber = (raw) => {
     if (!raw) return '';
     const digits = String(raw).replace(/\D/g, '');
@@ -279,6 +347,9 @@ const normalizeSupabaseUser = (supabaseUser, fallback = {}) => {
         lastLogin: supabaseUser.last_sign_in_at || new Date().toISOString(),
         joinedAt,
         status: metadata.status || 'active',
+        schoolId: fallback.schoolId || null,
+        schoolName: fallback.schoolName || '',
+        schoolSlug: fallback.schoolSlug || '',
         rating: metadata.rating ?? fallback.rating ?? 0,
         totalReviews: metadata.totalReviews ?? fallback.totalReviews ?? 0,
         totalSales: metadata.totalSales ?? fallback.totalSales ?? 0,
@@ -298,6 +369,26 @@ const registerUser = async (userData) => {
 
     if (client && isSupabaseEnabled() && !isLocalOnlyMode()) {
         try {
+            // Multi-campus: only supported school emails may register.
+            // (The database enforces this too — this check exists for a friendly message.)
+            const emailDomain = String(userData.email || '').trim().toLowerCase().split('@')[1] || '';
+            if (!emailDomain.endsWith('.edu')) {
+                return {
+                    success: false,
+                    message: 'Please sign up with your school email address (ending in .edu).'
+                };
+            }
+
+            // null = confirmed unsupported; undefined = lookup unavailable, in
+            // which case we proceed and let the database trigger enforce it.
+            const school = await getSchoolForEmail(userData.email);
+            if (school === null) {
+                return {
+                    success: false,
+                    message: `DormGlide isn't at your school yet (${emailDomain}). We're expanding — check back soon!`
+                };
+            }
+
             const joinedAt = new Date().toISOString();
 
             const { data, error } = await client.auth.signUp({
@@ -349,6 +440,11 @@ const registerUser = async (userData) => {
             });
 
             if (normalized) {
+                if (school) {
+                    normalized.schoolId = school.id;
+                    normalized.schoolName = school.name;
+                    normalized.schoolSlug = school.slug;
+                }
                 upsertCachedUser({ ...normalized, password: undefined });
                 cacheSessionUser(data.session ? normalized : null);
                 window.DormGlideSupabaseSessionActive = Boolean(data.session);
@@ -357,6 +453,7 @@ const registerUser = async (userData) => {
             return {
                 success: true,
                 user: normalized,
+                school: school || null,
                 requiresEmailConfirmation: !data.session
             };
         } catch (error) {
@@ -446,6 +543,7 @@ const loginUser = async (emailOrName, password) => {
             const supabaseUser = data.user || data.session?.user;
             const normalized = normalizeSupabaseUser(supabaseUser, { email: resolvedEmail });
             if (normalized) {
+                await attachSchoolInfo(normalized);
                 upsertCachedUser(normalized);
                 cacheSessionUser(normalized);
                 window.DormGlideSupabaseSessionActive = true;
@@ -514,6 +612,7 @@ const logoutUser = async () => {
         }
     }
     cacheSessionUser(null);
+    schoolCacheByUserId.clear();
     window.DormGlideSupabaseSessionActive = false;
 };
 
@@ -539,6 +638,7 @@ const getCurrentUser = async () => {
             const cachedProfile = getAllUsers().find((user) => user.id === supabaseUser.id) || {};
             const normalized = normalizeSupabaseUser(supabaseUser, cachedProfile);
             if (normalized) {
+                await attachSchoolInfo(normalized);
                 upsertCachedUser(normalized);
                 cacheSessionUser(normalized);
             }
@@ -1129,6 +1229,8 @@ const seedLocalDemoUsersIfEmpty = () => {
 window.DormGlideAuth = {
     registerUser,
     loginUser,
+    getSchoolForEmail,
+    fetchSchoolForUser,
     logoutUser,
     getCurrentUser,
     updateUserProfile,
