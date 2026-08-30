@@ -6,7 +6,7 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-family: "Nunito Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Avenir Next", Roboto, "Helvetica Neue", Arial, sans-serif;
     line-height: 1.6;
     color: #333;
     background-color: #f8f9fa;
@@ -653,17 +653,6 @@ p {
     font-size: 0.95rem;
 }
 
-.search-icon {
-    position: absolute;
-    left: 1.1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: rgba(79, 70, 229, 0.7);
-    z-index: 0;
-    pointer-events: none;
-    transition: opacity 0.18s ease, transform 0.18s ease;
-    display: none;
-}
 
 .search-input {
     width: 100%;
@@ -2935,27 +2924,7 @@ p {
 }
 
 /* Utilities */
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
 
-.mb-1 { margin-bottom: 0.25rem; }
-.mb-2 { margin-bottom: 0.5rem; }
-.mb-3 { margin-bottom: 1rem; }
-.mb-4 { margin-bottom: 1.5rem; }
-
-.mt-1 { margin-top: 0.25rem; }
-.mt-2 { margin-top: 0.5rem; }
-.mt-3 { margin-top: 1rem; }
-.mt-4 { margin-top: 1.5rem; }
-
-.d-flex { display: flex; }
-.flex-column { flex-direction: column; }
-.align-items-center { align-items: center; }
-.justify-content-between { justify-content: space-between; }
-.gap-1 { gap: 0.25rem; }
-.gap-2 { gap: 0.5rem; }
-.gap-3 { gap: 1rem; }
 
 /* Admin Panel */
 .admin-modal {
@@ -3293,43 +3262,6 @@ p {
     text-decoration: underline;
 }
 
-.user-type-selector {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-.user-type-option {
-    cursor: pointer;
-}
-
-.user-type-option input[type="radio"] {
-    display: none;
-}
-
-.user-type-content {
-    padding: 1rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    text-align: center;
-    transition: all 0.2s;
-}
-
-.user-type-content i {
-    font-size: 2rem;
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #718096;
-}
-
-.user-type-option input:checked + .user-type-content {
-    border-color: #4a90e2;
-    background: #e6f3ff;
-}
-
-.user-type-option input:checked + .user-type-content i {
-    color: #4a90e2;
-}
 
 .btn-block {
     width: 100%;
@@ -4277,19 +4209,6 @@ p {
     flex-shrink: 0;
 }
 
-.login-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
-    border: none !important;
-    padding: 0.75rem 1.5rem !important;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.login-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-}
 
 /* Image preview enhancements */
 .uploaded-image {
@@ -4402,13 +4321,9 @@ p {
         min-width: 260px;
     }
     
-    .login-btn span {
-        display: none;
-    }
     
-    .login-btn {
-        padding: 0.75rem 1rem !important;
-    }
+    
+    
 }
 
 /* Sell page enhancements */
@@ -4709,7 +4624,7 @@ button.icon-btn.danger:hover {
 }
 
 body {
-    font-family: "Nunito Sans", "Avenir Next", "Helvetica Neue", sans-serif;
+    font-family: "Nunito Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Avenir Next", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: var(--dg-text);
     background:
         radial-gradient(circle at 15% -10%, rgba(59, 130, 246, 0.16), transparent 34%),
@@ -4962,7 +4877,7 @@ html {
 }
 
 body {
-    font-family: Inter, "Nunito Sans", "Avenir Next", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: "Nunito Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Avenir Next", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 .home-page section {
@@ -5503,8 +5418,7 @@ i[class*="fa-"]::before {
 }
 
 /* --- Item count + empty state: quieter, single focal point --- */
-.home-page .results-count,
-.home-page .items-found {
+.home-page .product-count {
     color: var(--dg-muted);
     font-size: 0.9rem;
 }
@@ -5828,4 +5742,9 @@ i[class*="fa-"]::before {
     border-top: 1px solid var(--dg-border);
     color: var(--dg-muted);
     font-size: 0.85rem;
+}
+
+/* Design pass v3: one font stack everywhere (form controls do not inherit by default) */
+button, input, select, textarea {
+    font-family: inherit;
 }
