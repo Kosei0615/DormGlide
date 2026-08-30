@@ -160,6 +160,28 @@ const App = () => {
 
         bootstrapApp();
 
+        // Keep React state in sync with the Supabase session: restores the user
+        // after token refreshes and clears it on sign-out (including other tabs).
+        let authSubscription = null;
+        if (window.SupabaseClient?.auth?.onAuthStateChange) {
+            const { data } = window.SupabaseClient.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_OUT') {
+                    if (isMounted) setCurrentUser(null);
+                    return;
+                }
+                if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') && session?.user) {
+                    window.DormGlideAuth?.getCurrentUser?.()
+                        .then((user) => {
+                            if (isMounted && user) setCurrentUser(user);
+                        })
+                        .catch((error) => {
+                            console.warn('[DormGlide] Failed to sync auth state:', error);
+                        });
+                }
+            });
+            authSubscription = data?.subscription || null;
+        }
+
         const handleKeyDown = (e) => {
             if (e.ctrlKey && e.shiftKey && e.key === 'A') {
                 setShowAdminPanel(true);
@@ -171,6 +193,7 @@ const App = () => {
         return () => {
             isMounted = false;
             document.removeEventListener('keydown', handleKeyDown);
+            if (authSubscription) authSubscription.unsubscribe();
         };
     }, []);
 

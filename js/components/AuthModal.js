@@ -114,6 +114,7 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        if (loading) return; // guard against double-submit
         if (loginCooldownRemaining > 0) {
             setErrorMessage(`Too many login attempts. Try again in ${loginCooldownRemaining}s.`);
             return;
@@ -139,8 +140,10 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
                 setFailedAttempts(nextFailedAttempts);
 
                 if (isRateLimitError(result)) {
-                    startLoginCooldown(60);
-                    setErrorMessage("Too many login attempts. Please wait a few minutes and try again. If you forgot your password, use the 'Forgot Password' link below.");
+                    // Use the server's retry-after when available instead of a hardcoded 60s.
+                    const waitSeconds = Number(result.retryAfterSeconds) > 0 ? Number(result.retryAfterSeconds) : 60;
+                    startLoginCooldown(waitSeconds);
+                    setErrorMessage(`Too many login attempts. Please wait ${Math.ceil(waitSeconds)} seconds and try again. If you forgot your password, use the 'Forgot Password?' link below.`);
                 } else if (nextFailedAttempts >= 3) {
                     setErrorMessage('Multiple failed attempts detected. Please double-check your password or reset it to avoid being temporarily locked out.');
                 } else {
@@ -153,8 +156,9 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
             setFailedAttempts(nextFailedAttempts);
 
             if (isRateLimitError(error)) {
-                startLoginCooldown(60);
-                setErrorMessage("Too many login attempts. Please wait a few minutes and try again. If you forgot your password, use the 'Forgot Password' link below.");
+                const waitSeconds = Number(error.retryAfterSeconds) > 0 ? Number(error.retryAfterSeconds) : 60;
+                startLoginCooldown(waitSeconds);
+                setErrorMessage(`Too many login attempts. Please wait ${Math.ceil(waitSeconds)} seconds and try again. If you forgot your password, use the 'Forgot Password?' link below.`);
             } else if (nextFailedAttempts >= 3) {
                 setErrorMessage('Multiple failed attempts detected. Please double-check your password or reset it to avoid being temporarily locked out.');
             } else {
@@ -167,6 +171,7 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
 
     const handleResetPassword = async (e) => {
         e.preventDefault();
+        if (loading) return; // guard against double-submit
         setErrorMessage('');
         setSuccessMessage('');
 
@@ -196,7 +201,7 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
                 return;
             }
 
-            setSuccessMessage('Check your email for a password reset link!');
+            setSuccessMessage(`We sent a password reset link to ${email}. If you don't see it in a minute, check your spam folder.`);
         } catch (error) {
             console.error('[DormGlide] Password reset request failed', error);
             setErrorMessage('Unable to send password reset email. Please try again.');
@@ -207,6 +212,7 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
 
     const handleSignup = async (e) => {
         e.preventDefault();
+        if (loading) return; // guard against double-submit
         setLoading(true);
         setErrorMessage('');
         setSuccessMessage('');
@@ -266,9 +272,10 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
                 const marketName = result.school?.name || signupSchool?.name;
                 if (result.requiresEmailConfirmation) {
                     switchMode('login');
+                    const confirmEmail = String(formData.email || '').trim();
                     setSuccessMessage(marketName
-                        ? `Welcome to the ${marketName} market! Check your email to confirm your account before logging in.`
-                        : 'Account created! Check your email to confirm before logging in.');
+                        ? `Welcome to the ${marketName} market! We sent a confirmation link to ${confirmEmail} — if it's not in your inbox, check your spam folder.`
+                        : `Account created! We sent a confirmation link to ${confirmEmail} — if it's not in your inbox, check your spam folder.`);
                 } else if (result.user) {
                     onAuthSuccess(result.user);
                     onClose();
@@ -559,7 +566,9 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
                 )
             ),
 
-            React.createElement('div', { className: 'auth-demo-hint' },
+            // Demo hint only when running without Supabase (local/offline demo).
+            // In production the demo credentials don't exist and invite failed logins.
+            !window.SupabaseClient && React.createElement('div', { className: 'auth-demo-hint' },
                 React.createElement('p', null,
                     React.createElement('i', { className: 'fas fa-info-circle' }),
                     ' Demo Mode: You can create any account or use test@demo.com / password'

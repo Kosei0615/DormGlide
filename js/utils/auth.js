@@ -123,7 +123,7 @@ const normalizeAuthMessage = (error, context = 'generic') => {
     }
 
     if (message.includes('email not confirmed')) {
-        return 'Email not confirmed. Please check your inbox (and spam) for the confirmation email, then try logging in again.';
+        return 'Your email is not confirmed yet. Check your inbox — and your spam folder — for the confirmation email, then try logging in again.';
     }
 
     if (message.includes('captcha') || message.includes('hcaptcha') || message.includes('turnstile')) {
@@ -141,10 +141,35 @@ const normalizeAuthMessage = (error, context = 'generic') => {
 
     if (message.includes('invalid login credentials') || message.includes('invalid email or password')) {
         // Common when Supabase is enabled but the user account only exists in local demo storage.
-        return 'Invalid email or password.';
+        return 'Incorrect email or password. Double-check both, or use "Forgot Password?" below.';
     }
 
-    return raw;
+    if (message.includes('already registered') || message.includes('user already exists')) {
+        return 'An account with this email already exists. Try logging in instead.';
+    }
+
+    if (message.includes('password should be at least')) {
+        return 'Password must be at least 6 characters.';
+    }
+
+    if (message.includes('unable to validate email') || message.includes('invalid format')) {
+        return 'Please enter a valid email address.';
+    }
+
+    if (
+        message.includes('failed to fetch') ||
+        message.includes('network') ||
+        message.includes('load failed') ||
+        message.includes('timeout')
+    ) {
+        return 'Connection problem. Please check your internet and try again.';
+    }
+
+    // Unrecognized: log the raw error for debugging, show a friendly generic.
+    console.warn('[DormGlide] Unmapped auth error:', raw);
+    if (context === 'login') return 'Unable to log in right now. Please try again in a moment.';
+    if (context === 'signup') return 'Unable to create your account right now. Please try again in a moment.';
+    return 'Something went wrong. Please try again.';
 };
 
 const resolveEmailFromIdentifier = (identifier) => {
