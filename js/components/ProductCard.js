@@ -31,7 +31,7 @@ const ProductCard = ({ product, onProductClick, currentUser }) => {
         event.stopPropagation();
 
         if (!currentUser?.id) {
-            window.DormGlideToast?.warning?.('Please log in to save listings to your wishlist.');
+            window.DormGlideToast?.warning?.('Please log in to save listings.');
             return;
         }
 
@@ -48,7 +48,7 @@ const ProductCard = ({ product, onProductClick, currentUser }) => {
             }
 
             setIsWishlisted(Boolean(result.saved));
-            window.DormGlideToast?.success?.(result.saved ? 'Saved to wishlist.' : 'Removed from wishlist.');
+            window.DormGlideToast?.success?.(result.saved ? 'Added to your saved items.' : 'Removed from saved items.');
         } catch (error) {
             console.error('[DormGlide] Failed toggling wishlist:', error);
             window.DormGlideToast?.error?.('Unable to update wishlist right now.');

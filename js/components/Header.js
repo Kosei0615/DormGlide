@@ -45,7 +45,18 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
         setShowMoreMenu(false);
     };
 
+    // Wishlist = the want-alerts page (items you're looking for, with notifications).
     const handleWishlistOpen = () => {
+        if (!currentUser) {
+            onShowAuth('login');
+            setIsMenuOpen(false);
+            return;
+        }
+        handleNavigation('wishlist');
+    };
+
+    // Saved Items = listings you hearted to revisit later.
+    const handleSavedItemsOpen = () => {
         if (!currentUser) {
             onShowAuth('login');
             setIsMenuOpen(false);
@@ -290,8 +301,14 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         React.createElement('button', {
                             onClick: handleWishlistOpen
                         },
-                            navGlyph('❤️'),
+                            navGlyph('🔔'),
                             'Wishlist'
+                        ),
+                        React.createElement('button', {
+                            onClick: handleSavedItemsOpen
+                        },
+                            navGlyph('❤️'),
+                            'Saved Items'
                         )
                     )
                 ),
@@ -389,8 +406,14 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                             React.createElement('button', {
                                 onClick: handleWishlistOpen
                             },
-                                navGlyph('❤️'),
+                                navGlyph('🔔'),
                                 'Wishlist'
+                            ),
+                            React.createElement('button', {
+                                onClick: handleSavedItemsOpen
+                            },
+                                navGlyph('❤️'),
+                                'Saved Items'
                             ),
                             React.createElement('button', {
                                 onClick: () => handleNavigation('profile')
@@ -495,8 +518,15 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                         className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
                         onClick: handleWishlistOpen
                     },
-                        navGlyph('❤️'),
+                        navGlyph('🔔'),
                         React.createElement('span', null, 'Wishlist')
+                    ),
+                    React.createElement('button', {
+                        className: 'nav-btn',
+                        onClick: handleSavedItemsOpen
+                    },
+                        navGlyph('❤️'),
+                        React.createElement('span', null, 'Saved Items')
                     ),
                     React.createElement('button', {
                         className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,

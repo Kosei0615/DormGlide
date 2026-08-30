@@ -369,7 +369,7 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview', onLis
         try {
             await window.DormGlidePersonalization.toggleWishlist(currentUser.id, listingId);
             await refreshWishlist();
-            toast.success('Removed from wishlist.');
+            toast.success('Removed from saved items.');
         } catch (error) {
             console.error('[DormGlide] Failed to remove from wishlist:', error);
             toast.error('Unable to update wishlist right now.');
@@ -876,7 +876,7 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview', onLis
         if (wishlistProducts.length === 0) {
             return React.createElement('div', { className: 'empty-state' },
                 React.createElement('i', { className: 'fa-regular fa-heart' }),
-                React.createElement('h3', null, 'Your wishlist is empty'),
+                React.createElement('h3', null, 'No saved items yet'),
                 React.createElement('p', null, 'Tap hearts on listings to save them for later.'),
                 React.createElement('button', {
                     className: 'btn btn-primary',
@@ -886,7 +886,7 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview', onLis
         }
 
         return React.createElement('div', { className: 'favorites-list' },
-            React.createElement('h3', null, 'Wishlist'),
+            React.createElement('h3', null, 'Saved Items'),
             React.createElement('div', { className: 'favorites-grid' },
                 wishlistProducts.map((listing) =>
                     React.createElement('div', { key: `wishlist-${listing.id}`, className: 'favorite-card' },
@@ -1129,19 +1129,13 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview', onLis
                 React.createElement('i', { className: 'fas fa-dollar-sign' }),
                 'Sales'
             ),
-            React.createElement('button', {
-                className: `tab ${activeTab === 'favorites' ? 'active' : ''}`,
-                onClick: () => setActiveTab('favorites')
-            },
-                React.createElement('i', { className: 'fas fa-heart' }),
-                'Favorites'
-            ),
+            // Legacy local-only "Favorites" tab hidden: superseded by Saved Items (hearts).
             React.createElement('button', {
                 className: `tab ${activeTab === 'wishlist' ? 'active' : ''}`,
                 onClick: () => setActiveTab('wishlist')
             },
-                React.createElement('i', { className: 'fa-regular fa-heart' }),
-                'Wishlist'
+                React.createElement('i', { className: 'fa-solid fa-heart' }),
+                'Saved Items'
             ),
             React.createElement('button', {
                 className: `tab ${activeTab === 'alerts' ? 'active' : ''}`,

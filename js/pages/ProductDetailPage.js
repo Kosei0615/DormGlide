@@ -315,7 +315,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     };
 
     const handleToggleSave = async () => {
-        if (!ensureAuthenticated('Log in to save this item to your wishlist.')) return;
+        if (!ensureAuthenticated('Log in to save this item.')) return;
         try {
             if (!window.DormGlidePersonalization?.toggleWishlist) {
                 toast.error('Wishlist is not available right now.');
@@ -332,11 +332,11 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             setIsSaved(saved);
 
             if (saved) {
-                if (confirm('Saved to your wishlist! Open your wishlist now?')) {
+                if (confirm('Saved! Open your Saved Items now?')) {
                     onNavigate('dashboard', null, { tab: 'wishlist' });
                 }
             } else {
-                toast.info('Removed from your wishlist.');
+                toast.info('Removed from your saved items.');
             }
         } catch (error) {
             console.error('[DormGlide] Failed updating wishlist from detail page:', error);
