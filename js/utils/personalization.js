@@ -27,8 +27,23 @@
     };
 
     const getClient = () => window.SupabaseClient || null;
-    const hasSupabaseSession = () => Boolean(window.DormGlideSupabaseSessionActive);
-    const canUseSupabase = () => Boolean(getClient() && hasSupabaseSession());
+
+    // Resolve session availability from the client itself. The old check read a
+    // global flag that is set asynchronously at startup, so early callers (e.g.
+    // product cards mounting right after a page refresh) raced it and silently
+    // fell back to local-only data — wishlist hearts appeared unsaved.
+    const canUseSupabase = async () => {
+        const client = getClient();
+        if (!client) return false;
+        if (window.DormGlideSupabaseSessionActive) return true;
+        try {
+            const { data } = await client.auth.getSession();
+            window.DormGlideSupabaseSessionActive = Boolean(data?.session);
+            return Boolean(data?.session);
+        } catch (_error) {
+            return false;
+        }
+    };
 
     const nowIso = () => new Date().toISOString();
     const randomId = (prefix) => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -43,7 +58,7 @@
     const fetchWishlistListingIds = async (userId) => {
         if (!userId) return [];
 
-        if (canUseSupabase()) {
+        if (await canUseSupabase()) {
             const client = getClient();
             const { data, error } = await client
                 .from('wishlists')
@@ -74,7 +89,10 @@
             return { success: false, message: 'Missing user or listing.' };
         }
 
-        if (canUseSupabase()) {
+        if (await canUseSupabase()) {
+            // Supabase is the source of truth for a logged-in user. Do NOT fall
+            // back to localStorage on failure here — that used to mask RLS and
+            // schema errors as success, saving hearts only on this one device.
             const client = getClient();
             const { data: existing, error: existingError } = await client
                 .from('wishlists')
@@ -83,27 +101,39 @@
                 .eq('listing_id', listingId)
                 .maybeSingle();
 
-            if (!existingError && existing?.id) {
+            if (existingError) {
+                console.error('[DormGlide] Wishlist lookup failed:', existingError);
+                return { success: false, message: 'Unable to update your wishlist right now. Please try again.' };
+            }
+
+            if (existing?.id) {
                 const { error: deleteError } = await client
                     .from('wishlists')
                     .delete()
                     .eq('id', existing.id)
                     .eq('user_id', userId);
-                if (!deleteError) {
-                    return { success: true, saved: false };
+                if (deleteError) {
+                    console.error('[DormGlide] Wishlist remove failed:', deleteError);
+                    return { success: false, message: 'Unable to remove this from your wishlist right now. Please try again.' };
                 }
+                return { success: true, saved: false };
             }
 
-            if (!existingError && !existing?.id) {
-                const { error: insertError } = await client
-                    .from('wishlists')
-                    .insert({ user_id: userId, listing_id: listingId });
-                if (!insertError) {
-                    return { success: true, saved: true };
+            const { error: insertError } = await client
+                .from('wishlists')
+                .insert({ user_id: userId, listing_id: listingId });
+            if (insertError) {
+                console.error('[DormGlide] Wishlist save failed:', insertError);
+                const msg = String(insertError.message || '').toLowerCase();
+                if (msg.includes('row-level security')) {
+                    return { success: false, message: 'Could not save to your wishlist (permission issue). Try logging out and back in.' };
                 }
+                return { success: false, message: 'Unable to save to your wishlist right now. Please try again.' };
             }
+            return { success: true, saved: true };
         }
 
+        // Local fallback only when Supabase is not available (offline/demo mode).
         const local = readLocal(LOCAL_LISTING_WISHLIST_KEY, []);
         const normalized = Array.isArray(local) ? local : [];
         const index = normalized.findIndex((entry) => isSameId(entry?.user_id, userId) && isSameId(entry?.listing_id, listingId));
@@ -164,7 +194,7 @@
     const fetchKeywordAlerts = async (userId) => {
         if (!userId) return [];
 
-        if (canUseSupabase()) {
+        if (await canUseSupabase()) {
             const client = getClient();
             const { data, error } = await client
                 .from('keyword_alerts')
@@ -194,7 +224,7 @@
             return { success: false, message: 'You already have this keyword alert.' };
         }
 
-        if (canUseSupabase()) {
+        if (await canUseSupabase()) {
             const client = getClient();
             const { data, error } = await client
                 .from('keyword_alerts')
@@ -230,7 +260,7 @@
     const deleteKeywordAlert = async ({ userId, alertId }) => {
         if (!userId || !alertId) return { success: false, message: 'Missing alert.' };
 
-        if (canUseSupabase()) {
+        if (await canUseSupabase()) {
             const client = getClient();
             const { error } = await client
                 .from('keyword_alerts')
@@ -252,7 +282,7 @@
     const createNotification = async ({ userId, type = 'wishlist_match', title = 'DormGlide notification', message, listingId, keyword = null }) => {
         if (!userId || !message) return null;
 
-        if (canUseSupabase()) {
+        if (await canUseSupabase()) {
             const client = getClient();
             const { data, error } = await client
                 .from('notifications')
@@ -293,7 +323,7 @@
     const fetchNotifications = async ({ userId, limit = 8 }) => {
         if (!userId) return [];
 
-        if (canUseSupabase()) {
+        if (await canUseSupabase()) {
             const client = getClient();
             const { data, error } = await client
                 .from('notifications')
@@ -317,7 +347,7 @@
     const getUnreadNotificationCount = async (userId) => {
         if (!userId) return 0;
 
-        if (canUseSupabase()) {
+        if (await canUseSupabase()) {
             const client = getClient();
             const { count, error } = await client
                 .from('notifications')
@@ -337,7 +367,7 @@
     const markNotificationsRead = async ({ userId, notificationIds = [] }) => {
         if (!userId) return;
 
-        if (canUseSupabase()) {
+        if (await canUseSupabase()) {
             const client = getClient();
             let query = client
                 .from('notifications')
@@ -396,7 +426,7 @@
     const processListingKeywordAlerts = async (listing) => {
         if (!listing?.id) return { matches: 0 };
 
-        if (!canUseSupabase()) {
+        if (!(await canUseSupabase())) {
             const alerts = readLocal(LOCAL_KEYWORD_ALERTS_KEY, []);
             const matches = [];
 
