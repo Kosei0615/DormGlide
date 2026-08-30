@@ -5368,3 +5368,149 @@ i[class*="fa-"]::before {
     display: inline-block;
     animation: spin 1s linear infinite;
 }
+
+/* ============================================================
+   Design pass v1 — homepage (appended layer, wins the cascade)
+   Goals: one blue, 8px spacing rhythm, consistent radii,
+   calmer hero, tighter category grid, aligned section headings.
+   ============================================================ */
+
+/* --- Section rhythm: consistent vertical spacing + headings --- */
+.home-page section {
+    margin: 2.5rem 0;
+}
+
+.home-page h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--dg-text);
+    text-align: left;
+    margin: 0 0 1rem;
+}
+
+/* --- Hero: single-hue brand gradient, inline CTAs, quieter chips --- */
+.home-page .hero-section {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 55%, #3b82f6 100%);
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    margin: 1.5rem 0 2.5rem;
+    text-align: center;
+}
+
+.home-page .hero-content h1 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+}
+
+.home-page .hero-content > p {
+    font-size: 1.05rem;
+    opacity: 0.92;
+    margin-bottom: 1.5rem;
+}
+
+.home-page .hero-stats {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+}
+
+.home-page .hero-stats .stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* CTAs: side-by-side, content-sized — never two stacked full-width slabs */
+.home-page .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.home-page .hero-actions .cta-button {
+    width: auto;
+    min-width: 180px;
+    max-width: 260px;
+    padding: 0.8rem 1.6rem;
+    border-radius: 999px;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.home-page .cta-button.cta-primary {
+    background: #ffffff;
+    color: var(--dg-primary);
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.home-page .cta-button.cta-secondary {
+    background: transparent;
+    color: #ffffff;
+    border: 1.5px solid rgba(255, 255, 255, 0.65);
+    box-shadow: none;
+}
+
+@media (max-width: 480px) {
+    .home-page .hero-section {
+        padding: 2rem 1.25rem;
+    }
+    .home-page .hero-actions .cta-button {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+/* --- Category cards: tighter grid, uniform radius, gentle hover --- */
+.home-page .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+}
+
+.home-page .category-card {
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 12px;
+    padding: 1rem 0.75rem;
+    text-align: center;
+    box-shadow: none;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.home-page .category-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--dg-primary);
+    box-shadow: 0 6px 16px rgba(29, 78, 216, 0.10);
+}
+
+/* --- Search card: aligned with section rhythm --- */
+.home-page .search-section,
+.home-page .search-filter-card {
+    border-radius: 16px;
+}
+
+/* --- Item count + empty state: quieter, single focal point --- */
+.home-page .results-count,
+.home-page .items-found {
+    color: var(--dg-muted);
+    font-size: 0.9rem;
+}
+
+.home-page .empty-marketplace {
+    background: var(--dg-surface);
+    border: 1px dashed var(--dg-border);
+    border-radius: 16px;
+}

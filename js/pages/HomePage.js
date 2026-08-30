@@ -278,9 +278,11 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                         React.createElement('span', { className: 'hero-glyph', 'aria-hidden': 'true' }, '🧑‍🎓'),
                         React.createElement('span', null, 'Trusted by Students')
                     ),
-                    React.createElement('div', { className: 'stat' },
+                    // Hide the item-count chip while the market is empty —
+                    // "0 Items" undermines the pitch right below it.
+                    decoratedProducts.length > 0 && React.createElement('div', { className: 'stat' },
                         React.createElement('span', { className: 'hero-glyph', 'aria-hidden': 'true' }, '📦'),
-                        React.createElement('span', null, `${decoratedProducts.length} Items${decoratedProducts.length === 0 ? ' (Start Selling!)' : ''}`)
+                        React.createElement('span', null, `${decoratedProducts.length} Items`)
                     ),
                     React.createElement('div', { className: 'stat' },
                         React.createElement('span', { className: 'hero-glyph', 'aria-hidden': 'true' }, '🤝'),
