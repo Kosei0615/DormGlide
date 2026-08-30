@@ -5514,3 +5514,318 @@ i[class*="fa-"]::before {
     border: 1px dashed var(--dg-border);
     border-radius: 16px;
 }
+
+/* ============================================================
+   Design pass v2 — site-wide components (buttons, forms, cards,
+   modal, dashboard, wishlist, footer). Same tokens, same rhythm.
+   ============================================================ */
+
+/* --- Buttons: one hierarchy everywhere --- */
+.btn {
+    border-radius: 999px;
+    font-weight: 700;
+    padding: 0.65rem 1.4rem;
+    transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.btn:focus-visible {
+    outline: 3px solid rgba(29, 78, 216, 0.35);
+    outline-offset: 2px;
+}
+
+.btn.btn-primary {
+    background: var(--dg-primary);
+    color: #fff;
+    border: none;
+}
+
+.btn.btn-primary:hover:not(:disabled) {
+    background: var(--dg-primary-strong);
+}
+
+.btn.btn-secondary,
+.btn.btn-outline {
+    background: var(--dg-surface);
+    color: var(--dg-primary);
+    border: 1.5px solid var(--dg-border);
+}
+
+.btn.btn-secondary:hover:not(:disabled),
+.btn.btn-outline:hover:not(:disabled) {
+    border-color: var(--dg-primary);
+    background: #f0f5ff;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn.btn-sm {
+    padding: 0.45rem 1rem;
+    font-size: 0.88rem;
+}
+
+/* --- Form fields: one input style, no iOS zoom, clear focus --- */
+.form-group label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--dg-text);
+    margin-bottom: 0.35rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    border: 1px solid var(--dg-border);
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    font-size: 1rem; /* >=16px prevents iOS focus zoom */
+    background: var(--dg-surface);
+    color: var(--dg-text);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--dg-primary);
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+    outline: none;
+}
+
+.form-hint {
+    color: var(--dg-muted);
+    font-size: 0.82rem;
+}
+
+/* --- Product cards: image-led, price-first --- */
+.product-card {
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--dg-primary);
+    box-shadow: 0 8px 20px rgba(29, 78, 216, 0.10);
+}
+
+.product-card .product-image {
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    object-fit: cover;
+    background: #eef2f9;
+}
+
+.product-card .product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-card .product-info {
+    padding: 0.75rem 0.85rem 0.9rem;
+}
+
+.product-card .product-price {
+    color: var(--dg-text);
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+.product-card .product-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.product-card .product-category {
+    display: inline-flex;
+    align-items: center;
+    background: #eef2ff;
+    color: var(--dg-primary);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.product-card .product-seller,
+.product-card .product-location,
+.product-card .product-date {
+    color: var(--dg-muted);
+    font-size: 0.8rem;
+}
+
+/* --- Auth modal: aligned with card language --- */
+.auth-modal {
+    border-radius: 16px;
+}
+
+.auth-modal-header h2 {
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.auth-error,
+.auth-success {
+    border-radius: 10px;
+    font-size: 0.92rem;
+}
+
+.auth-tabs .auth-tab {
+    font-weight: 700;
+}
+
+/* --- Sell page: form sections as cards --- */
+.sell-form .form-section {
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.sell-form .form-section h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.sell-form .section-description {
+    color: var(--dg-muted);
+    font-size: 0.88rem;
+    margin-bottom: 1rem;
+}
+
+.page-header h1 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.page-header p {
+    color: var(--dg-muted);
+}
+
+/* --- Dashboard: pill tabs, consistent cards + empty states --- */
+.dashboard-tabs {
+    gap: 0.4rem;
+}
+
+.dashboard-tabs .tab {
+    border-radius: 999px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dashboard-tabs .tab.active {
+    background: #eef2ff;
+    color: var(--dg-primary);
+    border-color: rgba(29, 78, 216, 0.25);
+}
+
+.empty-state,
+.wishlist-empty-state {
+    background: var(--dg-surface);
+    border: 1px dashed var(--dg-border);
+    border-radius: 16px;
+    color: var(--dg-muted);
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+}
+
+.empty-state h3 {
+    color: var(--dg-text);
+    font-weight: 700;
+}
+
+/* --- Wishlist page: form as a card, entries consistent --- */
+.wishlist-form-card {
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 16px;
+    padding: 1.25rem;
+}
+
+.wishlist-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+}
+
+@media (min-width: 720px) {
+    .wishlist-form-grid {
+        grid-template-columns: 2fr 1fr 1fr;
+        align-items: end;
+    }
+}
+
+.wishlist-entry-card {
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wishlist-entry-card:hover {
+    border-color: var(--dg-primary);
+}
+
+.wishlist-entry-card h3 {
+    font-size: 0.98rem;
+    font-weight: 700;
+    margin: 0 0 0.15rem;
+}
+
+.wishlist-entry-meta {
+    color: var(--dg-muted);
+    font-size: 0.82rem;
+    margin: 0;
+}
+
+/* --- Auth-required gate cards --- */
+.auth-required {
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 16px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+}
+
+/* --- Footer: quiet, structured --- */
+.footer {
+    border-top: 1px solid var(--dg-border);
+    background: var(--dg-surface);
+}
+
+.footer,
+.footer a {
+    color: var(--dg-muted);
+}
+
+.footer a:hover {
+    color: var(--dg-primary);
+}
+
+.footer .footer-section h4 {
+    color: var(--dg-text);
+    font-weight: 700;
+    font-size: 0.92rem;
+}
+
+.footer-bottom {
+    border-top: 1px solid var(--dg-border);
+    color: var(--dg-muted);
+    font-size: 0.85rem;
+}
