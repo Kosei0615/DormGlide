@@ -166,6 +166,8 @@
         const result = await addKeywordAlert({
             userId,
             keyword,
+            category,
+            maxPrice,
             notifyInApp: true,
             notifyEmail: true
         });
@@ -213,15 +215,22 @@
             .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
     };
 
-    const addKeywordAlert = async ({ userId, keyword, notifyInApp = true, notifyEmail = true }) => {
+    const addKeywordAlert = async ({ userId, keyword, notifyInApp = true, notifyEmail = true, category = '', maxPrice = null }) => {
         const normalizedKeyword = normalizeKeyword(keyword);
-        if (!userId || !normalizedKeyword) {
-            return { success: false, message: 'Please enter a keyword.' };
+        const normalizedCategory = String(category || '').trim();
+        const normalizedMaxPrice = Number.isFinite(Number(maxPrice)) && Number(maxPrice) > 0 ? Number(maxPrice) : null;
+
+        if (!userId || (!normalizedKeyword && !normalizedCategory)) {
+            return { success: false, message: 'Please enter a keyword or pick a category.' };
         }
 
         const existing = await fetchKeywordAlerts(userId);
-        if (existing.some((entry) => normalizeKeyword(entry.keyword) === normalizedKeyword)) {
-            return { success: false, message: 'You already have this keyword alert.' };
+        const isDuplicate = existing.some((entry) =>
+            normalizeKeyword(entry.keyword) === normalizedKeyword &&
+            String(entry.category || '').trim().toLowerCase() === normalizedCategory.toLowerCase()
+        );
+        if (isDuplicate) {
+            return { success: false, message: 'You already have this wishlist alert.' };
         }
 
         if (await canUseSupabase()) {
@@ -231,6 +240,8 @@
                 .insert({
                     user_id: userId,
                     keyword: normalizedKeyword,
+                    category: normalizedCategory || null,
+                    max_price: normalizedMaxPrice,
                     notify_in_app: Boolean(notifyInApp),
                     notify_email: Boolean(notifyEmail)
                 })
@@ -248,6 +259,8 @@
             id: randomId('alert'),
             user_id: userId,
             keyword: normalizedKeyword,
+            category: normalizedCategory || null,
+            max_price: normalizedMaxPrice,
             notify_in_app: Boolean(notifyInApp),
             notify_email: Boolean(notifyEmail),
             created_at: nowIso()
@@ -256,6 +269,31 @@
         writeLocal(LOCAL_KEYWORD_ALERTS_KEY, next);
         return { success: true, alert: record };
     };
+
+    // Pure matcher shared by the instant back-match UI. Mirrors the SQL trigger:
+    // (keyword substring OR exact category) AND price within max_price.
+    const listingMatchesAlert = (listing, alert) => {
+        if (!listing || !alert) return false;
+        const status = String(listing.status || 'available').toLowerCase();
+        if (status !== 'available' && status !== 'active') return false;
+
+        const keyword = normalizeKeyword(alert.keyword);
+        const category = String(alert.category || '').trim().toLowerCase();
+        const haystack = `${listing.title || ''} ${listing.description || ''}`.toLowerCase();
+
+        const keywordMatch = Boolean(keyword) && haystack.includes(keyword);
+        const categoryMatch = Boolean(category) && String(listing.category || '').trim().toLowerCase() === category;
+        if (!keywordMatch && !categoryMatch) return false;
+
+        const maxPrice = Number(alert.max_price ?? alert.maxPrice);
+        if (Number.isFinite(maxPrice) && maxPrice > 0 && Number(listing.price || 0) > maxPrice) {
+            return false;
+        }
+        return true;
+    };
+
+    const findMatchingListings = (alert, listings = []) =>
+        (Array.isArray(listings) ? listings : []).filter((listing) => listingMatchesAlert(listing, alert));
 
     const deleteKeywordAlert = async ({ userId, alertId }) => {
         if (!userId || !alertId) return { success: false, message: 'Missing alert.' };
@@ -552,6 +590,8 @@
         fetchKeywordAlerts,
         addKeywordAlert,
         deleteKeywordAlert,
+        listingMatchesAlert,
+        findMatchingListings,
         fetchNotifications,
         getUnreadNotificationCount,
         markNotificationsRead,

@@ -6,6 +6,9 @@ const WishlistPage = ({ currentUser, onNavigate, onShowAuth }) => {
     const [isLoading, setIsLoading] = React.useState(false);
     const [isAdding, setIsAdding] = React.useState(false);
     const [deletingEntryId, setDeletingEntryId] = React.useState('');
+    // Instant back-match: listings already live that match the alert just added.
+    const [backMatches, setBackMatches] = React.useState([]);
+    const [backMatchLabel, setBackMatchLabel] = React.useState('');
 
     const toast = window.DormGlideToast || {
         success: () => {},
@@ -50,8 +53,8 @@ const WishlistPage = ({ currentUser, onNavigate, onShowAuth }) => {
             return;
         }
 
-        if (!keyword.trim()) {
-            toast.warning('Please enter a keyword.');
+        if (!keyword.trim() && !category) {
+            toast.warning('Please enter a keyword or pick a category.');
             return;
         }
 
@@ -74,11 +77,40 @@ const WishlistPage = ({ currentUser, onNavigate, onShowAuth }) => {
                 return;
             }
 
+            const addedAlert = result.entry || {
+                keyword: keyword.trim(),
+                category,
+                max_price: maxPrice === '' ? null : Number(maxPrice)
+            };
+
             setKeyword('');
             setCategory('');
             setMaxPrice('');
             await loadEntries();
-            toast.success('Added to wishlist.');
+
+            // Instant back-match: check listings that are ALREADY live.
+            try {
+                if (typeof getProductsFromStorage !== 'undefined' && window.DormGlidePersonalization?.findMatchingListings) {
+                    const allListings = await getProductsFromStorage();
+                    const matches = window.DormGlidePersonalization.findMatchingListings(addedAlert, allListings || []);
+                    setBackMatches(matches.slice(0, 6));
+                    setBackMatchLabel(addedAlert.keyword || addedAlert.category || '');
+                    if (matches.length > 0) {
+                        toast.success(`Added! ${matches.length} current listing${matches.length === 1 ? '' : 's'} already match${matches.length === 1 ? 'es' : ''} — see below.`);
+                    } else {
+                        toast.success("Added to wishlist. We'll notify you when a match is posted.");
+                    }
+                } else {
+                    setBackMatches([]);
+                    setBackMatchLabel('');
+                    toast.success('Added to wishlist.');
+                }
+            } catch (matchError) {
+                console.warn('[DormGlide] Back-match check failed:', matchError);
+                setBackMatches([]);
+                setBackMatchLabel('');
+                toast.success('Added to wishlist.');
+            }
         } catch (error) {
             console.error('[DormGlide] Failed to add wishlist entry:', error);
             toast.error('Unable to add wishlist entry right now.');
@@ -149,15 +181,15 @@ const WishlistPage = ({ currentUser, onNavigate, onShowAuth }) => {
             React.createElement('form', { className: 'wishlist-form-card', onSubmit: handleAddEntry },
                 React.createElement('div', { className: 'wishlist-form-grid' },
                     React.createElement('div', { className: 'form-group' },
-                        React.createElement('label', { htmlFor: 'wishlist-keyword' }, 'Keyword *'),
+                        React.createElement('label', { htmlFor: 'wishlist-keyword' }, 'Keyword'),
                         React.createElement('input', {
                             id: 'wishlist-keyword',
                             type: 'text',
                             value: keyword,
                             placeholder: 'desk lamp, bike, calculus textbook',
-                            onChange: (event) => setKeyword(event.target.value),
-                            required: true
-                        })
+                            onChange: (event) => setKeyword(event.target.value)
+                        }),
+                        React.createElement('small', { style: { color: '#6b7280' } }, 'Enter a keyword, pick a category, or both.')
                     ),
                     React.createElement('div', { className: 'form-group' },
                         React.createElement('label', { htmlFor: 'wishlist-category' }, 'Category'),
@@ -191,6 +223,29 @@ const WishlistPage = ({ currentUser, onNavigate, onShowAuth }) => {
                     isAdding && React.createElement('i', { className: 'fa-solid fa-spinner fa-spin' }),
                     !isAdding && React.createElement('i', { className: 'fa-solid fa-plus' }),
                     isAdding ? 'Adding...' : 'Add to Wishlist'
+                )
+            ),
+
+            // Instant back-match results for the alert just added
+            backMatches.length > 0 && React.createElement('section', { className: 'wishlist-list-section' },
+                React.createElement('h2', { style: { margin: '16px 0 8px' } },
+                    `🎉 Already for sale${backMatchLabel ? ` — matching "${backMatchLabel}"` : ''}`
+                ),
+                React.createElement('div', { className: 'wishlist-entry-grid' },
+                    backMatches.map((listing) => React.createElement('article', {
+                        key: listing.id,
+                        className: 'wishlist-entry-card',
+                        style: { cursor: 'pointer' },
+                        onClick: () => onNavigate('product-detail', listing.id)
+                    },
+                        React.createElement('div', { className: 'wishlist-entry-main' },
+                            React.createElement('h3', null, listing.title),
+                            React.createElement('p', { className: 'wishlist-entry-meta' },
+                                `$${Number(listing.price || 0).toFixed(2)}${listing.category ? ` · ${listing.category}` : ''}`
+                            )
+                        ),
+                        React.createElement('i', { className: 'fa-solid fa-chevron-right', 'aria-hidden': 'true' })
+                    ))
                 )
             ),
 
