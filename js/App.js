@@ -60,6 +60,47 @@ const sanitizePlaceholderListings = (listings = []) => {
     return { keptListings, removedIds };
 };
 
+// Persistent mobile bottom tab bar (hidden on desktop via CSS).
+// Logged-out taps on account-gated tabs open the auth modal instead.
+const BottomNav = ({ currentPage, currentUser, onNavigate, onShowAuth }) => {
+    const items = [
+        { id: 'home', label: 'Browse', glyph: '🛍️' },
+        { id: 'wishlist', label: 'Wishlist', glyph: '🔔', needsAuth: true },
+        { id: 'sell', label: 'Sell', glyph: '➕' },
+        { id: 'messages', label: 'Messages', glyph: '💬', needsAuth: true },
+        currentUser
+            ? { id: 'dashboard', label: 'Me', glyph: '👤' }
+            : { id: '__auth', label: 'Sign up', glyph: '🔑' }
+    ];
+
+    const handleTap = (item) => {
+        if (item.id === '__auth') {
+            onShowAuth('signup');
+            return;
+        }
+        if (item.needsAuth && !currentUser) {
+            onShowAuth('login');
+            return;
+        }
+        onNavigate(item.id);
+    };
+
+    return React.createElement('nav', {
+        className: 'bottom-nav',
+        'aria-label': 'Primary'
+    }, items.map((item) =>
+        React.createElement('button', {
+            key: item.id,
+            className: `bottom-nav-item ${currentPage === item.id ? 'active' : ''}`,
+            onClick: () => handleTap(item),
+            'aria-current': currentPage === item.id ? 'page' : undefined
+        },
+            React.createElement('span', { className: 'bottom-nav-glyph', 'aria-hidden': 'true' }, item.glyph),
+            React.createElement('span', { className: 'bottom-nav-label' }, item.label)
+        )
+    ));
+};
+
 const App = () => {
     console.log('App component initializing...');
     const [currentPage, setCurrentPage] = useState('home');
@@ -479,6 +520,13 @@ const App = () => {
         ),
         React.createElement(Footer, {
             onNavigate: navigateToPage
+        }),
+
+        React.createElement(BottomNav, {
+            currentPage: currentPage,
+            currentUser: currentUser,
+            onNavigate: navigateToPage,
+            onShowAuth: openAuthModal
         }),
         
         // Auth Modal

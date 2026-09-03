@@ -86,13 +86,15 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
         }
     }, [currentUser?.id]);
 
+    // No confirm() dialog: it is suppressed by several mobile in-app browsers
+    // (returning false), which made the logout tap do nothing on phones.
+    // Logging out is low-stakes and instantly reversible by logging back in.
     const handleLogout = () => {
-        if (confirm('Are you sure you want to logout?')) {
-            onLogout();
-            setShowUserMenu(false);
-            setIsMenuOpen(false);
-            setShowNotificationMenu(false);
-        }
+        onLogout();
+        setShowUserMenu(false);
+        setIsMenuOpen(false);
+        setShowNotificationMenu(false);
+        window.DormGlideToast?.info?.('You have been logged out.');
     };
 
     React.useEffect(() => {
@@ -458,6 +460,13 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     )
                 )
             ),
+
+            // Mobile-only quick login: first-time phone visitors must see an
+            // auth action on the first screen without opening the menu.
+            !currentUser && React.createElement('button', {
+                className: 'header-login-quick',
+                onClick: () => onShowAuth('login')
+            }, 'Log in'),
 
             // Mobile menu toggle
             React.createElement('button', {

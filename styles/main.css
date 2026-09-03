@@ -5748,3 +5748,114 @@ i[class*="fa-"]::before {
 button, input, select, textarea {
     font-family: inherit;
 }
+
+/* ============================================================
+   Design pass v4 — mobile navigation & tap targets
+   Bottom tab bar (phones only), header quick-login pill,
+   44px minimum touch targets, safe-area support.
+   ============================================================ */
+
+.bottom-nav {
+    display: none;
+}
+
+.header-login-quick {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1100;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        background: var(--dg-surface);
+        border-top: 1px solid var(--dg-border);
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        min-height: 56px;
+        padding: 6px 2px 8px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--dg-muted);
+        font-family: inherit;
+        font-size: 0.68rem;
+        font-weight: 700;
+    }
+
+    .bottom-nav-item.active {
+        color: var(--dg-primary);
+    }
+
+    .bottom-nav-glyph {
+        font-size: 1.3rem;
+        line-height: 1;
+    }
+
+    /* Keep page content and footer clear of the fixed bar */
+    .app {
+        padding-bottom: calc(64px + env(safe-area-inset-bottom));
+    }
+
+    /* Always-visible auth action on the first phone screen */
+    .header-login-quick {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 18px;
+        margin-right: 8px;
+        border: none;
+        border-radius: 999px;
+        background: var(--dg-primary);
+        color: #ffffff;
+        font-family: inherit;
+        font-size: 0.92rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    /* Tap targets: 44px minimum on interactive controls */
+    .nav-btn,
+    .icon-btn,
+    .auth-tab,
+    .dashboard-tabs .tab,
+    .btn,
+    .mobile-menu-toggle,
+    .auth-inline-link,
+    .category-card {
+        min-height: 44px;
+    }
+
+    .auth-modal-close {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 767px) {
+    /* Footer links + social icons: comfortable touch targets */
+    .footer a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+
+    .social-links a {
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+    }
+}

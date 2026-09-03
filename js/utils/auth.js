@@ -626,13 +626,29 @@ const loginUserLocal = async (resolvedEmail, trimmedPassword, originalIdentifier
 // Logout user
 const logoutUser = async () => {
     const client = getSupabaseClient();
-    if (client && isSupabaseEnabled()) {
+    // ALWAYS attempt sign-out when a client exists — never behind the
+    // circuit breaker. Skipping signOut leaves the persisted session in
+    // localStorage, which logged users right back in after a refresh
+    // (the "logout doesn't work on phones" bug: flaky mobile connections
+    // tripped the breaker far more often than desktops).
+    if (client) {
         try {
-            await client.auth.signOut();
+            const { error } = await client.auth.signOut();
+            if (error) throw error;
         } catch (error) {
-            console.warn('[DormGlide] Supabase sign out failed:', error);
-            if (shouldDisableSupabaseAuth(error)) {
-                markSupabaseUnavailable(error);
+            console.warn('[DormGlide] Global sign out failed, clearing local session:', error);
+            try {
+                // Local scope clears the persisted session without a server call.
+                await client.auth.signOut({ scope: 'local' });
+            } catch (localError) {
+                console.warn('[DormGlide] Local sign out failed, purging tokens:', localError);
+                // Last resort: remove Supabase auth tokens directly so a
+                // refresh cannot restore the session.
+                try {
+                    Object.keys(localStorage)
+                        .filter((key) => key.startsWith('sb-'))
+                        .forEach((key) => localStorage.removeItem(key));
+                } catch (_purgeError) { /* storage unavailable */ }
             }
         }
     }
