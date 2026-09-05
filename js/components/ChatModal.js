@@ -4,6 +4,7 @@ const ChatModal = ({
     participant,
     initialConversation = null,
     initialDraft = '',
+    dealStatus = null,
     onProductUpdate,
     onClose,
     onConversationActivity
@@ -626,6 +627,43 @@ const ChatModal = ({
                             );
                         })
             ),
+            // One-tap starter messages, chosen by deal stage. Tapping fills the
+            // input (still editable) — nothing is auto-sent.
+            (() => {
+                const stage = String(dealStatus || '').toLowerCase();
+                let starters;
+                if (stage === 'accepted') {
+                    starters = [
+                        'Hi! When are you free to meet up?',
+                        'I can do Venmo or cash — which do you prefer?',
+                        'Does tomorrow afternoon work for you?'
+                    ];
+                } else if (stage === 'meetup_arranged') {
+                    starters = [
+                        "I'm on my way!",
+                        "I'm at our meetup spot.",
+                        'Running 5 min late, sorry!'
+                    ];
+                } else if (stage === 'pending') {
+                    starters = [
+                        'Hi! Is this still available?',
+                        'Would you take a slightly lower price?'
+                    ];
+                } else {
+                    starters = [
+                        'Hi! Is this still available?',
+                        'When are you free to meet up?'
+                    ];
+                }
+                return React.createElement('div', { className: 'chat-quick-replies' },
+                    starters.map((text) => React.createElement('button', {
+                        key: text,
+                        type: 'button',
+                        className: 'chat-quick-reply',
+                        onClick: () => setMessage((prev) => (prev && prev.trim() ? `${prev} ${text}` : text))
+                    }, text))
+                );
+            })(),
             React.createElement('div', { className: 'chat-input-bar' },
                 React.createElement('textarea', {
                     className: 'chat-input',

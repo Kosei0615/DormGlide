@@ -78,6 +78,9 @@ const normalizeProductRecord = (record) => {
         soldMethod: record.sold_method || record.soldMethod || null,
         buyerConfirmedAt: record.buyer_confirmed_at || record.buyerConfirmedAt || null,
         sellerConfirmedAt: record.seller_confirmed_at || record.sellerConfirmedAt || null,
+        paymentMethods: Array.isArray(record.payment_methods)
+            ? record.payment_methods
+            : (Array.isArray(record.paymentMethods) ? record.paymentMethods : []),
         isDemo: Boolean(record.isDemo ?? record.is_demo ?? false),
         createdAt: record.created_at || record.createdAt || new Date().toISOString(),
         views: record.views || 0
@@ -107,6 +110,7 @@ const productToSupabasePayload = (product) => ({
     sold_method: product.soldMethod || null,
     buyer_confirmed_at: product.buyerConfirmedAt || null,
     seller_confirmed_at: product.sellerConfirmedAt || null,
+    payment_methods: Array.isArray(product.paymentMethods) ? product.paymentMethods : [],
     is_demo: Boolean(product.isDemo),
     created_at: product.createdAt || new Date().toISOString(),
     views: product.views || 0
@@ -141,6 +145,7 @@ const productUpdatesToSupabasePayload = (updates = {}) => {
     if (hasOwn(updates, 'soldMethod')) payload.sold_method = updates.soldMethod || null;
     if (hasOwn(updates, 'buyerConfirmedAt')) payload.buyer_confirmed_at = updates.buyerConfirmedAt || null;
     if (hasOwn(updates, 'sellerConfirmedAt')) payload.seller_confirmed_at = updates.sellerConfirmedAt || null;
+    if (hasOwn(updates, 'paymentMethods')) payload.payment_methods = Array.isArray(updates.paymentMethods) ? updates.paymentMethods : [];
     if (hasOwn(updates, 'isDemo')) payload.is_demo = Boolean(updates.isDemo);
     if (hasOwn(updates, 'createdAt')) payload.created_at = updates.createdAt || new Date().toISOString();
     if (hasOwn(updates, 'views')) payload.views = updates.views || 0;
@@ -189,6 +194,11 @@ const normalizePurchaseRequestRecord = (record) => {
         buyerId: record.buyer_id || record.buyerId,
         sellerId: record.seller_id || record.sellerId,
         status: String(record.status || 'pending').toLowerCase(),
+        meetupNote: record.meetup_note ?? record.meetupNote ?? '',
+        meetupAt: record.meetup_at ?? record.meetupAt ?? null,
+        cancelledBy: record.cancelled_by ?? record.cancelledBy ?? null,
+        cancelReason: record.cancel_reason ?? record.cancelReason ?? '',
+        completedAt: record.completed_at ?? record.completedAt ?? null,
         createdAt: record.created_at || record.createdAt || new Date().toISOString(),
         updatedAt: record.updated_at || record.updatedAt || new Date().toISOString()
     };
@@ -807,7 +817,7 @@ const createPurchaseRequest = async ({ listingId, buyerId, sellerId }) => {
     return normalizePurchaseRequestRecord(record);
 };
 
-const updatePurchaseRequestStatus = async (requestId, status) => {
+const updatePurchaseRequestStatus = async (requestId, status, extraFields = {}) => {
     if (!requestId) return null;
     const nextStatus = String(status || 'pending').toLowerCase();
     const now = new Date().toISOString();
@@ -816,7 +826,7 @@ const updatePurchaseRequestStatus = async (requestId, status) => {
     if (isSupabaseActive() && client) {
         const { data, error } = await client
             .from('purchase_requests')
-            .update({ status: nextStatus, updated_at: now })
+            .update({ status: nextStatus, updated_at: now, ...extraFields })
             .eq('id', requestId)
             .select('*')
             .single();
@@ -827,9 +837,63 @@ const updatePurchaseRequestStatus = async (requestId, status) => {
     const requests = readLocal(LOCAL_PURCHASE_REQUESTS_KEY, []);
     const index = requests.findIndex((entry) => entry?.id === requestId);
     if (index === -1) return null;
-    requests[index] = { ...requests[index], status: nextStatus, updatedAt: now };
+    requests[index] = { ...requests[index], status: nextStatus, updatedAt: now, ...extraFields };
     writeLocal(LOCAL_PURCHASE_REQUESTS_KEY, requests);
     return normalizePurchaseRequestRecord(requests[index]);
+};
+
+// ---------------------------------------------------------------------------
+// Guided deal flow. In Supabase mode the database triggers own all side
+// effects (listing status sync, auto-declining rivals, notifying the other
+// party); the client only moves the request through its states. Local demo
+// mode replicates the listing sync client-side.
+// ---------------------------------------------------------------------------
+
+const acceptDeal = async ({ listingId, requestId }) => {
+    const request = await updatePurchaseRequestStatus(requestId, 'accepted');
+    if (!isSupabaseActive()) {
+        await updateProduct(listingId, { status: 'pending', buyerId: request?.buyerId || null });
+    }
+    return request;
+};
+
+const declineDeal = async ({ listingId, requestId }) => {
+    const request = await updatePurchaseRequestStatus(requestId, 'declined');
+    if (!isSupabaseActive()) {
+        await updateProduct(listingId, { status: 'available', buyerId: null, requestedAt: null });
+    }
+    return request;
+};
+
+const arrangeDealMeetup = async ({ requestId, note = '', meetupAt = null }) => {
+    return updatePurchaseRequestStatus(requestId, 'meetup_arranged', {
+        meetup_note: String(note || '').trim().slice(0, 200) || null,
+        meetup_at: meetupAt || null
+    });
+};
+
+const completeDeal = async ({ listingId, requestId }) => {
+    const request = await updatePurchaseRequestStatus(requestId, 'completed');
+    if (!isSupabaseActive()) {
+        const now = new Date().toISOString();
+        await updateProduct(listingId, {
+            status: 'sold',
+            buyerId: request?.buyerId || null,
+            purchasedAt: now,
+            soldAt: now
+        });
+    }
+    return request;
+};
+
+const cancelDeal = async ({ listingId, requestId, reason = '' }) => {
+    const request = await updatePurchaseRequestStatus(requestId, 'cancelled', {
+        cancel_reason: String(reason || '').trim().slice(0, 120) || null
+    });
+    if (!isSupabaseActive()) {
+        await updateProduct(listingId, { status: 'available', buyerId: null, requestedAt: null });
+    }
+    return request;
 };
 
 const requestPurchase = async ({ listingId, buyerId, sellerId }) => {
@@ -951,13 +1015,17 @@ const declinePurchase = async ({ listingId, purchaseRequestId }) => {
     return { listing, request: declinedRequest };
 };
 
-const respondToPurchaseRequest = async ({ listingId, purchaseRequestId, decision, buyerId }) => {
+const respondToPurchaseRequest = async ({ listingId, purchaseRequestId, decision }) => {
     const normalizedDecision = String(decision || '').toLowerCase();
     if (normalizedDecision === 'accepted' || normalizedDecision === 'accept') {
-        return confirmPurchase({ listingId, purchaseRequestId, buyerId });
+        // Staged flow: accepting no longer marks the listing sold — the deal
+        // continues through meetup and completion.
+        const request = await acceptDeal({ listingId, requestId: purchaseRequestId });
+        return { request };
     }
     if (normalizedDecision === 'declined' || normalizedDecision === 'decline') {
-        return declinePurchase({ listingId, purchaseRequestId });
+        const request = await declineDeal({ listingId, requestId: purchaseRequestId });
+        return { request };
     }
     throw new Error('Unsupported purchase request decision. Use accepted or declined.');
 };
@@ -1022,6 +1090,11 @@ window.DormGlideStorage = {
     confirmPurchase,
     declinePurchase,
     respondToPurchaseRequest,
+    acceptDeal,
+    declineDeal,
+    arrangeDealMeetup,
+    completeDeal,
+    cancelDeal,
     clearAllData,
     initializeDefaultData,
     isSupabaseConfigured,

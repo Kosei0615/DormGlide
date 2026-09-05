@@ -294,7 +294,12 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
                             React.createElement('div', { className: 'seller-request-meta' },
                                 React.createElement('strong', null, listing?.title || 'Listing'),
                                 React.createElement('span', null, `Buyer: ${buyer?.name || request.buyerId || 'Unknown'}`),
-                                React.createElement('span', null, `Status: ${request.status}`)
+                                React.createElement('span', { className: `deal-status-chip deal-status-inline ${window.DormGlideDealStatusClass ? window.DormGlideDealStatusClass(request.status) : ''}` },
+                                    window.DormGlideDealStatusLabel ? window.DormGlideDealStatusLabel(request.status) : request.status),
+                                ['accepted', 'meetup_arranged'].includes(request.status) && React.createElement('button', {
+                                    className: 'btn btn-sm btn-secondary',
+                                    onClick: () => onNavigate('product-detail', request.listingId)
+                                }, 'View deal')
                             ),
                             request.status === 'pending' && React.createElement('div', { className: 'seller-request-actions' },
                                 React.createElement('button', {
@@ -319,8 +324,13 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
                         return React.createElement('div', { key: `outgoing_${request.id}`, className: 'seller-request-row' },
                             React.createElement('div', { className: 'seller-request-meta' },
                                 React.createElement('strong', null, listing?.title || 'Listing'),
-                                React.createElement('span', null, 'Role: Buyer request'),
-                                React.createElement('span', null, `Status: ${request.status}`)
+                                React.createElement('span', null, 'Role: Buyer'),
+                                React.createElement('span', { className: `deal-status-chip deal-status-inline ${window.DormGlideDealStatusClass ? window.DormGlideDealStatusClass(request.status) : ''}` },
+                                    window.DormGlideDealStatusLabel ? window.DormGlideDealStatusLabel(request.status) : request.status),
+                                ['pending', 'accepted', 'meetup_arranged'].includes(request.status) && React.createElement('button', {
+                                    className: 'btn btn-sm btn-secondary',
+                                    onClick: () => onNavigate('product-detail', request.listingId)
+                                }, 'View deal')
                             )
                         );
                     })

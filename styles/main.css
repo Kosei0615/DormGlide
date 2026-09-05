@@ -5859,3 +5859,330 @@ button, input, select, textarea {
         justify-content: center;
     }
 }
+
+/* ============================================================
+   Design pass v5 — guided deal flow
+   Deal panel, status chips, step tracker, payment help,
+   chat quick-replies, payment-method choices, unread badge.
+   ============================================================ */
+
+.deal-panel {
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 16px;
+    padding: 1.1rem 1.2rem;
+    margin: 1rem 0;
+}
+
+.deal-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+}
+
+.deal-panel-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.deal-status-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.deal-status-requested { background: #fef3c7; color: #92400e; }
+.deal-status-accepted { background: #dbeafe; color: #1e40af; }
+.deal-status-meetup { background: #ede9fe; color: #5b21b6; }
+.deal-status-completed { background: #dcfce7; color: #166534; }
+.deal-status-cancelled { background: #fee2e2; color: #991b1b; }
+.deal-status-inline { font-size: 0.72rem; padding: 0.15rem 0.6rem; }
+
+.deal-steps {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+    gap: 0;
+}
+
+.deal-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    position: relative;
+}
+
+.deal-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 13px;
+    left: calc(50% + 18px);
+    right: calc(-50% + 18px);
+    height: 2px;
+    background: var(--dg-border);
+}
+
+.deal-step.done:not(:last-child)::after {
+    background: var(--dg-primary);
+}
+
+.deal-step-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: #eef2f9;
+    color: var(--dg-muted);
+    border: 2px solid var(--dg-border);
+    z-index: 1;
+}
+
+.deal-step.done .deal-step-dot {
+    background: var(--dg-primary);
+    border-color: var(--dg-primary);
+    color: #fff;
+}
+
+.deal-step.current .deal-step-dot {
+    border-color: var(--dg-primary);
+    color: var(--dg-primary);
+    background: #eef2ff;
+}
+
+.deal-step-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--dg-muted);
+    text-align: center;
+}
+
+.deal-step.current .deal-step-label { color: var(--dg-primary); }
+
+.deal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+}
+
+.deal-action-btn { min-height: 44px; }
+
+.deal-waiting,
+.deal-cancelled-note {
+    color: var(--dg-muted);
+    font-size: 0.92rem;
+    margin: 0.5rem 0 0;
+}
+
+.deal-meetup-row {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+}
+
+.deal-meetup-input {
+    flex: 1;
+    min-width: 200px;
+    border: 1px solid var(--dg-border);
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.deal-meetup-input:focus {
+    border-color: var(--dg-primary);
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+    outline: none;
+}
+
+.deal-meetup-note {
+    margin: 0.6rem 0 0;
+    font-size: 0.9rem;
+    color: var(--dg-text);
+    font-weight: 600;
+}
+
+.deal-done p { margin: 0.5rem 0 0; font-weight: 700; }
+.deal-done-hint { color: var(--dg-muted); font-weight: 400 !important; font-size: 0.88rem; }
+
+.deal-buyer-line {
+    margin: 1rem 0 -0.5rem;
+    font-weight: 700;
+    color: var(--dg-text);
+}
+
+.deal-cancel-link {
+    background: none;
+    border: none;
+    color: var(--dg-muted);
+    font-size: 0.85rem;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 0.9rem;
+    padding: 4px 0;
+    font-family: inherit;
+}
+
+.deal-cancel-box {
+    margin-top: 0.9rem;
+    padding: 0.85rem;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    border-radius: 10px;
+}
+
+.deal-cancel-box label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+}
+
+.deal-cancel-box select {
+    width: 100%;
+    border: 1px solid var(--dg-border);
+    border-radius: 8px;
+    padding: 0.5rem 0.6rem;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+/* Payment help */
+.deal-payment-help { margin-top: 0.9rem; }
+
+.deal-payment-toggle {
+    background: none;
+    border: none;
+    color: var(--dg-primary);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 6px 0;
+    font-family: inherit;
+}
+
+.deal-payment-body {
+    background: #f8fafc;
+    border: 1px solid var(--dg-border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-top: 0.4rem;
+    font-size: 0.88rem;
+}
+
+.deal-payment-options { margin: 0.4rem 0; padding-left: 1.1rem; }
+.deal-payment-options li { margin-bottom: 0.35rem; }
+.deal-safety-rules p { margin: 0.25rem 0; }
+.deal-payment-accepts { margin: 0 0 0.5rem; }
+
+.deal-disclaimer {
+    margin: 0.6rem 0 0;
+    color: var(--dg-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+/* Chat quick replies */
+.chat-quick-replies {
+    display: flex;
+    gap: 0.45rem;
+    overflow-x: auto;
+    padding: 0.5rem 0.75rem 0.25rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.chat-quick-reply {
+    flex-shrink: 0;
+    background: #eef2ff;
+    color: var(--dg-primary);
+    border: 1px solid rgba(29, 78, 216, 0.25);
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    min-height: 36px;
+}
+
+.chat-quick-reply:hover { background: #e0e7ff; }
+
+/* Sell form payment choices */
+.payment-method-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.25rem 0 0.35rem;
+}
+
+.payment-method-choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1.5px solid var(--dg-border);
+    border-radius: 999px;
+    padding: 0.5rem 0.95rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 44px;
+    user-select: none;
+}
+
+.payment-method-choice.selected {
+    border-color: var(--dg-primary);
+    background: #eef2ff;
+    color: var(--dg-primary);
+}
+
+.payment-method-choice input { accent-color: var(--dg-primary); }
+
+/* Bottom-nav unread badge */
+.bottom-nav-item { position: relative; }
+
+.bottom-nav-badge {
+    position: absolute;
+    top: 4px;
+    left: calc(50% + 6px);
+    min-width: 17px;
+    height: 17px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+
+/* Outlined destructive buttons read as destructive */
+.btn.btn-outline.btn-danger,
+.btn.btn-secondary.btn-danger {
+    color: #dc2626;
+    border-color: #fecaca;
+    background: var(--dg-surface);
+}
+
+.btn.btn-outline.btn-danger:hover:not(:disabled),
+.btn.btn-secondary.btn-danger:hover:not(:disabled) {
+    background: #fef2f2;
+    border-color: #dc2626;
+}

@@ -17,8 +17,30 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
         location: preferredLocation,
         contactInfo: preferredContact,
         stripePaymentLink: '',
-        images: []
+        images: [],
+        // Remember the seller's last choice across listings (device-local).
+        paymentMethods: (() => {
+            try {
+                const saved = JSON.parse(localStorage.getItem('dormglide_seller_payment_methods') || '[]');
+                return Array.isArray(saved) ? saved : [];
+            } catch (_error) { return []; }
+        })()
     });
+
+    const PAYMENT_METHOD_OPTIONS = ['Venmo', 'Zelle', 'Cash App', 'Cash'];
+
+    const togglePaymentMethod = (method) => {
+        setFormData((prev) => {
+            const current = Array.isArray(prev.paymentMethods) ? prev.paymentMethods : [];
+            const next = current.includes(method)
+                ? current.filter((entry) => entry !== method)
+                : [...current, method];
+            try {
+                localStorage.setItem('dormglide_seller_payment_methods', JSON.stringify(next));
+            } catch (_error) { /* storage unavailable */ }
+            return { ...prev, paymentMethods: next };
+        });
+    };
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const categories = [
@@ -137,6 +159,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             condition: formData.condition,
             location: formData.location || 'Campus',
             contactInfo: formData.contactInfo.trim(),
+            paymentMethods: Array.isArray(formData.paymentMethods) ? formData.paymentMethods : [],
             stripePaymentLink: (formData.stripePaymentLink || '').trim(),
             images: formData.images,
             image: formData.images[0] || 'https://via.placeholder.com/300x200?text=No+Image',
@@ -306,6 +329,24 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                             required: true
                         }),
                         React.createElement('small', { className: 'form-hint' }, 'Buyers will see this after they tap “Chat with Seller”.')
+                    ),
+
+                    React.createElement('div', { className: 'form-group' },
+                        React.createElement('label', null, 'Payment apps you accept (optional)'),
+                        React.createElement('div', { className: 'payment-method-choices' },
+                            PAYMENT_METHOD_OPTIONS.map((method) => React.createElement('label', {
+                                key: method,
+                                className: `payment-method-choice ${formData.paymentMethods.includes(method) ? 'selected' : ''}`
+                            },
+                                React.createElement('input', {
+                                    type: 'checkbox',
+                                    checked: formData.paymentMethods.includes(method),
+                                    onChange: () => togglePaymentMethod(method)
+                                }),
+                                method
+                            ))
+                        ),
+                        React.createElement('small', { className: 'form-hint' }, 'Shown on your listing so buyers know how to pay at handoff. DormGlide never handles money.')
                     ),
 
                     React.createElement('div', { className: 'form-group' },

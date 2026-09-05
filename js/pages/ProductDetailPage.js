@@ -146,7 +146,19 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         refreshPurchaseRequests();
     }, [refreshPurchaseRequests, currentUser?.id]);
 
+    // When the seller opens chat from a deal panel, talk to that buyer
+    // instead of the default (seller) participant.
+    const [chatBuyerId, setChatBuyerId] = React.useState(null);
+
     const chatParticipant = React.useMemo(() => {
+        if (chatBuyerId) {
+            const buyer = window.DormGlideAuth?.getUserById?.(chatBuyerId);
+            return {
+                id: chatBuyerId,
+                name: buyer?.name || 'Buyer',
+                phone: buyer?.phone || ''
+            };
+        }
         if (sellerProfile) {
             return {
                 id: sellerProfile.id,
@@ -159,7 +171,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             name: product?.sellerName,
             phone: product?.contactInfo
         };
-    }, [sellerProfile, product]);
+    }, [chatBuyerId, sellerProfile, product]);
 
     const ensureAuthenticated = (message) => {
         if (currentUser) return true;
@@ -182,6 +194,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             toast.info('This is your own listing.');
             return;
         }
+        setChatBuyerId(null);
         setIsChatOpen(true);
     };
 
@@ -415,7 +428,10 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     const pendingBuyerName = sellerPendingRequest?.buyerId
         ? (window.DormGlideAuth?.getUserById?.(sellerPendingRequest.buyerId)?.name || sellerPendingRequest.buyerId)
         : '';
-    const isRequestAlreadySent = Boolean(myPurchaseRequest && ['pending', 'accepted'].includes(myPurchaseRequest.status));
+    const isRequestAlreadySent = Boolean(myPurchaseRequest && ['pending', 'accepted', 'meetup_arranged'].includes(myPurchaseRequest.status));
+    const buyerDealRequest = myPurchaseRequest && myPurchaseRequest.status !== 'declined' ? myPurchaseRequest : null;
+    const sellerActiveRequests = sellerIncomingRequests.filter((request) =>
+        ['pending', 'accepted', 'meetup_arranged'].includes(request?.status));
 
     const dealTimeline = [
         {
@@ -577,7 +593,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                             React.createElement('i', { className: isSavingStatus ? 'fas fa-spinner fa-spin' : (listingStatus === 'sold' ? 'fas fa-rotate-left' : 'fas fa-check-circle') }),
                             isSavingStatus
                                 ? 'Saving...'
-                                : (listingStatus === 'sold' ? 'Mark as Available' : 'Confirm Purchase')
+                                : (listingStatus === 'sold' ? 'Mark as Available' : 'Mark as Sold')
                         ),
                         isSellerOwner && React.createElement('button', {
                             className: 'btn btn-danger btn-delete-listing',
@@ -589,48 +605,42 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         )
                     ),
 
-                    myPurchaseRequest?.status === 'pending' && React.createElement('p', { className: 'message-thread-product' },
-                        '⏳ Your purchase request is pending seller approval'
-                    ),
-                    myPurchaseRequest?.status === 'accepted' && React.createElement('p', { className: 'message-thread-product' },
-                        '✅ Purchase accepted by seller!'
-                    ),
+                    // Guided deal flow: one panel per active deal, both roles.
+                    !isSellerOwner && buyerDealRequest && window.DormGlideDealPanel && React.createElement(window.DormGlideDealPanel, {
+                        request: buyerDealRequest,
+                        product,
+                        currentUser,
+                        onRefresh: async () => {
+                            await refreshPurchaseRequests();
+                            await refreshListingState();
+                        },
+                        onOpenChat: handleChatWithSeller
+                    }),
                     myPurchaseRequest?.status === 'declined' && React.createElement('p', { className: 'message-thread-product' },
-                        '❌ Purchase declined by seller. You can continue browsing.'
+                        '❌ This request was declined. You can send a new one if the item is still available.'
                     ),
-                    sellerPendingRequest && React.createElement('p', { className: 'message-thread-product' },
-                        `Purchase request pending from buyer ${pendingBuyerName}`
-                    ),
-                    isSellerOwner && sellerIncomingRequests.length > 0 && React.createElement('div', { className: 'seller-request-panel' },
-                        React.createElement('h4', null, 'Incoming purchase requests'),
-                        sellerIncomingRequests.map((request) => {
-                            const buyer = request?.buyerId ? window.DormGlideAuth?.getUserById?.(request.buyerId) : null;
-                            const buyerLabel = buyer?.name || request?.buyerId || 'Buyer';
-                            return React.createElement('div', { key: request.id, className: 'seller-request-row' },
-                                React.createElement('div', { className: 'seller-request-meta' },
-                                    React.createElement('strong', null, buyerLabel),
-                                    React.createElement('span', null, `Status: ${request.status}`),
-                                    React.createElement('span', null, `Requested: ${new Date(request.createdAt).toLocaleString()}`)
-                                ),
-                                request.status === 'pending' && React.createElement('div', { className: 'seller-request-actions' },
-                                    React.createElement('button', {
-                                        className: 'btn btn-sm btn-primary icon-btn',
-                                        title: 'Accept request',
-                                        'aria-label': 'Accept purchase request',
-                                        onClick: () => handleRespondToRequest(request, 'accepted'),
-                                        disabled: isSavingStatus
-                                    }, React.createElement('i', { className: 'fa-solid fa-check' })),
-                                    React.createElement('button', {
-                                        className: 'btn btn-sm btn-danger icon-btn danger',
-                                        title: 'Decline request',
-                                        'aria-label': 'Decline purchase request',
-                                        onClick: () => handleRespondToRequest(request, 'declined'),
-                                        disabled: isSavingStatus
-                                    }, React.createElement('i', { className: 'fa-solid fa-xmark' }))
-                                )
-                            );
-                        })
-                    ),
+                    isSellerOwner && sellerActiveRequests.map((request) => {
+                        const buyer = request?.buyerId ? window.DormGlideAuth?.getUserById?.(request.buyerId) : null;
+                        return React.createElement('div', { key: request.id },
+                            React.createElement('p', { className: 'deal-buyer-line' },
+                                React.createElement('i', { className: 'fas fa-user' }),
+                                ` Deal with ${buyer?.name || 'a buyer'}`
+                            ),
+                            window.DormGlideDealPanel && React.createElement(window.DormGlideDealPanel, {
+                                request,
+                                product,
+                                currentUser,
+                                onRefresh: async () => {
+                                    await refreshPurchaseRequests();
+                                    await refreshListingState();
+                                },
+                                onOpenChat: () => {
+                                    setChatBuyerId(request.buyerId);
+                                    setIsChatOpen(true);
+                                }
+                            })
+                        );
+                    }),
 
                     React.createElement('div', { className: 'product-description' },
                         React.createElement('h3', null, 'Description'),
@@ -654,7 +664,11 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                             ),
                             React.createElement('div', { className: 'detail-item' },
                                 React.createElement('i', { className: 'fas fa-handshake' }),
-                                React.createElement('span', null, 'Deal Type: Direct via chat (Zelle, Venmo, Cash)')
+                                React.createElement('span', null,
+                                    Array.isArray(product.paymentMethods) && product.paymentMethods.length > 0
+                                        ? `Seller accepts: ${product.paymentMethods.join(', ')}`
+                                        : 'Payment: agree in chat (Venmo, Zelle, Cash App, cash)'
+                                )
                             )
                         )
                     ),
@@ -764,6 +778,9 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             currentUser,
             participant: chatParticipant,
             initialDraft: `Hi ${chatParticipant?.name || 'there'}, I want to proceed with this purchase. Is it still available?`,
+            dealStatus: (chatBuyerId
+                ? sellerActiveRequests.find((request) => request?.buyerId === chatBuyerId)?.status
+                : buyerDealRequest?.status) || null,
             onProductUpdate,
             onClose: () => setIsChatOpen(false)
         })

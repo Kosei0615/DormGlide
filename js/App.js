@@ -62,7 +62,7 @@ const sanitizePlaceholderListings = (listings = []) => {
 
 // Persistent mobile bottom tab bar (hidden on desktop via CSS).
 // Logged-out taps on account-gated tabs open the auth modal instead.
-const BottomNav = ({ currentPage, currentUser, onNavigate, onShowAuth }) => {
+const BottomNav = ({ currentPage, currentUser, onNavigate, onShowAuth, unseenMessageCount = 0 }) => {
     const items = [
         { id: 'home', label: 'Browse', glyph: '🛍️' },
         { id: 'wishlist', label: 'Wishlist', glyph: '🔔', needsAuth: true },
@@ -96,6 +96,9 @@ const BottomNav = ({ currentPage, currentUser, onNavigate, onShowAuth }) => {
             'aria-current': currentPage === item.id ? 'page' : undefined
         },
             React.createElement('span', { className: 'bottom-nav-glyph', 'aria-hidden': 'true' }, item.glyph),
+            item.id === 'messages' && unseenMessageCount > 0 && React.createElement('span', {
+                className: 'bottom-nav-badge'
+            }, unseenMessageCount > 9 ? '9+' : unseenMessageCount),
             React.createElement('span', { className: 'bottom-nav-label' }, item.label)
         )
     ));
@@ -117,7 +120,13 @@ const App = () => {
     const [notifications, setNotifications] = useState([]);
     const [homeInitialCategory, setHomeInitialCategory] = useState('');
     const [dashboardInitialTab, setDashboardInitialTab] = useState('overview');
+    const [unseenMessageCount, setUnseenMessageCount] = useState(0);
     const seenMessageIdsRef = React.useRef(new Set());
+    const currentPageRef = React.useRef('home');
+
+    useEffect(() => {
+        currentPageRef.current = currentPage;
+    }, [currentPage]);
 
     useEffect(() => {
         let isMounted = true;
@@ -249,6 +258,10 @@ const App = () => {
             setDashboardInitialTab(String(options?.tab || 'overview'));
         } else if (dashboardInitialTab !== 'overview') {
             setDashboardInitialTab('overview');
+        }
+
+        if (page === 'messages') {
+            setUnseenMessageCount(0);
         }
 
         setCurrentPage(page);
@@ -391,6 +404,11 @@ const App = () => {
             }
             seenMessageIdsRef.current.add(message.id);
 
+            // Unread badge on the Messages tab (cleared on visiting Messages).
+            if (isIncoming && currentPageRef.current !== 'messages') {
+                setUnseenMessageCount((count) => Math.min(count + 1, 99));
+            }
+
             const sender = window.DormGlideAuth?.getUserById?.(message.senderId);
             const receiver = window.DormGlideAuth?.getUserById?.(message.receiverId);
             const toastId = `toast_${message.id || Date.now()}`;
@@ -526,7 +544,8 @@ const App = () => {
             currentPage: currentPage,
             currentUser: currentUser,
             onNavigate: navigateToPage,
-            onShowAuth: openAuthModal
+            onShowAuth: openAuthModal,
+            unseenMessageCount: unseenMessageCount
         }),
         
         // Auth Modal
