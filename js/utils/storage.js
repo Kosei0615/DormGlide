@@ -78,6 +78,7 @@ const normalizeProductRecord = (record) => {
         soldMethod: record.sold_method || record.soldMethod || null,
         buyerConfirmedAt: record.buyer_confirmed_at || record.buyerConfirmedAt || null,
         sellerConfirmedAt: record.seller_confirmed_at || record.sellerConfirmedAt || null,
+        availableFrom: record.available_from || record.availableFrom || null,
         paymentMethods: Array.isArray(record.payment_methods)
             ? record.payment_methods
             : (Array.isArray(record.paymentMethods) ? record.paymentMethods : []),
@@ -110,6 +111,7 @@ const productToSupabasePayload = (product) => ({
     sold_method: product.soldMethod || null,
     buyer_confirmed_at: product.buyerConfirmedAt || null,
     seller_confirmed_at: product.sellerConfirmedAt || null,
+    available_from: product.availableFrom || null,
     payment_methods: Array.isArray(product.paymentMethods) ? product.paymentMethods : [],
     is_demo: Boolean(product.isDemo),
     created_at: product.createdAt || new Date().toISOString(),
@@ -145,6 +147,7 @@ const productUpdatesToSupabasePayload = (updates = {}) => {
     if (hasOwn(updates, 'soldMethod')) payload.sold_method = updates.soldMethod || null;
     if (hasOwn(updates, 'buyerConfirmedAt')) payload.buyer_confirmed_at = updates.buyerConfirmedAt || null;
     if (hasOwn(updates, 'sellerConfirmedAt')) payload.seller_confirmed_at = updates.sellerConfirmedAt || null;
+    if (hasOwn(updates, 'availableFrom')) payload.available_from = updates.availableFrom || null;
     if (hasOwn(updates, 'paymentMethods')) payload.payment_methods = Array.isArray(updates.paymentMethods) ? updates.paymentMethods : [];
     if (hasOwn(updates, 'isDemo')) payload.is_demo = Boolean(updates.isDemo);
     if (hasOwn(updates, 'createdAt')) payload.created_at = updates.createdAt || new Date().toISOString();

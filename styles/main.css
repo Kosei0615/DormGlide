@@ -6421,3 +6421,61 @@ button, input, select, textarea {
     min-height: 32px;
     font-family: inherit;
 }
+
+/* ============================================================
+   Design pass v8 — reserve-ahead listings
+   ============================================================ */
+
+.reserve-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    background: #7c3aed;
+    color: #fff;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    max-width: calc(100% - 60px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reserve-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    margin: 0.75rem 0;
+}
+
+.reserve-banner-icon { font-size: 1.4rem; line-height: 1.2; }
+
+.reserve-banner strong {
+    color: #5b21b6;
+    font-size: 0.95rem;
+}
+
+.reserve-banner p {
+    margin: 0.2rem 0 0;
+    color: var(--dg-muted);
+    font-size: 0.86rem;
+}
+
+.deal-pickup-line {
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.86rem;
+    color: var(--dg-text);
+    margin: 0 0 0.85rem;
+}
+
+.deal-pickup-line strong { color: #5b21b6; }

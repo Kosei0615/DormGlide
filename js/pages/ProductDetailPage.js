@@ -441,6 +441,13 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         }
     };
 
+    // Reserve-ahead listing state
+    const reserveDate = product?.availableFrom ? new Date(`${product.availableFrom}T00:00:00`) : null;
+    const isReserveListing = Boolean(reserveDate && !Number.isNaN(reserveDate.getTime()) && reserveDate > new Date());
+    const handoffLabel = isReserveListing
+        ? reserveDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+        : '';
+
     const listingStatusRaw = String(product?.status || 'available').toLowerCase();
     const listingStatus = listingStatusRaw === 'active' ? 'available' : listingStatusRaw;
     const isSellerOwner = Boolean(currentUser?.id && product?.sellerId && currentUser.id === product.sellerId);
@@ -601,6 +608,18 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         )
                     ),
 
+                    isReserveListing && React.createElement('div', { className: 'reserve-banner' },
+                        React.createElement('span', { className: 'reserve-banner-icon', 'aria-hidden': true }, '📅'),
+                        React.createElement('div', null,
+                            React.createElement('strong', null, `Reserve now — pickup from ${handoffLabel}`),
+                            React.createElement('p', null, 'Lock this item in today. You meet up and pay on the pickup date; no money changes hands until then.')
+                        )
+                    ),
+
+                    isReserveListing && !isSellerOwner && window.DormGlideHint && React.createElement(window.DormGlideHint, { hintKey: 'reserve', icon: '📅' },
+                        'New: reserve-ahead listings! Sellers list items before they can hand them over (like end-of-semester moves). Reserving is free — it just holds the item for you until pickup day.'
+                    ),
+
                     React.createElement('div', { className: 'product-actions product-actions-priority' },
                         React.createElement('button', {
                             className: 'btn btn-primary btn-large',
@@ -609,8 +628,14 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         },
                             React.createElement('i', { className: isRequestingPurchase ? 'fas fa-spinner fa-spin' : 'fa-solid fa-bag-shopping' }),
                             isRequestingPurchase
-                                ? 'Sending Request...'
-                                : (isRequestAlreadySent ? 'Request Sent' : (listingStatus === 'sold' ? 'Sold Out' : (isSellerOwner ? 'Your Listing' : 'Request Purchase')))
+                                ? (isReserveListing ? 'Reserving...' : 'Sending Request...')
+                                : (isRequestAlreadySent
+                                    ? (isReserveListing ? 'Reserved' : 'Request Sent')
+                                    : (listingStatus === 'sold'
+                                        ? 'Sold Out'
+                                        : (isSellerOwner
+                                            ? 'Your Listing'
+                                            : (isReserveListing ? 'Reserve This Item' : 'Request Purchase'))))
                         ),
                         React.createElement('button', {
                             className: 'btn btn-secondary btn-large',

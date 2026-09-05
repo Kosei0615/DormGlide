@@ -84,11 +84,20 @@ const ProductCard = ({ product, onProductClick, currentUser }) => {
     const statusLabel = isSold ? 'Sold' : (listingStatus === 'pending' ? 'Pending' : 'Available');
     const iconGlyph = (glyph, className = 'meta-glyph') => React.createElement('span', { className, 'aria-hidden': 'true' }, glyph);
 
+    // Reserve-ahead listing: buyers can reserve NOW, pickup happens later.
+    const reserveDate = product.availableFrom ? new Date(`${product.availableFrom}T00:00:00`) : null;
+    const isReserveListing = Boolean(reserveDate && !Number.isNaN(reserveDate.getTime()) && reserveDate > new Date());
+    const handoffLabel = isReserveListing
+        ? reserveDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : '';
+
     return React.createElement('div', {
         className: 'product-card',
         onClick: () => onProductClick(product.id)
     },
         React.createElement('div', { className: 'product-image' },
+            isReserveListing && React.createElement('span', { className: 'reserve-badge' },
+                `📅 Reserve now · pickup ${handoffLabel}`),
             React.createElement('button', {
                 className: `wishlist-icon-btn icon-btn ${isWishlisted ? 'active' : ''}`,
                 title: isWishlisted ? 'Remove from wishlist' : 'Save to wishlist',

@@ -23,7 +23,7 @@ const OnboardingModal = ({ currentUser, onDone }) => {
         {
             glyph: '➕',
             title: 'Selling takes a minute',
-            body: 'Tap Sell, snap a few photos (we compress them for you), set a price — done. Your item is instantly visible to your whole campus, and matched against everyone\'s wishlists.'
+            body: 'Tap Sell, snap a few photos, set a price — done. Moving out later? Set a handoff date and buyers can RESERVE your item today, pick it up when you\'re ready. Every listing is matched against everyone\'s wishlists.'
         }
     ];
 

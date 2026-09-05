@@ -137,6 +137,17 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
             results = results.filter((product) => (product.condition || '').toLowerCase() === filters.condition.toLowerCase());
         }
 
+        if (filters.availability) {
+            const isReserve = (product) => {
+                if (!product.availableFrom) return false;
+                const date = new Date(`${product.availableFrom}T00:00:00`);
+                return !Number.isNaN(date.getTime()) && date > new Date();
+            };
+            results = filters.availability === 'reserve'
+                ? results.filter(isReserve)
+                : results.filter((product) => !isReserve(product));
+        }
+
         return results;
     }, [decoratedProducts, searchTerm, filters]);
 
@@ -232,6 +243,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         searchTerm.trim() ||
         filters.category ||
         filters.condition ||
+        filters.availability ||
         (filters.priceRange && (filters.priceRange.min || filters.priceRange.max))
     );
 

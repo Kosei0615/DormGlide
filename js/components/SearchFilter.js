@@ -3,6 +3,7 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
     const [selectedCategory, setSelectedCategory] = React.useState(activeCategory || '');
     const [priceRange, setPriceRange] = React.useState({ min: '', max: '' });
     const [condition, setCondition] = React.useState('');
+    const [availability, setAvailability] = React.useState('');
     const [isFilterOpen, setIsFilterOpen] = React.useState(false);
     const [showSuggestions, setShowSuggestions] = React.useState(false);
 
@@ -45,13 +46,14 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
         onFilter({
             category: selectedCategory,
             priceRange: priceRange,
-            condition: condition
+            condition: condition,
+            availability: availability
         });
     };
 
     React.useEffect(() => {
         handleFilterChange();
-    }, [selectedCategory, priceRange, condition]);
+    }, [selectedCategory, priceRange, condition, availability]);
 
     React.useEffect(() => {
         setSelectedCategory(activeCategory || '');
@@ -75,7 +77,8 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
         setSearchTerm('');
         setShowSuggestions(false);
         onSearch('');
-        onFilter({ category: '', priceRange: {}, condition: '' });
+        setAvailability('');
+        onFilter({ category: '', priceRange: {}, condition: '', availability: '' });
     };
 
     const glyph = (value, className = 'ui-glyph') => React.createElement('span', { className, 'aria-hidden': 'true' }, value);
@@ -214,6 +217,18 @@ const SearchFilter = ({ onSearch, onFilter, categories, activeCategory = '', sea
                     React.createElement('option', { value: 'Like New' }, 'Like New'),
                     React.createElement('option', { value: 'Good' }, 'Good'),
                     React.createElement('option', { value: 'Fair' }, 'Fair')
+                )
+            ),
+
+            React.createElement('div', { className: 'filter-group' },
+                React.createElement('label', null, 'Availability'),
+                React.createElement('select', {
+                    value: availability,
+                    onChange: (e) => setAvailability(e.target.value)
+                },
+                    React.createElement('option', { value: '' }, 'All items'),
+                    React.createElement('option', { value: 'now' }, 'Ready now'),
+                    React.createElement('option', { value: 'reserve' }, 'Reserve for later')
                 )
             ),
 

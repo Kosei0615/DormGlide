@@ -14,6 +14,7 @@ const DEAL_CANCEL_REASONS = [
     'Changed my mind',
     'Item no longer available',
     "We couldn't meet up",
+    "Seller didn't follow through",
     'Other'
 ];
 
@@ -197,6 +198,19 @@ const DealPanel = ({ request, product, currentUser, onRefresh, onOpenChat }) => 
             React.createElement('span', { className: `deal-status-chip ${meta.cls}` }, meta.label)
         ),
 
+        // Reserve-ahead deals show the pickup date up front.
+        (() => {
+            const pickup = product?.availableFrom ? new Date(`${product.availableFrom}T00:00:00`) : null;
+            if (!pickup || Number.isNaN(pickup.getTime()) || pickup <= new Date()) return null;
+            if (!['pending', 'accepted', 'meetup_arranged'].includes(status)) return null;
+            return React.createElement('p', { className: 'deal-pickup-line' },
+                '📅 ',
+                React.createElement('strong', null,
+                    `Pickup from ${pickup.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`),
+                ' — this is a reservation. No money changes hands until handoff day. We\'ll remind you both as it gets close.'
+            );
+        })(),
+
         activeStep >= 0 && React.createElement('ol', { className: 'deal-steps' },
             steps.map((label, index) => React.createElement('li', {
                 key: label,
@@ -225,9 +239,12 @@ const DealPanel = ({ request, product, currentUser, onRefresh, onOpenChat }) => 
                     React.createElement('button', {
                         className: 'btn btn-sm btn-danger deal-action-btn',
                         disabled: Boolean(busyAction),
-                        onClick: () => run('cancel',
-                            () => window.DormGlideStorage.cancelDeal({ listingId: request.listingId, requestId: request.id, reason: cancelReason }),
-                            'Deal cancelled.')
+                        onClick: () => run('cancel', async () => {
+                            await window.DormGlideStorage.cancelDeal({ listingId: request.listingId, requestId: request.id, reason: cancelReason });
+                            if (isBuyer && cancelReason === "Seller didn't follow through") {
+                                toast.info('Sorry that happened. Consider rating this seller below to help other students.');
+                            }
+                        }, 'Deal cancelled.')
                     }, spinner('cancel'), 'Confirm cancel'),
                     React.createElement('button', {
                         className: 'btn btn-sm btn-secondary deal-action-btn',

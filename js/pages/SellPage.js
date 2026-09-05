@@ -16,6 +16,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
         condition: '',
         location: preferredLocation,
         contactInfo: preferredContact,
+        availableFrom: '',
         stripePaymentLink: '',
         images: [],
         // Remember the seller's last choice across listings (device-local).
@@ -163,6 +164,22 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             return;
         }
 
+        if (formData.availableFrom) {
+            const handoff = new Date(`${formData.availableFrom}T00:00:00`);
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const maxDate = new Date(today); maxDate.setMonth(maxDate.getMonth() + 6);
+            if (Number.isNaN(handoff.getTime()) || handoff <= today) {
+                toast.warning('The handoff date must be in the future.');
+                setIsSubmitting(false);
+                return;
+            }
+            if (handoff > maxDate) {
+                toast.warning('The handoff date can be at most 6 months out.');
+                setIsSubmitting(false);
+                return;
+            }
+        }
+
         if (!formData.contactInfo || !formData.contactInfo.trim()) {
             toast.warning('Please provide contact information so buyers can reach you.');
             setIsSubmitting(false);
@@ -199,6 +216,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             condition: formData.condition,
             location: formData.location || 'Campus',
             contactInfo: formData.contactInfo.trim(),
+            availableFrom: formData.availableFrom || null,
             paymentMethods: Array.isArray(formData.paymentMethods) ? formData.paymentMethods : [],
             images: imageUrls,
             image: imageUrls[0] || 'https://via.placeholder.com/300x200?text=No+Image',
@@ -223,6 +241,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                 condition: '',
                 location: currentUser.campusLocation || currentUser.university || '',
                 contactInfo: currentUser.phone || currentUser.email || '',
+                availableFrom: '',
                 stripePaymentLink: '',
                 images: [],
                 paymentMethods: formData.paymentMethods
@@ -380,6 +399,18 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                             required: true
                         }),
                         React.createElement('small', { className: 'form-hint' }, 'Buyers will see this after they tap “Chat with Seller”.')
+                    ),
+
+                    React.createElement('div', { className: 'form-group' },
+                        React.createElement('label', null, 'Handoff date (optional) — for reserve-ahead selling'),
+                        React.createElement('input', {
+                            type: 'date',
+                            name: 'availableFrom',
+                            value: formData.availableFrom,
+                            onChange: handleInputChange
+                        }),
+                        React.createElement('small', { className: 'form-hint' },
+                            'Moving out at the end of the semester? Set the day you can hand the item over. Buyers can reserve it TODAY and pick it up on that date — you lock in your buyer early.')
                     ),
 
                     React.createElement('div', { className: 'form-group' },
