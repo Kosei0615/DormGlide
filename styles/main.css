@@ -6302,3 +6302,122 @@ button, input, select, textarea {
     font-size: 0.72rem;
     font-weight: 800;
 }
+
+/* ============================================================
+   Design pass v7 — onboarding walkthrough & contextual hints
+   ============================================================ */
+
+.onboarding-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.onboarding-card {
+    position: relative;
+    background: var(--dg-surface);
+    border-radius: 20px;
+    padding: 2.25rem 1.75rem 1.5rem;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+}
+
+.onboarding-skip {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: var(--dg-muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px;
+    min-height: 44px;
+    font-family: inherit;
+}
+
+.onboarding-glyph {
+    font-size: 3rem;
+    line-height: 1;
+    margin-bottom: 0.75rem;
+}
+
+.onboarding-card h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.01em;
+}
+
+.onboarding-card p {
+    color: var(--dg-muted);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin: 0 0 1.25rem;
+    min-height: 4.6em;
+}
+
+.onboarding-dots {
+    display: flex;
+    justify-content: center;
+    gap: 7px;
+    margin-bottom: 1.1rem;
+}
+
+.onboarding-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--dg-border);
+    transition: background 0.15s ease;
+}
+
+.onboarding-dot.active { background: var(--dg-primary); }
+
+.onboarding-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+.onboarding-actions .btn { min-width: 110px; }
+
+/* Contextual one-time hints */
+.contextual-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    background: #eef2ff;
+    border: 1px solid rgba(29, 78, 216, 0.25);
+    border-radius: 12px;
+    padding: 0.75rem 0.9rem;
+    margin: 0.75rem 0;
+}
+
+.contextual-hint p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--dg-text);
+    flex: 1;
+}
+
+.contextual-hint-icon { font-size: 1.1rem; line-height: 1.3; }
+
+.contextual-hint-close {
+    background: none;
+    border: none;
+    color: var(--dg-muted);
+    cursor: pointer;
+    padding: 4px 6px;
+    min-width: 32px;
+    min-height: 32px;
+    font-family: inherit;
+}

@@ -233,13 +233,18 @@ const fetchSchoolForUser = async (userId) => {
     try {
         const { data, error } = await client
             .from('profiles')
-            .select('school_id, schools(id, name, slug)')
+            .select('school_id, onboarded_at, schools(id, name, slug)')
             .eq('id', userId)
             .maybeSingle();
         if (error) throw error;
 
         const school = data?.schools
-            ? { id: data.schools.id, name: data.schools.name, slug: data.schools.slug }
+            ? {
+                id: data.schools.id,
+                name: data.schools.name,
+                slug: data.schools.slug,
+                onboardedAt: data.onboarded_at || null
+            }
             : null;
         schoolCacheByUserId.set(userId, school);
         return school;
@@ -257,8 +262,29 @@ const attachSchoolInfo = async (user) => {
         user.schoolId = school.id;
         user.schoolName = school.name;
         user.schoolSlug = school.slug;
+        user.onboardedAt = school.onboardedAt || null;
     }
     return user;
+};
+
+// Record that the welcome walkthrough was completed (or skipped), so it never
+// shows again — cross-device via profiles, with a local flag as fallback.
+const markOnboarded = async (userId) => {
+    try {
+        localStorage.setItem('dormglide_onboarded', 'true');
+    } catch (_error) { /* storage unavailable */ }
+
+    const client = getSupabaseClient();
+    if (!client || !userId) return;
+    try {
+        await client
+            .from('profiles')
+            .update({ onboarded_at: new Date().toISOString() })
+            .eq('id', userId);
+        schoolCacheByUserId.delete(userId);
+    } catch (error) {
+        console.warn('[DormGlide] Failed to persist onboarding state:', error);
+    }
 };
 
 const sanitizePhoneNumber = (raw) => {
@@ -1272,6 +1298,7 @@ window.DormGlideAuth = {
     loginUser,
     getSchoolForEmail,
     fetchSchoolForUser,
+    markOnboarded,
     logoutUser,
     getCurrentUser,
     updateUserProfile,

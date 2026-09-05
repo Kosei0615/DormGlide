@@ -189,6 +189,9 @@ const DealPanel = ({ request, product, currentUser, onRefresh, onOpenChat }) => 
         || (status === 'pending' && isBuyer);
 
     return React.createElement('div', { className: 'deal-panel' },
+        window.DormGlideHint && React.createElement(window.DormGlideHint, { hintKey: 'deal', icon: '🤝' },
+            'This panel guides you both through the deal: agree on a campus meetup, pay in person at handoff, then mark it complete.'
+        ),
         React.createElement('div', { className: 'deal-panel-header' },
             React.createElement('h3', null, 'Complete your deal'),
             React.createElement('span', { className: `deal-status-chip ${meta.cls}` }, meta.label)

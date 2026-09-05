@@ -178,6 +178,10 @@ const WishlistPage = ({ currentUser, onNavigate, onShowAuth }) => {
                 React.createElement('p', null, 'Get notified when new listings match your keywords.')
             ),
 
+            window.DormGlideHint && React.createElement(window.DormGlideHint, { hintKey: 'wishlist', icon: '🔔' },
+                'Tip: you can watch a whole category with a max price — like "any Furniture under $50" — and we\'ll email you the moment something matches.'
+            ),
+
             React.createElement('form', { className: 'wishlist-form-card', onSubmit: handleAddEntry },
                 React.createElement('div', { className: 'wishlist-form-grid' },
                     React.createElement('div', { className: 'form-group' },

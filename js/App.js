@@ -121,6 +121,15 @@ const App = () => {
     const [homeInitialCategory, setHomeInitialCategory] = useState('');
     const [dashboardInitialTab, setDashboardInitialTab] = useState('overview');
     const [unseenMessageCount, setUnseenMessageCount] = useState(0);
+    const [showOnboarding, setShowOnboarding] = useState(false);
+
+    const maybeStartOnboarding = (user) => {
+        if (!user?.id || user.onboardedAt) return;
+        try {
+            if (localStorage.getItem('dormglide_onboarded')) return;
+        } catch (_error) { /* storage unavailable */ }
+        setShowOnboarding(true);
+    };
     const seenMessageIdsRef = React.useRef(new Set());
     const currentPageRef = React.useRef('home');
 
@@ -200,6 +209,7 @@ const App = () => {
                     const user = await window.DormGlideAuth.getCurrentUser();
                     if (isMounted) {
                         setCurrentUser(user);
+                        maybeStartOnboarding(user);
                         console.log('Current user:', user);
                     }
                 }
@@ -319,6 +329,7 @@ const App = () => {
 
     const handleAuthSuccess = (user) => {
         setCurrentUser(user);
+        maybeStartOnboarding(user);
         console.log('User logged in:', user);
     };
 
@@ -548,6 +559,12 @@ const App = () => {
             unseenMessageCount: unseenMessageCount
         }),
         
+        // First-time walkthrough (once per account, always skippable)
+        showOnboarding && currentUser && window.DormGlideOnboarding && React.createElement(window.DormGlideOnboarding, {
+            currentUser: currentUser,
+            onDone: () => setShowOnboarding(false)
+        }),
+
         // Auth Modal
         showAuthModal && React.createElement(AuthModal, {
             onClose: () => setShowAuthModal(false),
