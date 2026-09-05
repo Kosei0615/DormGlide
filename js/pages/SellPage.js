@@ -144,12 +144,6 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             return;
         }
 
-        if (formData.stripePaymentLink && window.DormGlidePayments?.isValidStripePaymentLink && !window.DormGlidePayments.isValidStripePaymentLink(formData.stripePaymentLink)) {
-            toast.warning('Please use a valid Stripe payment link.');
-            setIsSubmitting(false);
-            return;
-        }
-
         const newProduct = {
             id: Date.now().toString(),
             title: formData.title,
@@ -349,17 +343,9 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                         React.createElement('small', { className: 'form-hint' }, 'Shown on your listing so buyers know how to pay at handoff. DormGlide never handles money.')
                     ),
 
-                    React.createElement('div', { className: 'form-group' },
-                        React.createElement('label', null, 'Stripe Payment Link (optional)'),
-                        React.createElement('input', {
-                            type: 'url',
-                            name: 'stripePaymentLink',
-                            value: formData.stripePaymentLink,
-                            onChange: handleInputChange,
-                            placeholder: 'https://buy.stripe.com/...'
-                        }),
-                        React.createElement('small', { className: 'form-hint' }, 'If provided, buyers can pay instantly via Stripe on the product page.')
-                    ),
+                    // Stripe Payment Link field removed (2026-08): DormGlide's
+                    // positioning is "we never handle money" — payment happens
+                    // in person via the deal flow's payment-apps chips.
 
                     React.createElement('div', { className: 'form-row' },
                         React.createElement('div', { className: 'form-group' },

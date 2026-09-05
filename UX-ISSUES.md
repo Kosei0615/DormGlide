@@ -31,3 +31,9 @@ Running log of UX problems found while working through the student-feedback phas
 | D | Pane cannot log in (sandbox can't reach Supabase), so logged-in mobile screens (dashboard, messages, wishlist) are audited by code-reading only | Founder should click through logged-in pages on a real phone after each deploy |
 | E | Product page still shows the old timestamp-based "Deal Timeline" card alongside the new deal panel — two narrations of the same story | Recommend removing the old card in Phase 6 polish once the panel is proven |
 | F | Stripe Payment Link field on the Sell form predates the "DormGlide never handles money" positioning | Recommend removing/hiding it — conflicts with the payment guidance; needs founder call |
+
+## Fixed (post-Phase-2, founder-approved)
+
+| # | Issue | Fix |
+|---|---|---|
+| F | Stripe Payment Link field contradicted "DormGlide never handles money" | Removed from the Sell form (approved by founder). Legacy payment_link data untouched |
