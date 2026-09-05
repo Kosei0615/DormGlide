@@ -342,6 +342,11 @@ const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview', onLis
                 await window.DormGlideStorage.deleteProduct(listingId);
             }
 
+            // Best-effort photo cleanup (owner-only per Storage RLS).
+            const deletedListing = (products || []).find((product) => product.id === listingId)
+                || (allProducts || []).find((product) => product.id === listingId);
+            window.DormGlidePhotos?.deleteListingPhotoUrls?.(deletedListing?.images || []);
+
             setProducts((prev) => prev.filter((product) => product.id !== listingId));
             setAllProducts((prev) => prev.filter((product) => product.id !== listingId));
             setWishlistListingIds((prev) => prev.filter((id) => id !== listingId));

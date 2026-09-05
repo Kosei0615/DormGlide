@@ -68,52 +68,77 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
         }));
     };
 
-    const handleImageUpload = (e) => {
-        const files = Array.from(e.target.files);
-        
-        if (files.length + formData.images.length > 5) {
-            toast.warning('You can upload up to 5 images.');
+    const MAX_PHOTOS = 6;
+    const [isProcessingPhotos, setIsProcessingPhotos] = React.useState(false);
+    const [uploadProgress, setUploadProgress] = React.useState('');
+
+    // Photos are compressed on selection (canvas, ~200KB each) and held as
+    // { id, blob, preview } entries; array order is display order, first = cover.
+    // The actual Storage upload happens at submit time.
+    const handleImageUpload = async (e) => {
+        const files = Array.from(e.target.files || []);
+        e.target.value = ''; // allow re-selecting the same file
+
+        if (files.length === 0) return;
+        if (files.length + formData.images.length > MAX_PHOTOS) {
+            toast.warning(`You can add up to ${MAX_PHOTOS} photos.`);
             return;
         }
-        
-        // Convert images to base64 for demo (in production, upload to server)
-        const promises = files.map(file => {
-            return new Promise((resolve, reject) => {
+        if (!window.DormGlidePhotos?.compressImage) {
+            toast.error('Photo tools failed to load. Please refresh the page.');
+            return;
+        }
+
+        setIsProcessingPhotos(true);
+        try {
+            const entries = [];
+            for (const file of files) {
                 if (!file.type.startsWith('image/')) {
-                    reject('Only image files are allowed');
-                    return;
+                    toast.warning(`"${file.name}" is not an image and was skipped.`);
+                    continue;
                 }
-                
-                if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                    reject('Image size should be less than 5MB');
-                    return;
+                if (file.size > 20 * 1024 * 1024) {
+                    toast.warning(`"${file.name}" is over 20MB and was skipped.`);
+                    continue;
                 }
-                
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        });
-        
-        Promise.all(promises)
-            .then(imageUrls => {
+                const blob = await window.DormGlidePhotos.compressImage(file);
+                entries.push({
+                    id: `photo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                    blob,
+                    preview: URL.createObjectURL(blob)
+                });
+            }
+            if (entries.length > 0) {
                 setFormData(prev => ({
                     ...prev,
-                    images: [...prev.images, ...imageUrls].slice(0, 5)
+                    images: [...prev.images, ...entries].slice(0, MAX_PHOTOS)
                 }));
-            })
-            .catch(error => {
-                console.error('[DormGlide] Image upload validation failed:', error);
-                toast.error('One or more images could not be processed.');
-            });
+            }
+        } catch (error) {
+            console.error('[DormGlide] Photo processing failed:', error);
+            toast.error('One or more photos could not be processed.');
+        } finally {
+            setIsProcessingPhotos(false);
+        }
     };
 
     const removeImage = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index)
-        }));
+        setFormData(prev => {
+            const removed = prev.images[index];
+            if (removed?.preview) URL.revokeObjectURL(removed.preview);
+            return { ...prev, images: prev.images.filter((_, i) => i !== index) };
+        });
+    };
+
+    // "Set as cover" moves the photo to the front; array order is display order.
+    const makeCover = (index) => {
+        setFormData(prev => {
+            if (index <= 0 || index >= prev.images.length) return prev;
+            const next = [...prev.images];
+            const [chosen] = next.splice(index, 1);
+            next.unshift(chosen);
+            return { ...prev, images: next };
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -144,6 +169,27 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             return;
         }
 
+        // Upload compressed photos to Storage first; a listing is only created
+        // once every photo made it (no half-broken listings).
+        let imageUrls = [];
+        if (formData.images.length > 0) {
+            try {
+                setUploadProgress(`Uploading photos (0/${formData.images.length})...`);
+                imageUrls = await window.DormGlidePhotos.uploadListingPhotos({
+                    userId: currentUser.id,
+                    blobs: formData.images.map((entry) => entry.blob),
+                    onProgress: (done, total) => setUploadProgress(`Uploading photos (${done}/${total})...`)
+                });
+            } catch (error) {
+                console.error('[DormGlide] Photo upload failed:', error);
+                toast.error(error?.message || 'Photo upload failed. Please try again.');
+                setUploadProgress('');
+                setIsSubmitting(false);
+                return;
+            }
+            setUploadProgress('');
+        }
+
         const newProduct = {
             id: Date.now().toString(),
             title: formData.title,
@@ -154,9 +200,8 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             location: formData.location || 'Campus',
             contactInfo: formData.contactInfo.trim(),
             paymentMethods: Array.isArray(formData.paymentMethods) ? formData.paymentMethods : [],
-            stripePaymentLink: (formData.stripePaymentLink || '').trim(),
-            images: formData.images,
-            image: formData.images[0] || 'https://via.placeholder.com/300x200?text=No+Image',
+            images: imageUrls,
+            image: imageUrls[0] || 'https://via.placeholder.com/300x200?text=No+Image',
             sellerId: currentUser.id,
             sellerName: currentUser.name,
             sellerEmail: currentUser.email,
@@ -179,7 +224,8 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                 location: currentUser.campusLocation || currentUser.university || '',
                 contactInfo: currentUser.phone || currentUser.email || '',
                 stripePaymentLink: '',
-                images: []
+                images: [],
+                paymentMethods: formData.paymentMethods
             });
             onNavigate('home', persisted?.id);
         } catch (error) {
@@ -215,15 +261,15 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                 // Images Section
                 React.createElement('div', { className: 'form-section' },
                     React.createElement('h3', null, 'Photos'),
-                    React.createElement('p', { className: 'section-description' }, 
-                        'Add up to 5 photos to show your item (first photo will be the main image)'
+                    React.createElement('p', { className: 'section-description' },
+                        `Add up to ${MAX_PHOTOS} photos. The cover photo is what buyers see while browsing — tap the star on any photo to make it the cover.`
                     ),
-                    
+
                     React.createElement('div', { className: 'image-upload-area' },
                         formData.images.length > 0 && React.createElement('div', { className: 'uploaded-images' },
-                            formData.images.map((image, index) =>
-                                React.createElement('div', { key: index, className: 'uploaded-image' },
-                                    React.createElement('img', { src: image, alt: `Upload ${index + 1}` }),
+                            formData.images.map((entry, index) =>
+                                React.createElement('div', { key: entry.id || index, className: 'uploaded-image' },
+                                    React.createElement('img', { src: entry.preview || entry, alt: `Photo ${index + 1}` }),
                                     React.createElement('button', {
                                         type: 'button',
                                         className: 'remove-image icon-btn danger',
@@ -233,20 +279,31 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                                     },
                                         React.createElement('i', { className: 'fa-solid fa-trash' })
                                     ),
-                                    index === 0 && React.createElement('span', { className: 'main-image-badge' }, 'Main')
+                                    index === 0
+                                        ? React.createElement('span', { className: 'main-image-badge' },
+                                            React.createElement('i', { className: 'fa-solid fa-star' }), ' Cover')
+                                        : React.createElement('button', {
+                                            type: 'button',
+                                            className: 'set-cover-btn',
+                                            title: 'Set as cover photo',
+                                            'aria-label': 'Set as cover photo',
+                                            onClick: () => makeCover(index)
+                                        },
+                                            React.createElement('i', { className: 'fa-regular fa-star' }), ' Set cover')
                                 )
                             )
                         ),
-                        
-                        formData.images.length < 5 && React.createElement('label', {
+
+                        formData.images.length < MAX_PHOTOS && React.createElement('label', {
                             className: 'image-upload-btn icon-btn',
-                            title: 'Upload photo'
+                            title: 'Add photos'
                         },
-                            React.createElement('i', { className: 'fa-solid fa-image' }),
+                            React.createElement('i', { className: isProcessingPhotos ? 'fas fa-spinner fa-spin' : 'fa-solid fa-image' }),
                             React.createElement('input', {
                                 type: 'file',
                                 accept: 'image/*',
                                 multiple: true,
+                                disabled: isProcessingPhotos,
                                 onChange: handleImageUpload,
                                 style: { display: 'none' }
                             })
@@ -404,7 +461,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                         disabled: isSubmitting
                     },
                         isSubmitting && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
-                        isSubmitting ? 'Listing...' : 'List Item'
+                        isSubmitting ? (uploadProgress || 'Listing...') : 'List Item'
                     )
                 )
             )

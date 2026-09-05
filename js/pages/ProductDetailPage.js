@@ -150,6 +150,26 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     // instead of the default (seller) participant.
     const [chatBuyerId, setChatBuyerId] = React.useState(null);
 
+    // Swipeable gallery plumbing (scroll-snap track).
+    const galleryTrackRef = React.useRef(null);
+
+    const scrollGalleryTo = (index) => {
+        const track = galleryTrackRef.current;
+        const total = (product?.images?.length || 1);
+        const clamped = Math.max(0, Math.min(total - 1, index));
+        setCurrentImageIndex(clamped);
+        if (track) {
+            track.scrollTo({ left: clamped * track.clientWidth, behavior: 'smooth' });
+        }
+    };
+
+    const handleGalleryScroll = () => {
+        const track = galleryTrackRef.current;
+        if (!track || track.clientWidth === 0) return;
+        const index = Math.round(track.scrollLeft / track.clientWidth);
+        setCurrentImageIndex((prev) => (prev === index ? prev : index));
+    };
+
     const chatParticipant = React.useMemo(() => {
         if (chatBuyerId) {
             const buyer = window.DormGlideAuth?.getUserById?.(chatBuyerId);
@@ -409,6 +429,8 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         setIsSavingStatus(true);
         try {
             await window.DormGlideStorage.deleteProduct(product.id);
+            // Best-effort: remove the listing's photos from Storage (owner-only per RLS).
+            window.DormGlidePhotos?.deleteListingPhotoUrls?.(product.images || []);
             toast.success('Listing deleted successfully.');
             onNavigate('dashboard', null, { tab: 'sales' });
         } catch (error) {
@@ -510,23 +532,43 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             ),
 
             React.createElement('div', { className: 'product-detail-content' },
+                // Swipeable photo gallery: native scroll-snap (smooth on phones,
+                // no library), arrows + dots for desktop, thumbnails below.
                 React.createElement('div', { className: 'product-images' },
-                    React.createElement('div', { className: 'main-image' },
-                        React.createElement('img', {
-                            src: images[currentImageIndex],
-                            alt: product.title,
-                            onClick: () => setIsImageModalOpen(true)
-                        }),
-                        images.length > 1 && React.createElement('div', { className: 'image-nav' },
-                            React.createElement('button', {
-                                onClick: () => setCurrentImageIndex(Math.max(0, currentImageIndex - 1)),
-                                disabled: currentImageIndex === 0
-                            }, React.createElement('i', { className: 'fas fa-chevron-left' })),
-                            React.createElement('span', null, `${currentImageIndex + 1} / ${images.length}`),
-                            React.createElement('button', {
-                                onClick: () => setCurrentImageIndex(Math.min(images.length - 1, currentImageIndex + 1)),
-                                disabled: currentImageIndex === images.length - 1
-                            }, React.createElement('i', { className: 'fas fa-chevron-right' }))
+                    React.createElement('div', { className: 'pdp-gallery' },
+                        React.createElement('div', {
+                            className: 'pdp-gallery-track',
+                            ref: galleryTrackRef,
+                            onScroll: handleGalleryScroll
+                        },
+                            images.map((image, index) =>
+                                React.createElement('img', {
+                                    key: index,
+                                    src: image,
+                                    alt: `${product.title} photo ${index + 1}`,
+                                    className: 'pdp-gallery-slide',
+                                    loading: index === 0 ? 'eager' : 'lazy',
+                                    onClick: () => setIsImageModalOpen(true)
+                                })
+                            )
+                        ),
+                        images.length > 1 && React.createElement('button', {
+                            className: 'pdp-gallery-arrow prev',
+                            'aria-label': 'Previous photo',
+                            disabled: currentImageIndex === 0,
+                            onClick: () => scrollGalleryTo(currentImageIndex - 1)
+                        }, React.createElement('i', { className: 'fas fa-chevron-left' })),
+                        images.length > 1 && React.createElement('button', {
+                            className: 'pdp-gallery-arrow next',
+                            'aria-label': 'Next photo',
+                            disabled: currentImageIndex === images.length - 1,
+                            onClick: () => scrollGalleryTo(currentImageIndex + 1)
+                        }, React.createElement('i', { className: 'fas fa-chevron-right' })),
+                        images.length > 1 && React.createElement('div', { className: 'pdp-gallery-dots' },
+                            images.map((_, index) => React.createElement('span', {
+                                key: index,
+                                className: `pdp-gallery-dot ${index === currentImageIndex ? 'active' : ''}`
+                            }))
                         )
                     ),
                     images.length > 1 && React.createElement('div', { className: 'thumbnail-strip' },
@@ -536,7 +578,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                                 src: image,
                                 alt: `${product.title} ${index + 1}`,
                                 className: index === currentImageIndex ? 'active' : '',
-                                onClick: () => setCurrentImageIndex(index)
+                                onClick: () => scrollGalleryTo(index)
                             })
                         )
                     )

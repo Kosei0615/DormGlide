@@ -6186,3 +6186,119 @@ button, input, select, textarea {
     background: #fef2f2;
     border-color: #dc2626;
 }
+
+/* ============================================================
+   Design pass v6 — listing photos
+   Swipeable scroll-snap gallery, dots/arrows, set-cover control.
+   ============================================================ */
+
+.pdp-gallery {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #eef2f9;
+}
+
+.pdp-gallery-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.pdp-gallery-track::-webkit-scrollbar { display: none; }
+
+.pdp-gallery-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    scroll-snap-align: center;
+    cursor: zoom-in;
+}
+
+.pdp-gallery-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--dg-text);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.pdp-gallery-arrow.prev { left: 10px; }
+.pdp-gallery-arrow.next { right: 10px; }
+.pdp-gallery-arrow:disabled { opacity: 0.35; cursor: default; }
+
+/* Arrows only where hover exists (desktop); phones swipe */
+@media (hover: hover) and (min-width: 768px) {
+    .pdp-gallery-arrow { display: inline-flex; }
+}
+
+.pdp-gallery-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.pdp-gallery-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.pdp-gallery-dot.active { background: #ffffff; }
+
+/* Sell form: set-cover control on photo thumbnails */
+.uploaded-image { position: relative; }
+
+.set-cover-btn {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    min-height: 30px;
+}
+
+.set-cover-btn:hover { background: rgba(29, 78, 216, 0.9); }
+
+.uploaded-image .main-image-badge {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--dg-primary);
+    color: #fff;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
