@@ -21,16 +21,19 @@ Running log of UX problems found while working through the student-feedback phas
 | 7 | Seller "Confirm Purchase" button was ambiguous (it force-sold the listing outside any request) | Relabeled "Mark as Sold"; the guided flow is the primary path |
 | 8 | Bottom-nav Messages tab had no unread indicator (item A) | Live unread badge fed by the existing realtime subscription; clears on opening Messages |
 
+## Fixed (Phase 6)
+
+| # | Issue | Fix |
+|---|---|---|
+| B | Tiny (13px) control on Privacy Policy page | It was the policy-acknowledgment checkbox; now 22px with a 44px touch row (the earlier "dead anchor" guess was fixed by the footer tap-target CSS) |
+| C | Hamburger menu duplicated the bottom tab bar (Browse/Sell/Wishlist/Messages/Dashboard) | Slimmed to secondary items only: How It Works, Policy, Saved Items, Notifications, Profile, Admin, Logout (logged out: How It Works, Policy, Log In, Sign Up) |
+| E | Old timestamp "Deal Timeline" card duplicated the deal panel's story | Removed; the deal panel is the single narration of a deal |
+
 ## Needs approval / later
 
 | # | Issue | Recommendation |
 |---|---|---|
-| A | Bottom-nav Messages tab has no unread badge — users won't know they have new messages without opening it | Wire the existing unread count (Header already computes it) into BottomNav via shared state or a small event. Medium effort, high value. Recommend doing in Phase 2 alongside chat work |
-| B | Privacy Policy page has one 13px-tall empty anchor (decorative/possibly dead link) | Inspect and remove or enlarge during Phase 6 polish |
-| C | The hamburger "Menu" still duplicates Browse/Sell (now also in bottom nav) | Consider slimming the hamburger to secondary items only (How It Works, Policy, Logout) in Phase 6 |
 | D | Pane cannot log in (sandbox can't reach Supabase), so logged-in mobile screens (dashboard, messages, wishlist) are audited by code-reading only | Founder should click through logged-in pages on a real phone after each deploy |
-| E | Product page still shows the old timestamp-based "Deal Timeline" card alongside the new deal panel — two narrations of the same story | Recommend removing the old card in Phase 6 polish once the panel is proven |
-| F | Stripe Payment Link field on the Sell form predates the "DormGlide never handles money" positioning | Recommend removing/hiding it — conflicts with the payment guidance; needs founder call |
 
 ## Fixed (post-Phase-2, founder-approved)
 

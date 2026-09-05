@@ -462,24 +462,6 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
     const sellerActiveRequests = sellerIncomingRequests.filter((request) =>
         ['pending', 'accepted', 'meetup_arranged'].includes(request?.status));
 
-    const dealTimeline = [
-        {
-            key: 'requested',
-            label: 'Requested purchase',
-            at: product?.requestedAt
-        },
-        {
-            key: 'buyer-confirmed',
-            label: 'Buyer confirmed received',
-            at: product?.buyerConfirmedAt
-        },
-        {
-            key: 'seller-confirmed',
-            label: 'Seller confirmed sold',
-            at: product?.sellerConfirmedAt || product?.purchasedAt || product?.soldAt
-        }
-    ];
-
     const safetyTips = [
         {
             icon: 'fas fa-people-group',
@@ -740,26 +722,8 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         )
                     ),
 
-                    React.createElement('div', { className: 'deal-timeline-card' },
-                        React.createElement('h3', null, 'Deal Timeline'),
-                        React.createElement('div', { className: 'deal-timeline-list' },
-                            dealTimeline.map((step) => {
-                                const completed = Boolean(step.at);
-                                return React.createElement('div', {
-                                    key: step.key,
-                                    className: `deal-timeline-item ${completed ? 'completed' : ''}`
-                                },
-                                    React.createElement('div', { className: 'deal-timeline-dot' },
-                                        React.createElement('i', { className: completed ? 'fas fa-check' : 'fas fa-clock' })
-                                    ),
-                                    React.createElement('div', { className: 'deal-timeline-content' },
-                                        React.createElement('h4', null, step.label),
-                                        React.createElement('p', null, formatTimelineDate(step.at))
-                                    )
-                                );
-                            })
-                        )
-                    ),
+                    // (The old "Deal Timeline" card was removed: the deal panel
+                    //  is now the single narration of a deal's progress.)
 
                     React.createElement('div', { className: 'safety-tips-card' },
                         React.createElement('h3', null,

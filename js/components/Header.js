@@ -484,21 +484,9 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
 
         // Mobile Navigation Menu
         isMenuOpen && React.createElement('nav', { className: 'header-nav mobile-nav', id: 'dormglide-mobile-nav' },
-            React.createElement('p', { className: 'mobile-nav-hint' }, 'Quick navigation'),
-            React.createElement('button', {
-                className: `nav-btn ${currentPage === 'home' ? 'active' : ''}`,
-                onClick: () => handleNavigation('home')
-            }, 
-                navGlyph('🛍️'),
-                React.createElement('span', null, 'Browse')
-            ),
-            React.createElement('button', {
-                className: `nav-btn ${currentPage === 'sell' ? 'active' : ''}`,
-                onClick: () => handleNavigation('sell')
-            }, 
-                navGlyph('➕'),
-                React.createElement('span', null, 'Sell')
-            ),
+            // Browse / Sell / Wishlist / Messages / Me live in the bottom tab
+            // bar on phones — the menu holds only secondary destinations.
+            React.createElement('p', { className: 'mobile-nav-hint' }, 'More'),
             React.createElement('button', {
                 className: `nav-btn ${currentPage === 'how-it-works' ? 'active' : ''}`,
                 onClick: () => handleNavigation('how-it-works')
@@ -517,32 +505,11 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
             currentUser ? (
                 React.createElement(React.Fragment, null,
                     React.createElement('button', {
-                        className: `nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`,
-                        onClick: () => handleNavigation('dashboard')
-                    }, 
-                        navGlyph('📊'),
-                        React.createElement('span', null, 'Dashboard')
-                    ),
-                    React.createElement('button', {
-                        className: `nav-btn ${currentPage === 'wishlist' ? 'active' : ''}`,
-                        onClick: handleWishlistOpen
-                    },
-                        navGlyph('🔔'),
-                        React.createElement('span', null, 'Wishlist')
-                    ),
-                    React.createElement('button', {
                         className: 'nav-btn',
                         onClick: handleSavedItemsOpen
                     },
                         navGlyph('❤️'),
                         React.createElement('span', null, 'Saved Items')
-                    ),
-                    React.createElement('button', {
-                        className: `nav-btn ${currentPage === 'messages' ? 'active' : ''}`,
-                        onClick: () => handleNavigation('messages')
-                    }, 
-                        navGlyph('💬'),
-                        React.createElement('span', null, 'Messages')
                     ),
                     React.createElement('button', {
                         className: 'nav-btn',

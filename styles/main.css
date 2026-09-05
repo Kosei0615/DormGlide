@@ -6479,3 +6479,19 @@ button, input, select, textarea {
 }
 
 .deal-pickup-line strong { color: #5b21b6; }
+
+/* Phase 6 polish: policy acknowledgment checkbox at touch size */
+.policy-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 44px;
+    cursor: pointer;
+}
+
+.policy-checkbox-row input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    accent-color: var(--dg-primary);
+}
