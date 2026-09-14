@@ -79,6 +79,12 @@ const normalizeProductRecord = (record) => {
         buyerConfirmedAt: record.buyer_confirmed_at || record.buyerConfirmedAt || null,
         sellerConfirmedAt: record.seller_confirmed_at || record.sellerConfirmedAt || null,
         availableFrom: record.available_from || record.availableFrom || null,
+        listingType: record.listing_type || record.listingType || 'goods',
+        serviceCategory: record.service_category || record.serviceCategory || null,
+        rate: record.rate !== undefined && record.rate !== null ? Number(record.rate) : (record.listingType === 'service' ? Number(record.price || 0) : null),
+        rateUnit: record.rate_unit || record.rateUnit || null,
+        availabilityNote: record.availability_note || record.availabilityNote || '',
+        locationNote: record.location_note || record.locationNote || null,
         paymentMethods: Array.isArray(record.payment_methods)
             ? record.payment_methods
             : (Array.isArray(record.paymentMethods) ? record.paymentMethods : []),
@@ -112,6 +118,12 @@ const productToSupabasePayload = (product) => ({
     buyer_confirmed_at: product.buyerConfirmedAt || null,
     seller_confirmed_at: product.sellerConfirmedAt || null,
     available_from: product.availableFrom || null,
+    listing_type: product.listingType === 'service' ? 'service' : 'goods',
+    service_category: product.listingType === 'service' ? (product.serviceCategory || null) : null,
+    rate: product.listingType === 'service' ? Number(product.rate || product.price || 0) : null,
+    rate_unit: product.listingType === 'service' ? (product.rateUnit || 'hour') : null,
+    availability_note: product.availabilityNote || null,
+    location_note: product.locationNote || null,
     payment_methods: Array.isArray(product.paymentMethods) ? product.paymentMethods : [],
     is_demo: Boolean(product.isDemo),
     created_at: product.createdAt || new Date().toISOString(),
@@ -148,6 +160,10 @@ const productUpdatesToSupabasePayload = (updates = {}) => {
     if (hasOwn(updates, 'buyerConfirmedAt')) payload.buyer_confirmed_at = updates.buyerConfirmedAt || null;
     if (hasOwn(updates, 'sellerConfirmedAt')) payload.seller_confirmed_at = updates.sellerConfirmedAt || null;
     if (hasOwn(updates, 'availableFrom')) payload.available_from = updates.availableFrom || null;
+    if (hasOwn(updates, 'rate')) payload.rate = updates.rate === null ? null : Number(updates.rate);
+    if (hasOwn(updates, 'rateUnit')) payload.rate_unit = updates.rateUnit || null;
+    if (hasOwn(updates, 'availabilityNote')) payload.availability_note = updates.availabilityNote || null;
+    if (hasOwn(updates, 'locationNote')) payload.location_note = updates.locationNote || null;
     if (hasOwn(updates, 'paymentMethods')) payload.payment_methods = Array.isArray(updates.paymentMethods) ? updates.paymentMethods : [];
     if (hasOwn(updates, 'isDemo')) payload.is_demo = Boolean(updates.isDemo);
     if (hasOwn(updates, 'createdAt')) payload.created_at = updates.createdAt || new Date().toISOString();
@@ -197,6 +213,7 @@ const normalizePurchaseRequestRecord = (record) => {
         buyerId: record.buyer_id || record.buyerId,
         sellerId: record.seller_id || record.sellerId,
         status: String(record.status || 'pending').toLowerCase(),
+        kind: record.kind || 'purchase',
         meetupNote: record.meetup_note ?? record.meetupNote ?? '',
         meetupAt: record.meetup_at ?? record.meetupAt ?? null,
         cancelledBy: record.cancelled_by ?? record.cancelledBy ?? null,
@@ -782,7 +799,7 @@ const fetchPurchaseRequestsForUser = async (userId) => {
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
 
-const createPurchaseRequest = async ({ listingId, buyerId, sellerId }) => {
+const createPurchaseRequest = async ({ listingId, buyerId, sellerId, kind = 'purchase' }) => {
     if (!listingId || !buyerId || !sellerId) {
         throw new Error('Missing purchase request fields.');
     }
@@ -797,7 +814,8 @@ const createPurchaseRequest = async ({ listingId, buyerId, sellerId }) => {
                 listing_id: listingId,
                 buyer_id: buyerId,
                 seller_id: sellerId,
-                status: 'pending'
+                status: 'pending',
+                kind: kind === 'booking' ? 'booking' : 'purchase'
             })
             .select('*')
             .single();
@@ -812,6 +830,7 @@ const createPurchaseRequest = async ({ listingId, buyerId, sellerId }) => {
         buyerId,
         sellerId,
         status: 'pending',
+        kind: kind === 'booking' ? 'booking' : 'purchase',
         createdAt: now,
         updatedAt: now
     };
@@ -899,17 +918,21 @@ const cancelDeal = async ({ listingId, requestId, reason = '' }) => {
     return request;
 };
 
-const requestPurchase = async ({ listingId, buyerId, sellerId }) => {
+const requestPurchase = async ({ listingId, buyerId, sellerId, kind = 'purchase' }) => {
     const existing = await fetchPurchaseRequests(listingId);
-    const existingForBuyer = (existing || []).find((entry) => entry?.buyerId === buyerId && ['pending', 'accepted'].includes(entry?.status));
-    const request = existingForBuyer || await createPurchaseRequest({ listingId, buyerId, sellerId });
+    const existingForBuyer = (existing || []).find((entry) => entry?.buyerId === buyerId && ['pending', 'accepted', 'meetup_arranged'].includes(entry?.status));
+    const request = existingForBuyer || await createPurchaseRequest({ listingId, buyerId, sellerId, kind });
 
-    const requestedAt = new Date().toISOString();
-    await updateProduct(listingId, {
-        status: 'pending',
-        buyerId,
-        requestedAt
-    });
+    // Supabase mode: the DB trigger syncs listing status (and skips it for
+    // services). Local demo mode mirrors that here.
+    if (!isSupabaseActive() && kind !== 'booking') {
+        const requestedAt = new Date().toISOString();
+        await updateProduct(listingId, {
+            status: 'pending',
+            buyerId,
+            requestedAt
+        });
+    }
 
     notifyPurchaseEvent({
         event: 'purchase_requested',

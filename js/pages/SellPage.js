@@ -1,4 +1,4 @@
-const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
+const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth, initialListingType = null }) => {
     const toast = window.DormGlideToast || {
         success: () => {},
         error: () => {},
@@ -18,6 +18,12 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
         contactInfo: preferredContact,
         availableFrom: '',
         stripePaymentLink: '',
+        // Glyde service fields (used when listingType === 'service')
+        serviceCategory: '',
+        rate: '',
+        rateUnit: 'hour',
+        availabilityNote: '',
+        locationNote: 'on campus',
         images: [],
         // Remember the seller's last choice across listings (device-local).
         paymentMethods: (() => {
@@ -29,6 +35,14 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
     });
 
     const PAYMENT_METHOD_OPTIONS = ['Venmo', 'Zelle', 'Cash App', 'Cash'];
+
+    // First step: Item (DormGlide) or Service (Glyde). null = show the chooser.
+    const [listingType, setListingType] = React.useState(initialListingType || null);
+    React.useEffect(() => {
+        if (initialListingType) setListingType(initialListingType);
+    }, [initialListingType]);
+    const isService = listingType === 'service';
+    const glyde = window.DormGlideGlyde;
 
     const togglePaymentMethod = (method) => {
         setFormData((prev) => {
@@ -158,7 +172,9 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
         setIsSubmitting(true);
 
         // Validate form
-        if (!formData.title || !formData.description || !formData.price || !formData.category || !formData.condition) {
+        const missingGoods = !isService && (!formData.price || !formData.category || !formData.condition);
+        const missingService = isService && (!formData.serviceCategory || !formData.rate || Number(formData.rate) <= 0);
+        if (!formData.title || !formData.description || missingGoods || missingService) {
             toast.warning('Please fill in all required fields.');
             setIsSubmitting(false);
             return;
@@ -211,10 +227,20 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
             id: Date.now().toString(),
             title: formData.title,
             description: formData.description,
-            price: parseFloat(formData.price),
-            category: formData.category,
-            condition: formData.condition,
-            location: formData.location || 'Campus',
+            // Services: price mirrors rate (sorting/wishlist caps), category
+            // mirrors the service category, condition is n/a.
+            price: isService ? parseFloat(formData.rate) : parseFloat(formData.price),
+            category: isService ? formData.serviceCategory : formData.category,
+            condition: isService ? 'n/a' : formData.condition,
+            location: isService
+                ? (glyde?.locationLabel(formData.locationNote) || 'On campus')
+                : (formData.location || 'Campus'),
+            listingType: isService ? 'service' : 'goods',
+            serviceCategory: isService ? formData.serviceCategory : null,
+            rate: isService ? parseFloat(formData.rate) : null,
+            rateUnit: isService ? formData.rateUnit : null,
+            availabilityNote: isService ? String(formData.availabilityNote || '').trim() : '',
+            locationNote: isService ? formData.locationNote : null,
             contactInfo: formData.contactInfo.trim(),
             availableFrom: formData.availableFrom || null,
             paymentMethods: Array.isArray(formData.paymentMethods) ? formData.paymentMethods : [],
@@ -243,6 +269,11 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                 contactInfo: currentUser.phone || currentUser.email || '',
                 availableFrom: '',
                 stripePaymentLink: '',
+                serviceCategory: '',
+                rate: '',
+                rateUnit: 'hour',
+                availabilityNote: '',
+                locationNote: 'on campus',
                 images: [],
                 paymentMethods: formData.paymentMethods
             });
@@ -272,14 +303,45 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
     return React.createElement('div', { className: 'sell-page' },
         React.createElement('div', { className: 'sell-container' },
             React.createElement('div', { className: 'page-header' },
-                React.createElement('h1', null, 'Sell Your Item'),
-                React.createElement('p', null, 'List your item and reach hundreds of students on campus')
+                React.createElement('h1', null,
+                    listingType === null ? 'What are you listing?' : (isService ? 'Offer a Service' : 'Sell Your Item')),
+                React.createElement('p', null,
+                    listingType === null
+                        ? 'Items go on DormGlide. Skills go on Glyde. Same account, same campus.'
+                        : (isService
+                            ? 'Post a skill and get booked by students on your campus'
+                            : 'List your item and reach hundreds of students on campus'))
             ),
 
-            React.createElement('form', { className: 'sell-form', onSubmit: handleSubmit },
+            listingType === null ? React.createElement('div', { className: 'listing-type-choice' },
+                React.createElement('button', {
+                    type: 'button',
+                    className: 'listing-type-card',
+                    onClick: () => setListingType('goods')
+                },
+                    React.createElement('span', { className: 'listing-type-glyph', 'aria-hidden': true }, '🏠'),
+                    React.createElement('strong', null, 'Item'),
+                    React.createElement('span', null, 'Furniture, textbooks, electronics, clothes — stuff you hand over.')
+                ),
+                React.createElement('button', {
+                    type: 'button',
+                    className: 'listing-type-card listing-type-card-glyde',
+                    onClick: () => setListingType('service')
+                },
+                    React.createElement('span', { className: 'listing-type-glyph', 'aria-hidden': true }, '✨'),
+                    React.createElement('strong', null, 'Service'),
+                    React.createElement('span', null, 'Tutoring, haircuts, tech help, photos, moving help — skills you offer.')
+                )
+            ) : React.createElement('form', { className: 'sell-form', onSubmit: handleSubmit },
+                React.createElement('button', {
+                    type: 'button',
+                    className: 'listing-type-back',
+                    onClick: () => setListingType(null)
+                }, `← Listing ${isService ? 'a service' : 'an item'} — change`),
+
                 // Images Section
                 React.createElement('div', { className: 'form-section' },
-                    React.createElement('h3', null, 'Photos'),
+                    React.createElement('h3', null, isService ? 'Photos (optional)' : 'Photos'),
                     React.createElement('p', { className: 'section-description' },
                         `Add up to ${MAX_PHOTOS} photos. The cover photo is what buyers see while browsing — tap the star on any photo to make it the cover.`
                     ),
@@ -341,10 +403,40 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                             name: 'title',
                             value: formData.title,
                             onChange: handleInputChange,
-                            placeholder: 'What are you selling?',
+                            placeholder: isService ? 'e.g. CS 173 tutoring, Men\'s haircuts, Laptop repair' : 'What are you selling?',
                             required: true
                         })
                     ),
+
+                    isService && React.createElement('div', { className: 'form-row' },
+                        React.createElement('div', { className: 'form-group' },
+                            React.createElement('label', null, 'Service category *'),
+                            React.createElement('select', {
+                                name: 'serviceCategory',
+                                value: formData.serviceCategory,
+                                onChange: handleInputChange,
+                                required: true
+                            },
+                                React.createElement('option', { value: '' }, 'Select a category'),
+                                (glyde?.SERVICE_CATEGORIES || []).map((entry) =>
+                                    React.createElement('option', { key: entry.name, value: entry.name }, `${entry.glyph} ${entry.name}`))
+                            )
+                        ),
+                        React.createElement('div', { className: 'form-group' },
+                            React.createElement('label', null, 'Where'),
+                            React.createElement('select', {
+                                name: 'locationNote',
+                                value: formData.locationNote,
+                                onChange: handleInputChange
+                            },
+                                (glyde?.LOCATION_OPTIONS || []).map((entry) =>
+                                    React.createElement('option', { key: entry.value, value: entry.value }, `${entry.glyph} ${entry.label}`))
+                            )
+                        )
+                    ),
+
+                    isService && React.createElement('p', { className: 'form-hint excluded-services-notice' },
+                        '⚠️ ', glyde?.EXCLUDED_SERVICES_NOTICE),
 
                     React.createElement('div', { className: 'form-group' },
                         React.createElement('label', null, 'Description *'),
@@ -352,13 +444,57 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                             name: 'description',
                             value: formData.description,
                             onChange: handleInputChange,
-                            placeholder: 'Describe your item, its condition, and any important details...',
+                            placeholder: isService
+                                ? 'What you offer, your experience, what a session looks like...'
+                                : 'Describe your item, its condition, and any important details...',
                             rows: 4,
                             required: true
                         })
                     ),
 
-                    React.createElement('div', { className: 'form-row' },
+                    isService && React.createElement('div', { className: 'form-row' },
+                        React.createElement('div', { className: 'form-group' },
+                            React.createElement('label', null, 'Rate *'),
+                            React.createElement('div', { className: 'price-input' },
+                                React.createElement('span', { className: 'currency' }, '$'),
+                                React.createElement('input', {
+                                    type: 'number',
+                                    name: 'rate',
+                                    value: formData.rate,
+                                    onChange: handleInputChange,
+                                    placeholder: '20',
+                                    min: '1',
+                                    step: '1',
+                                    required: true
+                                })
+                            )
+                        ),
+                        React.createElement('div', { className: 'form-group' },
+                            React.createElement('label', null, 'Per'),
+                            React.createElement('select', {
+                                name: 'rateUnit',
+                                value: formData.rateUnit,
+                                onChange: handleInputChange
+                            },
+                                (glyde?.RATE_UNITS || []).map((entry) =>
+                                    React.createElement('option', { key: entry.value, value: entry.value }, entry.label))
+                            )
+                        )
+                    ),
+
+                    isService && React.createElement('div', { className: 'form-group' },
+                        React.createElement('label', null, 'Availability'),
+                        React.createElement('input', {
+                            type: 'text',
+                            name: 'availabilityNote',
+                            value: formData.availabilityNote,
+                            onChange: handleInputChange,
+                            placeholder: 'e.g. Tue/Thu evenings, weekends',
+                            maxLength: 120
+                        })
+                    ),
+
+                    !isService && React.createElement('div', { className: 'form-row' },
                         React.createElement('div', { className: 'form-group' },
                             React.createElement('label', null, 'Price *'),
                             React.createElement('div', { className: 'price-input' },
@@ -402,7 +538,9 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                     ),
 
                     React.createElement('div', { className: 'form-group' },
-                        React.createElement('label', null, 'Handoff date (optional) — for reserve-ahead selling'),
+                        React.createElement('label', null, isService
+                            ? 'Bookable from (optional)'
+                            : 'Handoff date (optional) — for reserve-ahead selling'),
                         React.createElement('input', {
                             type: 'date',
                             name: 'availableFrom',
@@ -435,7 +573,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                     // positioning is "we never handle money" — payment happens
                     // in person via the deal flow's payment-apps chips.
 
-                    React.createElement('div', { className: 'form-row' },
+                    !isService && React.createElement('div', { className: 'form-row' },
                         React.createElement('div', { className: 'form-group' },
                             React.createElement('label', null, 'Category *'),
                             React.createElement('select', {
@@ -492,7 +630,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth }) => {
                         disabled: isSubmitting
                     },
                         isSubmitting && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
-                        isSubmitting ? (uploadProgress || 'Listing...') : 'List Item'
+                        isSubmitting ? (uploadProgress || 'Posting...') : (isService ? 'Post Service' : 'List Item')
                     )
                 )
             )

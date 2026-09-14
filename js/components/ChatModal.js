@@ -5,6 +5,7 @@ const ChatModal = ({
     initialConversation = null,
     initialDraft = '',
     dealStatus = null,
+    dealKind = 'purchase',
     onProductUpdate,
     onClose,
     onConversationActivity
@@ -632,7 +633,13 @@ const ChatModal = ({
             (() => {
                 const stage = String(dealStatus || '').toLowerCase();
                 let starters;
-                if (stage === 'accepted') {
+                if (dealKind === 'booking') {
+                    starters = stage === 'meetup_arranged'
+                        ? ["I'm here — where should we meet?", 'Running 5 min late, sorry!', 'Thanks — that was great!']
+                        : stage === 'accepted'
+                            ? ['Hi! What times work for you this week?', 'Does Tuesday 7pm at the library work?', 'I can do Venmo or cash — which do you prefer?']
+                            : ['Hi! Are you available this week?', 'What does a typical session look like?'];
+                } else if (stage === 'accepted') {
                     starters = [
                         'Hi! When are you free to meet up?',
                         'I can do Venmo or cash — which do you prefer?',

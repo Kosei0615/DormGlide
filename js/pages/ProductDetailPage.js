@@ -247,7 +247,8 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             await window.DormGlideStorage.requestPurchase({
                 listingId: product.id,
                 buyerId: currentUser.id,
-                sellerId: product.sellerId
+                sellerId: product.sellerId,
+                kind: isServiceListing ? 'booking' : 'purchase'
             });
 
             await refreshPurchaseRequests();
@@ -441,6 +442,9 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         }
     };
 
+    // Glyde: service listings get booking labels instead of purchase labels.
+    const isServiceListing = Boolean(window.DormGlideGlyde?.isService(product));
+
     // Reserve-ahead listing state
     const reserveDate = product?.availableFrom ? new Date(`${product.availableFrom}T00:00:00`) : null;
     const isReserveListing = Boolean(reserveDate && !Number.isNaN(reserveDate.getTime()) && reserveDate > new Date());
@@ -576,17 +580,24 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                 React.createElement('div', { className: 'product-info-detail' },
                     React.createElement('div', { className: 'product-header' },
                         React.createElement('h1', null, product.title),
-                        React.createElement('div', { className: 'product-price-large' }, formatPrice(product.price)),
-                        React.createElement('div', { className: `listing-status-badge listing-status-${listingStatus}` },
+                        React.createElement('div', { className: 'product-price-large' },
+                            isServiceListing ? window.DormGlideGlyde.formatRate(product) : formatPrice(product.price)),
+                        React.createElement('div', { className: `listing-status-badge listing-status-${isServiceListing ? 'available' : listingStatus}` },
                             React.createElement('span', { className: 'status-dot' }),
-                            listingStatus === 'sold' ? 'Sold' : (listingStatus === 'pending' ? 'Pending' : 'Available')
+                            isServiceListing ? 'Bookable' : (listingStatus === 'sold' ? 'Sold' : (listingStatus === 'pending' ? 'Pending' : 'Available'))
                         ),
                         React.createElement('div', { className: 'product-badges' },
-                            React.createElement('span', { className: `condition-badge condition-${product.condition.toLowerCase()}` }, product.condition),
-                            React.createElement('span', { className: 'category-badge' },
+                            !isServiceListing && React.createElement('span', { className: `condition-badge condition-${String(product.condition || 'good').toLowerCase()}` }, product.condition),
+                            isServiceListing && React.createElement('span', { className: 'service-category-chip' },
+                                `${window.DormGlideGlyde.categoryGlyph(product.serviceCategory)} ${product.serviceCategory || 'Service'}`),
+                            !isServiceListing && React.createElement('span', { className: 'category-badge' },
                                 React.createElement('i', { className: 'fas fa-tag' }),
                                 product.category
                             )
+                        ),
+                        isServiceListing && React.createElement('div', { className: 'service-detail-lines' },
+                            product.availabilityNote && React.createElement('p', null, '🗓️ ', product.availabilityNote),
+                            product.locationNote && React.createElement('p', null, '📍 ', window.DormGlideGlyde.locationLabel(product.locationNote))
                         )
                     ),
 
@@ -594,8 +605,8 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                     React.createElement('div', { className: 'trust-strip' },
                         React.createElement('span', null, '✅ Verified ',
                             (currentUser?.schoolName || 'school'), ' student'),
-                        React.createElement('span', null, '🏫 Meet on campus'),
-                        React.createElement('span', null, '💵 Pay at pickup'),
+                        React.createElement('span', null, isServiceListing ? '🏫 Meet on campus first' : '🏫 Meet on campus'),
+                        React.createElement('span', null, isServiceListing ? '💵 Pay at the session' : '💵 Pay at pickup'),
                         React.createElement('button', {
                             className: 'trust-strip-link',
                             onClick: () => onNavigate('how-it-works')
@@ -629,14 +640,14 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         },
                             React.createElement('i', { className: isRequestingPurchase ? 'fas fa-spinner fa-spin' : 'fa-solid fa-bag-shopping' }),
                             isRequestingPurchase
-                                ? (isReserveListing ? 'Reserving...' : 'Sending Request...')
+                                ? (isServiceListing ? 'Booking...' : (isReserveListing ? 'Reserving...' : 'Sending Request...'))
                                 : (isRequestAlreadySent
-                                    ? (isReserveListing ? 'Reserved' : 'Request Sent')
-                                    : (listingStatus === 'sold'
+                                    ? (isServiceListing ? 'Booking Requested' : (isReserveListing ? 'Reserved' : 'Request Sent'))
+                                    : (listingStatus === 'sold' && !isServiceListing
                                         ? 'Sold Out'
                                         : (isSellerOwner
                                             ? 'Your Listing'
-                                            : (isReserveListing ? 'Reserve This Item' : 'Request Purchase'))))
+                                            : (isServiceListing ? 'Book This Service' : (isReserveListing ? 'Reserve This Item' : 'Request Purchase')))))
                         ),
                         React.createElement('button', {
                             className: 'btn btn-secondary btn-large',
@@ -831,6 +842,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             dealStatus: (chatBuyerId
                 ? sellerActiveRequests.find((request) => request?.buyerId === chatBuyerId)?.status
                 : buyerDealRequest?.status) || null,
+            dealKind: isServiceListing ? 'booking' : 'purchase',
             onProductUpdate,
             onClose: () => setIsChatOpen(false)
         })

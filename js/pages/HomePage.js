@@ -1,4 +1,4 @@
-const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAuth, initialCategory = '' }) => {
+const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAuth, initialCategory = '', mode = 'goods', onSwitchMode }) => {
     const [searchTerm, setSearchTerm] = React.useState('');
     const [filters, setFilters] = React.useState({
         category: '',
@@ -45,7 +45,8 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
 
     const decoratedProducts = React.useMemo(() => {
         if (!Array.isArray(products)) return [];
-        return products.map((product) => {
+        // Goods storefront only — services live in Glyde browse.
+        return products.filter((product) => String(product?.listingType || 'goods') !== 'service').map((product) => {
             const base = {
                 ...product,
                 isDemo: Boolean(product.isDemo),
@@ -279,7 +280,38 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         return recentIds.map((id) => lookup.get(id)).filter(Boolean);
     }, [currentUser?.id, decoratedProducts]);
 
+    // DormGlide | Glyde storefront switch (top of Browse, all screen sizes).
+    const modeSwitch = React.createElement('div', { className: 'mode-switch', role: 'tablist', 'aria-label': 'Marketplace mode' },
+        React.createElement('button', {
+            className: `mode-switch-btn ${mode !== 'glyde' ? 'active' : ''}`,
+            role: 'tab',
+            'aria-selected': mode !== 'glyde',
+            onClick: () => onSwitchMode && onSwitchMode('goods')
+        }, '🏠 DormGlide', React.createElement('small', null, 'stuff')),
+        React.createElement('button', {
+            className: `mode-switch-btn mode-switch-glyde ${mode === 'glyde' ? 'active' : ''}`,
+            role: 'tab',
+            'aria-selected': mode === 'glyde',
+            onClick: () => onSwitchMode && onSwitchMode('glyde')
+        }, '✨ Glyde', React.createElement('small', null, 'skills'))
+    );
+
+    if (mode === 'glyde' && window.DormGlideGlydeBrowse) {
+        return React.createElement('div', { className: 'home-page glyde-home' },
+            modeSwitch,
+            React.createElement(window.DormGlideGlydeBrowse, {
+                products,
+                currentUser,
+                onProductClick,
+                onNavigate,
+                onShowAuth
+            })
+        );
+    }
+
     return React.createElement('div', { className: 'home-page' },
+        modeSwitch,
+
         // Hero Section
         React.createElement('section', { className: 'hero-section reveal-on-scroll' },
             React.createElement('div', { className: 'hero-content' },

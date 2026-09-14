@@ -21,6 +21,11 @@ const OnboardingModal = ({ currentUser, onDone, onNavigate }) => {
             body: 'Request an item, agree on a campus meetup in chat, pay at handoff with Venmo, Zelle, Cash App, or cash. DormGlide never touches your money — a step-by-step guide walks you both through every deal.'
         },
         {
+            glyph: '✨',
+            title: 'DormGlide is for stuff. Glyde is for skills.',
+            body: 'Flip the switch at the top of Browse to Glyde: tutoring, haircuts, tech help, photos, moving muscle — offered by students on your campus. Book a session, pay them directly when you meet.'
+        },
+        {
             glyph: '➕',
             title: 'Selling takes a minute',
             body: 'Tap Sell, snap a few photos, set a price — done. Moving out later? Set a handoff date and buyers can RESERVE your item today, pick it up when you\'re ready. Every listing is matched against everyone\'s wishlists.'

@@ -40,3 +40,12 @@ Running log of UX problems found while working through the student-feedback phas
 | # | Issue | Fix |
 |---|---|---|
 | F | Stripe Payment Link field contradicted "DormGlide never handles money" | Removed from the Sell form (approved by founder). Legacy payment_link data untouched |
+
+## Logged during Glyde Phase 2 (not built — recommendations)
+
+| # | Issue | Recommendation |
+|---|---|---|
+| G1 | Goods listings and Glyde services share one Sell entry; a seller who lands on Sell from Glyde mode gets the Service branch pre-selected, but from the bottom bar they see the chooser every time | Remember the last chosen type per device (like the mode switch) so repeat posters skip the chooser |
+| G2 | Service cards show a rating slot but ratings are per-seller (goods + services combined) and not yet fetched on the browse grid | Phase 3 provider stats: batch-fetch rating summaries for visible providers |
+| G3 | The wishlist keyword-match trigger now also matches services (category mirrors service_category) — a "tutoring" alert fires for tutoring services. Intended, but the alert email copy says "listing" | Phase 3: adjust wording to "listing or service" |
+| G4 | Reserve-ahead copy ("Reserve now · pickup") shows on services with a future available_from | Phase 3: say "Bookable from <date>" for services |

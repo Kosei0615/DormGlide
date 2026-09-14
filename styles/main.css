@@ -6657,3 +6657,311 @@ button, input, select, textarea {
     margin-bottom: 0.9rem;
     min-height: 44px;
 }
+
+/* ============================================================
+   Design pass v10 — Glyde services mode
+   Scoped orange accent via [data-mode="glyde"]; mode switch; service
+   cards; sell-form type chooser. No duplicated components.
+   ============================================================ */
+
+/* Orange token swap — everything that reads --dg-primary follows */
+.app[data-mode="glyde"] {
+    --dg-primary: #ea580c;
+    --dg-primary-strong: #c2410c;
+    --dg-accent: #1d4ed8;
+}
+
+.app[data-mode="glyde"] .btn.btn-primary { background: var(--dg-primary); }
+.app[data-mode="glyde"] .btn.btn-primary:hover:not(:disabled) { background: var(--dg-primary-strong); }
+.app[data-mode="glyde"] .bottom-nav-item.active { color: var(--dg-primary); }
+.app[data-mode="glyde"] .header-login-quick { background: var(--dg-primary); }
+.app[data-mode="glyde"] .form-group input:focus,
+.app[data-mode="glyde"] .form-group select:focus,
+.app[data-mode="glyde"] .form-group textarea:focus {
+    border-color: var(--dg-primary);
+    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.14);
+}
+
+.glyde-wordmark {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #ea580c;
+    color: #fff;
+    font-size: 0.72em;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    vertical-align: middle;
+}
+
+/* DormGlide | Glyde switch */
+.mode-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    background: #e5e9f2;
+    border-radius: 999px;
+    padding: 4px;
+    margin: 1rem 0 0.5rem;
+    max-width: 420px;
+}
+
+.mode-switch-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--dg-muted);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    line-height: 1.1;
+}
+
+.mode-switch-btn small {
+    font-size: 0.68rem;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.mode-switch-btn.active {
+    background: #ffffff;
+    color: #1d4ed8;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+.mode-switch-btn.mode-switch-glyde.active { color: #ea580c; }
+
+/* Glyde browse */
+.glyde-hero {
+    background: linear-gradient(135deg, #c2410c 0%, #ea580c 55%, #fb923c 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    margin: 1rem 0 1.25rem;
+    text-align: center;
+}
+
+.glyde-hero h1 {
+    color: #fff;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.4rem;
+}
+
+.glyde-hero p { opacity: 0.94; margin: 0 0 1.1rem; }
+.glyde-hero .btn { background: #fff; color: #ea580c; }
+.glyde-hero .btn:hover { background: #fff7ed; }
+
+.glyde-category-chips {
+    display: flex;
+    gap: 0.45rem;
+    overflow-x: auto;
+    padding: 0.25rem 0 0.5rem;
+    scrollbar-width: none;
+}
+
+.glyde-category-chips::-webkit-scrollbar { display: none; }
+
+.glyde-chip {
+    flex-shrink: 0;
+    min-height: 40px;
+    border: 1.5px solid var(--dg-border);
+    border-radius: 999px;
+    background: var(--dg-surface);
+    color: var(--dg-text);
+    padding: 0 0.9rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.glyde-chip.active {
+    background: #fff7ed;
+    border-color: #ea580c;
+    color: #c2410c;
+}
+
+.glyde-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0.5rem 0 0.75rem;
+}
+
+.glyde-sort select {
+    margin-left: 0.35rem;
+    border: 1px solid var(--dg-border);
+    border-radius: 8px;
+    padding: 0.4rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.service-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+}
+
+@media (min-width: 640px) { .service-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .service-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.service-card {
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 14px;
+    padding: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-2px);
+    border-color: #ea580c;
+    box-shadow: 0 8px 20px rgba(234, 88, 12, 0.12);
+}
+
+.service-card-top { display: flex; gap: 0.75rem; align-items: flex-start; }
+
+.service-card-glyph {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #fff7ed;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+}
+
+.service-card-photo {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.service-card-main { min-width: 0; flex: 1; }
+
+.service-category-chip {
+    display: inline-flex;
+    background: #fff7ed;
+    color: #c2410c;
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+}
+
+.service-card-title {
+    margin: 0 0 0.2rem;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.service-card-provider { margin: 0; font-size: 0.82rem; color: var(--dg-muted); }
+
+.service-card-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--dg-border);
+}
+
+.service-card-rate { font-weight: 800; font-size: 1.05rem; color: #c2410c; }
+.service-card-meta { font-size: 0.8rem; color: var(--dg-muted); flex: 1; min-width: 0; }
+.service-card-rating { font-size: 0.8rem; font-weight: 700; }
+
+.service-detail-lines p { margin: 0.25rem 0; color: var(--dg-muted); font-size: 0.92rem; }
+
+.glyde-empty { border-color: #fed7aa; }
+
+/* Sell form: Item / Service chooser */
+.listing-type-choice {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+    margin: 0.5rem 0 1.5rem;
+}
+
+@media (min-width: 560px) { .listing-type-choice { grid-template-columns: 1fr 1fr; } }
+
+.listing-type-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    text-align: left;
+    background: var(--dg-surface);
+    border: 2px solid var(--dg-border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    min-height: 44px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--dg-text);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.listing-type-card:hover { border-color: #1d4ed8; transform: translateY(-2px); }
+.listing-type-card-glyde:hover { border-color: #ea580c; }
+.listing-type-card strong { font-size: 1.15rem; font-weight: 800; }
+.listing-type-card span:last-child { font-size: 0.88rem; color: var(--dg-muted); }
+.listing-type-glyph { font-size: 1.9rem; line-height: 1; }
+
+.listing-type-back {
+    background: none;
+    border: none;
+    color: var(--dg-muted);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 6px 0;
+    min-height: 44px;
+    text-align: left;
+}
+
+.excluded-services-notice {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    color: #9a3412;
+    margin: 0 0 0.75rem;
+}
+
+/* Glyde fixes: keep the hero CTA white despite the orange token override;
+   keep the mobile login pill on one line next to the wordmark. */
+.app[data-mode="glyde"] .glyde-hero .btn.btn-primary {
+    background: #ffffff;
+    color: #ea580c;
+}
+
+.app[data-mode="glyde"] .glyde-hero .btn.btn-primary:hover:not(:disabled) {
+    background: #fff7ed;
+}
+
+.header-login-quick { white-space: nowrap; }
+
+@media (max-width: 767px) {
+    .app[data-mode="glyde"] .brand-copy small { display: none; }
+}

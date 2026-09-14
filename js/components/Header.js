@@ -1,4 +1,4 @@
-const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) => {
+const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout, mode = 'goods' }) => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const [showUserMenu, setShowUserMenu] = React.useState(false);
     const [showNotificationMenu, setShowNotificationMenu] = React.useState(false);
@@ -229,7 +229,8 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                     navGlyph('🏠')
                 ),
                 React.createElement('span', { className: 'brand-copy' },
-                    React.createElement('strong', null, 'DormGlide'),
+                    React.createElement('strong', null, 'DormGlide',
+                        mode === 'glyde' && React.createElement('span', { className: 'glyde-wordmark' }, 'Glyde')),
                     // Multi-campus: show which school market the user is in.
                     React.createElement('small', null, currentUser?.schoolName || 'Campus Marketplace')
                 )

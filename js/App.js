@@ -174,6 +174,10 @@ const App = () => {
     const [unseenMessageCount, setUnseenMessageCount] = useState(0);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [needsTermsAccept, setNeedsTermsAccept] = useState(false);
+    // Storefront mode: 'goods' (DormGlide) | 'glyde' (services). Remembered per device.
+    const [mode, setModeState] = useState(() => window.DormGlideGlyde?.getMode() || 'goods');
+    const switchMode = (next) => setModeState(window.DormGlideGlyde?.setMode(next) || (next === 'glyde' ? 'glyde' : 'goods'));
+    const [sellInitialType, setSellInitialType] = useState(null);
 
     const maybeStartOnboarding = (user) => {
         if (!user?.id || user.onboardedAt) return;
@@ -337,6 +341,10 @@ const App = () => {
             setHomeInitialCategory(String(options?.category || '').trim());
         } else if (homeInitialCategory) {
             setHomeInitialCategory('');
+        }
+
+        if (page === 'sell') {
+            setSellInitialType(options?.listingType || (mode === 'glyde' ? 'service' : null));
         }
 
         if (page === 'dashboard') {
@@ -535,6 +543,8 @@ const App = () => {
         switch (currentPage) {
             case 'home':
                 return React.createElement(HomePage, {
+                    mode: mode,
+                    onSwitchMode: switchMode,
                     products: products,
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
                     onNavigate: navigateToPage,
@@ -553,6 +563,7 @@ const App = () => {
                 });
             case 'sell':
                 return React.createElement(SellPage, {
+                    initialListingType: sellInitialType,
                     onNavigate: navigateToPage,
                     onProductAdd: addProduct,
                     currentUser: currentUser,
@@ -602,6 +613,8 @@ const App = () => {
                 });
             default:
                 return React.createElement(HomePage, {
+                    mode: mode,
+                    onSwitchMode: switchMode,
                     products: products,
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
                     onNavigate: navigateToPage,
@@ -612,8 +625,9 @@ const App = () => {
         }
     };
 
-    return React.createElement('div', { className: 'app' },
+    return React.createElement('div', { className: 'app', 'data-mode': mode === 'glyde' ? 'glyde' : 'goods' },
         React.createElement(Header, {
+            mode: mode,
             currentPage: currentPage,
             onNavigate: navigateToPage,
             currentUser: currentUser,

@@ -18,7 +18,7 @@ const DEAL_CANCEL_REASONS = [
     'Other'
 ];
 
-const DealPaymentHelp = ({ paymentMethods }) => {
+const DealPaymentHelp = ({ paymentMethods, isBooking = false }) => {
     const [open, setOpen] = React.useState(false);
 
     return React.createElement('div', { className: 'deal-payment-help' },
@@ -43,7 +43,9 @@ const DealPaymentHelp = ({ paymentMethods }) => {
                 )
             ),
             React.createElement('p', { className: 'deal-payment-rule' },
-                '💡 ', React.createElement('strong', null, "Pay at pickup, after you've seen it, never before.")
+                '💡 ', React.createElement('strong', null, isBooking
+                    ? 'Pay the provider directly at the session — DormGlide never handles money.'
+                    : "Pay at pickup, after you've seen it, never before.")
             ),
             React.createElement('ul', { className: 'deal-payment-options' },
                 React.createElement('li', null, React.createElement('strong', null, 'Venmo / Cash App / Zelle'), ' — free student-to-student transfers from your phone. Exchange usernames in chat.'),
@@ -106,7 +108,12 @@ const DealPanel = ({ request, product, currentUser, onRefresh, onOpenChat }) => 
 
     const spinner = (key) => busyAction === key && React.createElement('i', { className: 'fas fa-spinner fa-spin' });
 
-    const steps = ['Accepted', 'Meet up', 'Pay & complete'];
+    // Bookings (Glyde services) reuse the same states with session wording.
+    const isBooking = String(request.kind || 'purchase') === 'booking';
+    const steps = isBooking
+        ? ['Accepted', 'Session', 'Pay & complete']
+        : ['Accepted', 'Meet up', 'Pay & complete'];
+    const statusLabel = isBooking && status === 'meetup_arranged' ? 'Session scheduled' : meta.label;
     const activeStep = meta.step;
 
     const primaryBtn = (key, label, fn, successMsg) => React.createElement('button', {
@@ -143,7 +150,9 @@ const DealPanel = ({ request, product, currentUser, onRefresh, onOpenChat }) => 
                     React.createElement('input', {
                         type: 'text',
                         className: 'deal-meetup-input',
-                        placeholder: 'Meetup spot & time — e.g. Slayter steps, Fri 3pm',
+                        placeholder: isBooking
+                            ? 'When and where is the session? — e.g. Library 2nd floor, Tue 7pm'
+                            : 'Meetup spot & time — e.g. Slayter steps, Fri 3pm',
                         value: meetupNote,
                         maxLength: 200,
                         onChange: (e) => setMeetupNote(e.target.value)
@@ -154,7 +163,9 @@ const DealPanel = ({ request, product, currentUser, onRefresh, onOpenChat }) => 
                         onClick: () => run('meetup',
                             () => window.DormGlideStorage.arrangeDealMeetup({ requestId: request.id, note: meetupNote }),
                             'Meetup saved — the other person has been notified.')
-                    }, spinner('meetup'), status === 'meetup_arranged' ? 'Update meetup' : 'Set meetup')
+                    }, spinner('meetup'), isBooking
+                        ? (status === 'meetup_arranged' ? 'Update session' : 'Schedule session')
+                        : (status === 'meetup_arranged' ? 'Update meetup' : 'Set meetup'))
                 ),
                 status === 'meetup_arranged' && request.meetupNote && React.createElement('p', { className: 'deal-meetup-note' },
                     React.createElement('i', { className: 'fas fa-location-dot' }),
@@ -208,7 +219,7 @@ const DealPanel = ({ request, product, currentUser, onRefresh, onOpenChat }) => 
         ),
         React.createElement('div', { className: 'deal-panel-header' },
             React.createElement('h3', null, 'Complete your deal'),
-            React.createElement('span', { className: `deal-status-chip ${meta.cls}` }, meta.label)
+            React.createElement('span', { className: `deal-status-chip ${meta.cls}` }, statusLabel)
         ),
 
         // Reserve-ahead deals show the pickup date up front.
@@ -237,7 +248,8 @@ const DealPanel = ({ request, product, currentUser, onRefresh, onOpenChat }) => 
         renderActions(),
 
         ['accepted', 'meetup_arranged'].includes(status) && React.createElement(DealPaymentHelp, {
-            paymentMethods: product?.paymentMethods
+            paymentMethods: product?.paymentMethods,
+            isBooking
         }),
 
         cancellable && (showCancel

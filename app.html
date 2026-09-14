@@ -25,7 +25,7 @@
 
     <!-- Main Styles (load enhanced first, then main so latest main edits win) -->
     <link rel="stylesheet" href="styles/enhanced.css?v=5">
-    <link rel="stylesheet" href="styles/main.css?v=23">
+    <link rel="stylesheet" href="styles/main.css?v=25">
 </head>
 <body>
     <noscript>
@@ -47,36 +47,39 @@
         // Optional: set to your backend/edge function URL to trigger email notifications for new chat messages.
         window.DORMGLIDE_NOTIFICATION_WEBHOOK_URL = '';
         // Terms of Service version. Bumping this re-prompts every user to accept.
-        window.DORMGLIDE_TERMS_VERSION = '1.0';
+        window.DORMGLIDE_TERMS_VERSION = '1.1';
         // Shown on large-item listings (furniture/kitchen) until a Services tab exists. Edit freely.
         window.DORMGLIDE_MOVING_HELP_TEXT = 'Need help moving it? Ask in your dorm group chat — a Services section is coming soon.';
     </script>
     <script src="js/utils/supabaseClient.js?v=1"></script>
     <script src="js/utils/toast.js?v=1"></script>
-    <script src="js/utils/storage.js?v=11"></script>
+    <script src="js/utils/storage.js?v=12"></script>
     <script src="js/utils/auth.js?v=11"></script>
     <script src="js/utils/personalization.js?v=5"></script>
     <script src="js/utils/chat.js?v=1"></script>
     <script src="js/utils/payments.js?v=1"></script>
     <script src="js/utils/photos.js?v=1"></script>
+    <script src="js/utils/glyde.js?v=1"></script>
     <script src="js/utils/sampleData.js?v=3"></script>
 
     <!-- Load components -->
-    <script type="text/babel" src="js/components/Header.js?v=17"></script>
+    <script type="text/babel" src="js/components/Header.js?v=18"></script>
     <script type="text/babel" src="js/components/Footer.js?v=6"></script>
     <script type="text/babel" src="js/components/ProductCard.js?v=6"></script>
+    <script type="text/babel" src="js/components/ServiceCard.js?v=1"></script>
     <script type="text/babel" src="js/components/ProductGrid.js?v=4"></script>
     <script type="text/babel" src="js/components/SearchFilter.js?v=8"></script>
     <script type="text/babel" src="js/components/AuthModal.js?v=11"></script>
-    <script type="text/babel" src="js/components/ChatModal.js?v=8"></script>
-    <script type="text/babel" src="js/components/DealPanel.js?v=4"></script>
-    <script type="text/babel" src="js/components/Onboarding.js?v=3"></script>
+    <script type="text/babel" src="js/components/ChatModal.js?v=9"></script>
+    <script type="text/babel" src="js/components/DealPanel.js?v=5"></script>
+    <script type="text/babel" src="js/components/Onboarding.js?v=4"></script>
     <script type="text/babel" src="js/components/AdminPanel.js?v=4"></script>
 
     <!-- Load pages -->
-    <script type="text/babel" src="js/pages/HomePage.js?v=8"></script>
-    <script type="text/babel" src="js/pages/ProductDetailPage.js?v=20"></script>
-    <script type="text/babel" src="js/pages/SellPage.js?v=13"></script>
+    <script type="text/babel" src="js/pages/GlydeBrowse.js?v=1"></script>
+    <script type="text/babel" src="js/pages/HomePage.js?v=9"></script>
+    <script type="text/babel" src="js/pages/ProductDetailPage.js?v=21"></script>
+    <script type="text/babel" src="js/pages/SellPage.js?v=14"></script>
     <script type="text/babel" src="js/pages/ProfilePage.js?v=7"></script>
     <script type="text/babel" src="js/pages/UserDashboard.js?v=12"></script>
     <script type="text/babel" src="js/pages/MessagesPage.js?v=4"></script>
@@ -86,7 +89,7 @@
     <script type="text/babel" src="js/pages/PrivacyPolicyPage.js?v=3"></script>
 
     <!-- Load main app -->
-    <script type="text/babel" src="js/App.js?v=14"></script>
+    <script type="text/babel" src="js/App.js?v=15"></script>
 
     <script>
         console.log('DormGlide loaded successfully!');
