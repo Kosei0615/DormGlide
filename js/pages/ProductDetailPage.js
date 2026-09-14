@@ -590,6 +590,25 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         )
                     ),
 
+                    // Trust strip: answers "is this safe / when do I pay" at a glance.
+                    React.createElement('div', { className: 'trust-strip' },
+                        React.createElement('span', null, '✅ Verified ',
+                            (currentUser?.schoolName || 'school'), ' student'),
+                        React.createElement('span', null, '🏫 Meet on campus'),
+                        React.createElement('span', null, '💵 Pay at pickup'),
+                        React.createElement('button', {
+                            className: 'trust-strip-link',
+                            onClick: () => onNavigate('how-it-works')
+                        }, 'How deals work →')
+                    ),
+
+                    // Large items: moving help pointer (Services tab doesn't exist
+                    // yet — text is founder-editable in app.html config).
+                    ['furniture', 'kitchen'].includes(String(product.category || '').toLowerCase())
+                        && window.DORMGLIDE_MOVING_HELP_TEXT
+                        && React.createElement('p', { className: 'moving-help-line' },
+                            '🚚 ', window.DORMGLIDE_MOVING_HELP_TEXT),
+
                     isReserveListing && React.createElement('div', { className: 'reserve-banner' },
                         React.createElement('span', { className: 'reserve-banner-icon', 'aria-hidden': true }, '📅'),
                         React.createElement('div', null,

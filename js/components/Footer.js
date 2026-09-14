@@ -49,6 +49,11 @@ const Footer = ({ onNavigate }) => {
                         onClick: (event) => handleNavClick(event, 'privacy-policy')
                     }, '🛡️ Privacy Policy')),
                     React.createElement('li', null, React.createElement('a', {
+                        href: 'terms.html',
+                        target: '_blank',
+                        rel: 'noopener'
+                    }, '📋 Terms of Service')),
+                    React.createElement('li', null, React.createElement('a', {
                         href: '#',
                         onClick: (event) => handleNavClick(event, 'how-it-works')
                     }, '✅ Safety Tips')),

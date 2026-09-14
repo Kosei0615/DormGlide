@@ -19,6 +19,8 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
     // status: 'idle' | 'checking' | 'supported' | 'unsupported'
     const [signupSchool, setSignupSchool] = React.useState(null);
     const [signupSchoolStatus, setSignupSchoolStatus] = React.useState('idle');
+    // Terms acceptance: required, unchecked by default.
+    const [agreedToTerms, setAgreedToTerms] = React.useState(false);
 
     React.useEffect(() => {
         if (mode !== 'signup') return undefined;
@@ -269,6 +271,16 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
             });
 
             if (result.success) {
+                // Signup checkbox was checked; the profile row may not be
+                // writable until the email is confirmed and the user logs in,
+                // so stash the accepted version — App records it silently on
+                // first login instead of re-prompting.
+                try {
+                    localStorage.setItem('dormglide_terms_pending', String(window.DORMGLIDE_TERMS_VERSION || '1.0'));
+                } catch (_error) { /* storage unavailable */ }
+                if (result.user?.id) {
+                    window.DormGlideAuth?.markTermsAccepted?.(result.user.id);
+                }
                 const marketName = result.school?.name || signupSchool?.name;
                 if (result.requiresEmailConfirmation) {
                     switchMode('login');
@@ -506,10 +518,24 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
                         })
                     ),
 
+                    React.createElement('label', { className: 'policy-checkbox-row terms-agree-row' },
+                        React.createElement('input', {
+                            type: 'checkbox',
+                            checked: agreedToTerms,
+                            onChange: (event) => setAgreedToTerms(event.target.checked)
+                        }),
+                        React.createElement('span', null,
+                            'I agree to the ',
+                            React.createElement('a', { href: 'terms.html', target: '_blank', rel: 'noopener' }, 'Terms of Service'),
+                            ' and ',
+                            React.createElement('a', { href: 'privacy.html', target: '_blank', rel: 'noopener' }, 'Privacy Policy')
+                        )
+                    ),
+
                     React.createElement('button', {
                         type: 'submit',
                         className: 'btn btn-primary btn-block',
-                        disabled: loading
+                        disabled: loading || !agreedToTerms
                     },
                         loading && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
                         loading ? 'Creating account...' : 'Create account'

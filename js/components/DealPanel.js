@@ -33,22 +33,35 @@ const DealPaymentHelp = ({ paymentMethods }) => {
             React.createElement('i', { className: `fa-solid fa-chevron-${open ? 'up' : 'down'}` })
         ),
         open && React.createElement('div', { className: 'deal-payment-body' },
-            Array.isArray(paymentMethods) && paymentMethods.length > 0 && React.createElement('p', { className: 'deal-payment-accepts' },
-                React.createElement('strong', null, 'This seller accepts: '),
-                paymentMethods.join(' · ')
+            Array.isArray(paymentMethods) && paymentMethods.length > 0 && React.createElement('div', { className: 'deal-payment-apps' },
+                React.createElement('span', { className: 'deal-payment-apps-label' }, 'This seller accepts'),
+                React.createElement('div', { className: 'deal-payment-app-chips' },
+                    paymentMethods.map((method) => React.createElement('span', {
+                        key: method,
+                        className: 'deal-payment-app-chip'
+                    }, method))
+                )
+            ),
+            React.createElement('p', { className: 'deal-payment-rule' },
+                '💡 ', React.createElement('strong', null, "Pay at pickup, after you've seen it, never before.")
             ),
             React.createElement('ul', { className: 'deal-payment-options' },
                 React.createElement('li', null, React.createElement('strong', null, 'Venmo / Cash App / Zelle'), ' — free student-to-student transfers from your phone. Exchange usernames in chat.'),
                 React.createElement('li', null, React.createElement('strong', null, 'Cash'), ' — always works. Bring exact change if you can.')
             ),
             React.createElement('div', { className: 'deal-safety-rules' },
-                React.createElement('p', null, '✅ Pay only at handoff, after inspecting the item.'),
-                React.createElement('p', null, '🚫 Never pay before seeing the item in person.'),
                 React.createElement('p', null, '🏫 Meet in public campus spots (library, student union).')
             ),
             React.createElement('p', { className: 'deal-disclaimer' },
                 React.createElement('i', { className: 'fa-solid fa-shield-halved' }),
-                ' DormGlide never handles money — you pay each other directly.'
+                ' ',
+                React.createElement('a', {
+                    href: 'terms.html#section-4',
+                    target: '_blank',
+                    rel: 'noopener',
+                    className: 'deal-disclaimer-link'
+                }, 'DormGlide never handles money'),
+                ' — you pay each other directly.'
             )
         )
     );

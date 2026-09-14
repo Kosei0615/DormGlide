@@ -60,6 +60,57 @@ const sanitizePlaceholderListings = (listings = []) => {
     return { keptListings, removedIds };
 };
 
+// One-time "We've updated our Terms" gate: shown to logged-in users whose
+// recorded terms_version doesn't match the current one. Requires the same
+// checkbox as signup; cannot be dismissed without accepting.
+const TermsGate = ({ currentUser, onAccepted }) => {
+    const [agreed, setAgreed] = React.useState(false);
+    const [saving, setSaving] = React.useState(false);
+
+    const accept = async () => {
+        if (!agreed || saving) return;
+        setSaving(true);
+        try {
+            await window.DormGlideAuth?.markTermsAccepted?.(currentUser.id);
+        } finally {
+            setSaving(false);
+            onAccepted();
+        }
+    };
+
+    return React.createElement('div', { className: 'onboarding-overlay', role: 'dialog', 'aria-modal': true },
+        React.createElement('div', { className: 'onboarding-card terms-gate-card' },
+            React.createElement('div', { className: 'onboarding-glyph', 'aria-hidden': true }, '📋'),
+            React.createElement('h2', null, "We've updated our Terms"),
+            React.createElement('p', null,
+                'Please review and accept the Terms of Service and Privacy Policy to keep using DormGlide.'),
+            React.createElement('label', { className: 'policy-checkbox-row terms-agree-row' },
+                React.createElement('input', {
+                    type: 'checkbox',
+                    checked: agreed,
+                    onChange: (event) => setAgreed(event.target.checked)
+                }),
+                React.createElement('span', null,
+                    'I agree to the ',
+                    React.createElement('a', { href: 'terms.html', target: '_blank', rel: 'noopener' }, 'Terms of Service'),
+                    ' and ',
+                    React.createElement('a', { href: 'privacy.html', target: '_blank', rel: 'noopener' }, 'Privacy Policy')
+                )
+            ),
+            React.createElement('div', { className: 'onboarding-actions' },
+                React.createElement('button', {
+                    className: 'btn btn-primary',
+                    disabled: !agreed || saving,
+                    onClick: accept
+                },
+                    saving && React.createElement('i', { className: 'fas fa-spinner fa-spin' }),
+                    'Continue'
+                )
+            )
+        )
+    );
+};
+
 // Persistent mobile bottom tab bar (hidden on desktop via CSS).
 // Logged-out taps on account-gated tabs open the auth modal instead.
 const BottomNav = ({ currentPage, currentUser, onNavigate, onShowAuth, unseenMessageCount = 0 }) => {
@@ -122,6 +173,7 @@ const App = () => {
     const [dashboardInitialTab, setDashboardInitialTab] = useState('overview');
     const [unseenMessageCount, setUnseenMessageCount] = useState(0);
     const [showOnboarding, setShowOnboarding] = useState(false);
+    const [needsTermsAccept, setNeedsTermsAccept] = useState(false);
 
     const maybeStartOnboarding = (user) => {
         if (!user?.id || user.onboardedAt) return;
@@ -129,6 +181,28 @@ const App = () => {
             if (localStorage.getItem('dormglide_onboarded')) return;
         } catch (_error) { /* storage unavailable */ }
         setShowOnboarding(true);
+    };
+
+    // Terms gate: users whose recorded version doesn't match the current one
+    // must re-accept — except fresh signups, who already checked the box
+    // (recorded silently from the localStorage pending flag).
+    const checkTermsGate = (user) => {
+        if (!user?.id) return;
+        const current = String(window.DORMGLIDE_TERMS_VERSION || '1.0');
+        if (user.termsVersion === current) return;
+
+        let localAccepted = null;
+        try {
+            localAccepted = localStorage.getItem('dormglide_terms_pending')
+                || localStorage.getItem('dormglide_terms_accepted');
+        } catch (_error) { /* storage unavailable */ }
+
+        if (localAccepted === current) {
+            window.DormGlideAuth?.markTermsAccepted?.(user.id);
+            try { localStorage.removeItem('dormglide_terms_pending'); } catch (_e) { /* noop */ }
+            return;
+        }
+        setNeedsTermsAccept(true);
     };
     const seenMessageIdsRef = React.useRef(new Set());
     const currentPageRef = React.useRef('home');
@@ -209,6 +283,7 @@ const App = () => {
                     const user = await window.DormGlideAuth.getCurrentUser();
                     if (isMounted) {
                         setCurrentUser(user);
+                        checkTermsGate(user);
                         maybeStartOnboarding(user);
                         console.log('Current user:', user);
                     }
@@ -329,6 +404,7 @@ const App = () => {
 
     const handleAuthSuccess = (user) => {
         setCurrentUser(user);
+        checkTermsGate(user);
         maybeStartOnboarding(user);
         console.log('User logged in:', user);
     };
@@ -559,10 +635,18 @@ const App = () => {
             unseenMessageCount: unseenMessageCount
         }),
         
-        // First-time walkthrough (once per account, always skippable)
-        showOnboarding && currentUser && window.DormGlideOnboarding && React.createElement(window.DormGlideOnboarding, {
+        // Terms re-acceptance gate (blocks everything until accepted)
+        needsTermsAccept && currentUser && React.createElement(TermsGate, {
             currentUser: currentUser,
-            onDone: () => setShowOnboarding(false)
+            onAccepted: () => setNeedsTermsAccept(false)
+        }),
+
+        // First-time walkthrough (once per account, always skippable) —
+        // waits until the terms gate is cleared.
+        !needsTermsAccept && showOnboarding && currentUser && window.DormGlideOnboarding && React.createElement(window.DormGlideOnboarding, {
+            currentUser: currentUser,
+            onDone: () => setShowOnboarding(false),
+            onNavigate: navigateToPage
         }),
 
         // Auth Modal

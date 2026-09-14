@@ -36,6 +36,34 @@ const HowItWorksPage = ({ onNavigate }) => {
                 React.createElement('i', { className: 'fa-solid fa-arrow-left' })
             ),
             React.createElement('h1', null, 'How DormGlide Works'),
+
+            // The 3-step deal model, up top where money questions get answered first.
+            React.createElement('section', { className: 'deal-model-strip' },
+                React.createElement('h2', null, 'How deals work'),
+                React.createElement('div', { className: 'deal-model-steps' },
+                    React.createElement('div', { className: 'deal-model-step' },
+                        React.createElement('span', { className: 'deal-model-icon', 'aria-hidden': true }, '🛍️'),
+                        React.createElement('h3', null, '1. Request'),
+                        React.createElement('p', null, 'Tap Request Purchase (or Reserve). The seller accepts, and you chat to plan.')
+                    ),
+                    React.createElement('div', { className: 'deal-model-step' },
+                        React.createElement('span', { className: 'deal-model-icon', 'aria-hidden': true }, '🏫'),
+                        React.createElement('h3', null, '2. Meet on campus'),
+                        React.createElement('p', null, 'Agree on a public campus spot and time. Inspect the item in person.')
+                    ),
+                    React.createElement('div', { className: 'deal-model-step' },
+                        React.createElement('span', { className: 'deal-model-icon', 'aria-hidden': true }, '💵'),
+                        React.createElement('h3', null, '3. Pay at pickup'),
+                        React.createElement('p', null, 'Hand over cash or send via Venmo, Zelle, or Cash App — right there, at handoff.')
+                    )
+                ),
+                React.createElement('p', { className: 'deal-model-rule' },
+                    '💡 The one rule: ',
+                    React.createElement('strong', null, "Pay at pickup, after you've seen it, never before."),
+                    ' DormGlide never handles your money.'
+                )
+            ),
+
             React.createElement('p', { className: 'policy-lead' },
                 'DormGlide is designed for clear agreements, safer meetups, and transparent buyer/seller confirmations.'
             ),

@@ -1,7 +1,7 @@
 // First-time welcome walkthrough: 4 compact cards, always skippable,
 // under 30 seconds. Shows once per account (profiles.onboarded_at,
 // localStorage fallback for offline/demo mode).
-const OnboardingModal = ({ currentUser, onDone }) => {
+const OnboardingModal = ({ currentUser, onDone, onNavigate }) => {
     const [step, setStep] = React.useState(0);
 
     const steps = [
@@ -47,6 +47,15 @@ const OnboardingModal = ({ currentUser, onDone }) => {
             React.createElement('div', { className: 'onboarding-glyph', 'aria-hidden': true }, current.glyph),
             React.createElement('h2', null, current.title),
             React.createElement('p', null, current.body),
+
+            // The deals card links to the full "How deals work" walkthrough.
+            step === 2 && onNavigate && React.createElement('button', {
+                className: 'onboarding-inline-link',
+                onClick: () => {
+                    finish();
+                    onNavigate('how-it-works');
+                }
+            }, 'See how deals work →'),
 
             React.createElement('div', { className: 'onboarding-dots' },
                 steps.map((_, index) => React.createElement('span', {

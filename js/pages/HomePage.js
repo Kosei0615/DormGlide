@@ -316,7 +316,11 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                         React.createElement('span', { className: 'ui-glyph', 'aria-hidden': 'true' }, '🛍️'),
                         'Browse Items'
                     )
-                )
+                ),
+                React.createElement('button', {
+                    className: 'hero-deals-link',
+                    onClick: () => onNavigate('how-it-works')
+                }, 'How do deals & payment work? →')
             )
         ),
 

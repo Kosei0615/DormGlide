@@ -501,6 +501,16 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout }) 
                 navGlyph('🛡️'),
                 React.createElement('span', null, 'Policy')
             ),
+            React.createElement('button', {
+                className: 'nav-btn',
+                onClick: () => {
+                    window.open('terms.html', '_blank', 'noopener');
+                    setIsMenuOpen(false);
+                }
+            },
+                navGlyph('📋'),
+                React.createElement('span', null, 'Terms')
+            ),
             
             currentUser ? (
                 React.createElement(React.Fragment, null,

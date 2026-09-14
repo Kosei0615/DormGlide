@@ -6495,3 +6495,165 @@ button, input, select, textarea {
     flex-shrink: 0;
     accent-color: var(--dg-primary);
 }
+
+/* ============================================================
+   Design pass v9 — terms acceptance & payment clarity
+   ============================================================ */
+
+/* Signup / re-acceptance checkbox row */
+.terms-agree-row {
+    font-size: 0.88rem;
+    color: var(--dg-text);
+    margin: 0.25rem 0 0.75rem;
+    text-align: left;
+}
+
+.terms-agree-row a {
+    color: var(--dg-primary);
+    font-weight: 700;
+}
+
+.terms-gate-card p { min-height: auto; }
+
+/* Trust strip on product pages */
+.trust-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 1rem;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 0.55rem 0.85rem;
+    margin: 0.75rem 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #166534;
+}
+
+.trust-strip-link {
+    background: none;
+    border: none;
+    color: var(--dg-primary);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 4px 0;
+    font-family: inherit;
+    margin-left: auto;
+}
+
+/* Large-item moving help */
+.moving-help-line {
+    color: var(--dg-muted);
+    font-size: 0.85rem;
+    margin: 0.25rem 0 0.75rem;
+}
+
+/* Hero link to How deals work */
+.hero-deals-link {
+    display: inline-block;
+    margin-top: 0.9rem;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: inherit;
+    min-height: 44px;
+}
+
+/* How deals work: 3-step strip */
+.deal-model-strip {
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin: 1rem 0 1.5rem;
+}
+
+.deal-model-strip h2 {
+    margin: 0 0 1rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.deal-model-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+}
+
+@media (min-width: 640px) {
+    .deal-model-steps { grid-template-columns: repeat(3, 1fr); }
+}
+
+.deal-model-step {
+    background: #f8fafc;
+    border: 1px solid var(--dg-border);
+    border-radius: 12px;
+    padding: 0.9rem;
+    text-align: center;
+}
+
+.deal-model-icon { font-size: 1.8rem; line-height: 1.2; display: block; margin-bottom: 0.35rem; }
+.deal-model-step h3 { margin: 0 0 0.3rem; font-size: 0.95rem; font-weight: 800; }
+.deal-model-step p { margin: 0; font-size: 0.85rem; color: var(--dg-muted); }
+
+.deal-model-rule {
+    margin: 1rem 0 0;
+    background: #eef2ff;
+    border: 1px solid rgba(29, 78, 216, 0.25);
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+}
+
+/* Deal panel payment step: prominent apps + rule */
+.deal-payment-apps { margin-bottom: 0.6rem; }
+
+.deal-payment-apps-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--dg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.35rem;
+}
+
+.deal-payment-app-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.deal-payment-app-chip {
+    background: var(--dg-primary);
+    color: #fff;
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+}
+
+.deal-payment-rule {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.88rem;
+    margin: 0.6rem 0;
+}
+
+.deal-disclaimer-link { color: inherit; text-decoration: underline; }
+
+.onboarding-inline-link {
+    background: none;
+    border: none;
+    color: var(--dg-primary);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: inherit;
+    margin-bottom: 0.9rem;
+    min-height: 44px;
+}

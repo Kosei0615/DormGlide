@@ -233,7 +233,7 @@ const fetchSchoolForUser = async (userId) => {
     try {
         const { data, error } = await client
             .from('profiles')
-            .select('school_id, onboarded_at, schools(id, name, slug)')
+            .select('school_id, onboarded_at, terms_version, terms_accepted_at, schools(id, name, slug)')
             .eq('id', userId)
             .maybeSingle();
         if (error) throw error;
@@ -243,7 +243,9 @@ const fetchSchoolForUser = async (userId) => {
                 id: data.schools.id,
                 name: data.schools.name,
                 slug: data.schools.slug,
-                onboardedAt: data.onboarded_at || null
+                onboardedAt: data.onboarded_at || null,
+                termsVersion: data.terms_version || null,
+                termsAcceptedAt: data.terms_accepted_at || null
             }
             : null;
         schoolCacheByUserId.set(userId, school);
@@ -263,8 +265,33 @@ const attachSchoolInfo = async (user) => {
         user.schoolName = school.name;
         user.schoolSlug = school.slug;
         user.onboardedAt = school.onboardedAt || null;
+        user.termsVersion = school.termsVersion || null;
+        user.termsAcceptedAt = school.termsAcceptedAt || null;
     }
     return user;
+};
+
+// Record acceptance of the current Terms version on the user's own profile.
+const markTermsAccepted = async (userId) => {
+    const version = String(window.DORMGLIDE_TERMS_VERSION || '1.0');
+    try {
+        localStorage.setItem('dormglide_terms_accepted', version);
+    } catch (_error) { /* storage unavailable */ }
+
+    const client = getSupabaseClient();
+    if (!client || !userId) return false;
+    try {
+        const { error } = await client
+            .from('profiles')
+            .update({ terms_version: version, terms_accepted_at: new Date().toISOString() })
+            .eq('id', userId);
+        if (error) throw error;
+        schoolCacheByUserId.delete(userId);
+        return true;
+    } catch (error) {
+        console.warn('[DormGlide] Failed to record terms acceptance:', error);
+        return false;
+    }
 };
 
 // Record that the welcome walkthrough was completed (or skipped), so it never
@@ -1299,6 +1326,7 @@ window.DormGlideAuth = {
     getSchoolForEmail,
     fetchSchoolForUser,
     markOnboarded,
+    markTermsAccepted,
     logoutUser,
     getCurrentUser,
     updateUserProfile,
