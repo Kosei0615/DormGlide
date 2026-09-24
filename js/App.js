@@ -299,6 +299,23 @@ const App = () => {
 
         bootstrapApp();
 
+        // Deep link from the public landing page: app.html?auth=signup|login
+        // opens the auth modal on arrival (ignored when already logged in).
+        try {
+            const authParam = new URLSearchParams(window.location.search).get('auth');
+            if (authParam === 'signup' || authParam === 'login') {
+                window.setTimeout(() => {
+                    if (isMounted && !window.DormGlideSupabaseSessionActive) {
+                        setAuthModalMode(authParam);
+                        setShowAuthModal(true);
+                    }
+                }, 400);
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.searchParams.delete('auth');
+                window.history.replaceState({}, document.title, `${cleanUrl.pathname}${cleanUrl.search}`);
+            }
+        } catch (_error) { /* URL API unavailable */ }
+
         // Keep React state in sync with the Supabase session: restores the user
         // after token refreshes and clears it on sign-out (including other tabs).
         let authSubscription = null;

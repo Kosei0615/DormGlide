@@ -73,3 +73,9 @@ Running log of UX problems found while working through the student-feedback phas
 | # | Issue | Fix |
 |---|---|---|
 | G7 | Switching Glyde → DormGlide showed a blank Browse page (reported by a student tester). Root cause: the scroll-reveal IntersectionObserver in HomePage ran once on mount (`[]` deps); the goods sections remount on switch-back and stayed at opacity 0 | Observer effect keyed to `mode`; on any re-run the sections are shown immediately (no animation), plus a no-IntersectionObserver fallback. Verified: all four sections visible after two round-trips |
+
+## Resolved (2026-09-24)
+
+| # | Issue | Fix |
+|---|---|---|
+| Brand | Google/tab icon was the old green house; the otter design was blocked on a file + Glide/Glyde decision | Naming settled: **DormGlide** (company/app) → **Glyde** (services mode). Otter mark recovered from Alec's mock, favicon/apple-touch/OG image generated from it; public landing page at index.html |
