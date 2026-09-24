@@ -49,3 +49,21 @@ Running log of UX problems found while working through the student-feedback phas
 | G2 | Service cards show a rating slot but ratings are per-seller (goods + services combined) and not yet fetched on the browse grid | Phase 3 provider stats: batch-fetch rating summaries for visible providers |
 | G3 | The wishlist keyword-match trigger now also matches services (category mirrors service_category) — a "tutoring" alert fires for tutoring services. Intended, but the alert email copy says "listing" | Phase 3: adjust wording to "listing or service" |
 | G4 | Reserve-ahead copy ("Reserve now · pickup") shows on services with a future available_from | Phase 3: say "Bookable from <date>" for services |
+
+## Fixed (Glyde Phase 3)
+
+| # | Issue | Fix |
+|---|---|---|
+| G1 | Repeat posters saw the Item/Service chooser every time | Last choice remembered per device (`dormglide_last_listing_type`); still changeable via the "← change" link |
+| G2 | Service cards had a rating slot but never fetched ratings | Glyde browse batch-fetches one rating summary per visible provider |
+| G4 | Reserve-ahead copy ("Reserve now · pickup") showed on services with a future available_from | Services now say "Bookable from <date>" on cards and the detail banner |
+| — | Sort dropdown on Glyde browse was 36px tall on phones | 44px minimum on mobile |
+
+## Still open
+
+| # | Issue | Recommendation |
+|---|---|---|
+| G3 | Wishlist match email says "listing" even when the match is a service (alerts now match services by category — intended) | SQL-only wording change in the 07 trigger function ("listing or service"); do it alongside the next migration |
+| G5 | Request-board responses have no notification to the requester beyond the chat thread itself; requesters must check Messages | If boards go quiet, add "a provider responded" notifications (founder chose no notifications for v1) |
+| G6 | Admin Glyde panel shows counts but reports are read-only there (no resolve button) | Add a "mark resolved" action once report volume justifies it; today: `update public.reports set status='resolved' where id=...` |
+| D | Logged-in flows (post service, book, board respond) are code-verified only — sandbox can't log in | Founder phone test with the +test account |

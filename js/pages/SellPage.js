@@ -37,7 +37,17 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth, initialLi
     const PAYMENT_METHOD_OPTIONS = ['Venmo', 'Zelle', 'Cash App', 'Cash'];
 
     // First step: Item (DormGlide) or Service (Glyde). null = show the chooser.
-    const [listingType, setListingType] = React.useState(initialListingType || null);
+    const rememberedType = (() => {
+        try { return localStorage.getItem('dormglide_last_listing_type') || null; } catch (_e) { return null; }
+    })();
+    const [listingType, setListingTypeState] = React.useState(initialListingType || rememberedType || null);
+    const setListingType = (next) => {
+        setListingTypeState(next);
+        try {
+            if (next) localStorage.setItem('dormglide_last_listing_type', next);
+            else localStorage.removeItem('dormglide_last_listing_type');
+        } catch (_e) { /* storage unavailable */ }
+    };
     React.useEffect(() => {
         if (initialListingType) setListingType(initialListingType);
     }, [initialListingType]);

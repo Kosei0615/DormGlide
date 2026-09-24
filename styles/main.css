@@ -6965,3 +6965,166 @@ button, input, select, textarea {
 @media (max-width: 767px) {
     .app[data-mode="glyde"] .brand-copy small { display: none; }
 }
+
+/* ============================================================
+   Design pass v11 — Glyde Phase 3: trust & polish
+   Tiles, request board, provider card, safety, report, admin.
+   ============================================================ */
+
+.glyde-hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; }
+
+.glyde-hero-secondary {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
+}
+.glyde-hero-secondary:hover { background: rgba(255, 255, 255, 0.26); }
+
+.glyde-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    margin: 0.5rem 0 1rem;
+}
+@media (min-width: 640px) { .glyde-tiles { grid-template-columns: repeat(5, 1fr); } }
+@media (min-width: 1024px) { .glyde-tiles { grid-template-columns: repeat(9, 1fr); } }
+
+.glyde-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 74px;
+    padding: 0.6rem 0.35rem;
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    color: var(--dg-text);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.glyde-tile:hover { transform: translateY(-2px); border-color: #ea580c; }
+.glyde-tile-glyph { font-size: 1.5rem; line-height: 1; }
+.glyde-tile-label { font-size: 0.68rem; font-weight: 700; text-align: center; line-height: 1.2; }
+
+.glyde-how { margin-bottom: 1rem; }
+.glyde-how .deal-model-rule { background: #fff7ed; border-color: #fed7aa; }
+
+/* Request board */
+.glyde-board {
+    margin: 2rem 0 1rem;
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 16px;
+    padding: 1.1rem 1.2rem;
+}
+.glyde-board-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.glyde-board-head h2 { margin: 0 0 0.25rem; font-size: 1.15rem; font-weight: 800; }
+.glyde-board-head p { margin: 0; color: var(--dg-muted); font-size: 0.88rem; }
+.glyde-board-empty { color: var(--dg-muted); font-size: 0.9rem; margin: 1rem 0 0; }
+
+.glyde-request-form {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid var(--dg-border);
+    border-radius: 12px;
+}
+
+.glyde-request-list { display: grid; gap: 0.75rem; margin-top: 1rem; }
+
+.glyde-request-card {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border: 1px solid var(--dg-border);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+}
+.glyde-request-main { flex: 1; min-width: 200px; }
+.glyde-request-main h3 { margin: 0.3rem 0 0.2rem; font-size: 1rem; font-weight: 800; }
+.glyde-request-details { margin: 0 0 0.3rem; font-size: 0.88rem; color: var(--dg-text); }
+.glyde-request-meta { margin: 0; font-size: 0.8rem; color: var(--dg-muted); }
+.glyde-request-actions { display: flex; align-items: center; gap: 0.5rem; }
+
+/* Provider card + safety */
+.provider-card {
+    background: var(--dg-surface);
+    border: 1px solid var(--dg-border);
+    border-radius: 14px;
+    padding: 0.9rem 1rem;
+    margin: 0.75rem 0;
+}
+.provider-card-head { display: flex; align-items: center; gap: 0.7rem; }
+.provider-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #fff7ed; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
+.provider-card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.provider-card-sub { font-size: 0.8rem; color: var(--dg-muted); }
+.provider-stats { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin-top: 0.6rem; font-size: 0.84rem; font-weight: 600; }
+
+.service-safety {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 12px;
+    padding: 0.7rem 0.9rem;
+    margin: 0.75rem 0;
+    font-size: 0.86rem;
+}
+.service-safety p { margin: 0.2rem 0; }
+
+/* Report */
+.report-btn {
+    background: none;
+    border: none;
+    color: var(--dg-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 6px 4px;
+    min-height: 32px;
+}
+.report-btn:hover { color: #dc2626; }
+.report-btn.compact { font-size: 0.76rem; }
+.report-done { font-size: 0.8rem; color: var(--dg-muted); font-weight: 700; }
+.report-card { text-align: left; }
+.report-card p { min-height: auto; }
+.report-reasons { display: grid; gap: 0.35rem; margin-bottom: 0.75rem; }
+.report-reason {
+    display: flex; align-items: center; gap: 0.5rem;
+    border: 1.5px solid var(--dg-border); border-radius: 10px;
+    padding: 0.55rem 0.75rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; min-height: 44px;
+}
+.report-reason.selected { border-color: #dc2626; background: #fef2f2; }
+.report-reason input { accent-color: #dc2626; }
+.report-details {
+    width: 100%; border: 1px solid var(--dg-border); border-radius: 10px;
+    padding: 0.6rem 0.75rem; font-family: inherit; font-size: 0.95rem; margin-bottom: 0.9rem; resize: vertical;
+}
+
+/* Admin: Glyde panel */
+.admin-glyde-panel {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.25rem;
+}
+.admin-glyde-panel h3 { margin: 0 0 0.6rem; font-size: 1.05rem; font-weight: 800; }
+.admin-glyde-totals { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; font-size: 0.9rem; margin-bottom: 0.75rem; }
+.admin-glyde-totals strong { font-size: 1.2rem; color: #c2410c; margin-right: 4px; }
+.admin-glyde-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.admin-glyde-table th, .admin-glyde-table td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid #fed7aa; }
+.admin-glyde-reports { margin-top: 0.75rem; font-size: 0.85rem; }
+.admin-glyde-reports h4 { margin: 0 0 0.35rem; font-size: 0.9rem; }
+.admin-glyde-reports p { margin: 0.2rem 0; }
+
+/* Phase 3 nit: sort dropdown at touch size on phones */
+@media (max-width: 767px) {
+    .glyde-sort select { min-height: 44px; padding: 0.55rem 0.6rem; }
+}

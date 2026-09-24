@@ -613,9 +613,21 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                         }, 'How deals work →')
                     ),
 
+                    // Glyde services: provider trust card + safety layer
+                    isServiceListing && window.DormGlideProviderCard && React.createElement(window.DormGlideProviderCard, {
+                        product, currentUser
+                    }),
+                    isServiceListing && React.createElement('div', { className: 'service-safety' },
+                        React.createElement('p', null, '🔞 Providers on Glyde are students 18 or older.'),
+                        React.createElement('p', null, '🏫 Meet in public campus spaces for first sessions.'),
+                        !isSellerOwner && window.DormGlideReportButton && React.createElement(window.DormGlideReportButton, {
+                            targetType: 'listing', targetId: product.id, currentUser, label: 'Report this listing'
+                        })
+                    ),
+
                     // Large items: moving help pointer (Services tab doesn't exist
                     // yet — text is founder-editable in app.html config).
-                    ['furniture', 'kitchen'].includes(String(product.category || '').toLowerCase())
+                    !isServiceListing && ['furniture', 'kitchen'].includes(String(product.category || '').toLowerCase())
                         && window.DORMGLIDE_MOVING_HELP_TEXT
                         && React.createElement('p', { className: 'moving-help-line' },
                             '🚚 ', window.DORMGLIDE_MOVING_HELP_TEXT),
@@ -623,8 +635,12 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
                     isReserveListing && React.createElement('div', { className: 'reserve-banner' },
                         React.createElement('span', { className: 'reserve-banner-icon', 'aria-hidden': true }, '📅'),
                         React.createElement('div', null,
-                            React.createElement('strong', null, `Reserve now — pickup from ${handoffLabel}`),
-                            React.createElement('p', null, 'Lock this item in today. You meet up and pay on the pickup date; no money changes hands until then.')
+                            React.createElement('strong', null, isServiceListing
+                                ? `Bookable from ${handoffLabel}`
+                                : `Reserve now — pickup from ${handoffLabel}`),
+                            React.createElement('p', null, isServiceListing
+                                ? 'This provider starts taking sessions on that date. You can book now and schedule your first session for then.'
+                                : 'Lock this item in today. You meet up and pay on the pickup date; no money changes hands until then.')
                         )
                     ),
 

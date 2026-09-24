@@ -97,7 +97,9 @@ const ProductCard = ({ product, onProductClick, currentUser }) => {
     },
         React.createElement('div', { className: 'product-image' },
             isReserveListing && React.createElement('span', { className: 'reserve-badge' },
-                `📅 Reserve now · pickup ${handoffLabel}`),
+                String(product.listingType || 'goods') === 'service'
+                    ? `📅 Bookable from ${handoffLabel}`
+                    : `📅 Reserve now · pickup ${handoffLabel}`),
             React.createElement('button', {
                 className: `wishlist-icon-btn icon-btn ${isWishlisted ? 'active' : ''}`,
                 title: isWishlisted ? 'Remove from wishlist' : 'Save to wishlist',

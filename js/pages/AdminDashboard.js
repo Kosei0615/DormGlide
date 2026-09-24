@@ -1,5 +1,12 @@
 // Admin Dashboard for Managing Users and Platform
 const AdminDashboard = ({ onNavigate, currentUser }) => {
+    // Glyde founder counts (DB-gated by admin_users; non-admins get null).
+    const [glydeCounts, setGlydeCounts] = React.useState(null);
+    React.useEffect(() => {
+        let mounted = true;
+        window.DormGlideGlyde?.fetchGlydeAdminCounts?.().then((counts) => { if (mounted) setGlydeCounts(counts); });
+        return () => { mounted = false; };
+    }, [currentUser?.id]);
     const toast = window.DormGlideToast || {
         success: () => {},
         error: () => {},
@@ -129,6 +136,29 @@ const AdminDashboard = ({ onNavigate, currentUser }) => {
         const stats = calculatePlatformStats();
         
         return React.createElement('div', { className: 'admin-overview' },
+            glydeCounts && React.createElement('section', { className: 'admin-glyde-panel' },
+                React.createElement('h3', null, '✨ Glyde (services)'),
+                React.createElement('div', { className: 'admin-glyde-totals' },
+                    React.createElement('div', null, React.createElement('strong', null, glydeCounts.services), ' services'),
+                    React.createElement('div', null, React.createElement('strong', null, glydeCounts.bookings_requested), ' bookings requested'),
+                    React.createElement('div', null, React.createElement('strong', null, glydeCounts.bookings_completed), ' completed'),
+                    React.createElement('div', null, React.createElement('strong', null, glydeCounts.open_requests), ' open requests'),
+                    React.createElement('div', null, React.createElement('strong', null, glydeCounts.open_reports), ' open reports')
+                ),
+                Array.isArray(glydeCounts.by_category) && glydeCounts.by_category.length > 0 && React.createElement('table', { className: 'admin-glyde-table' },
+                    React.createElement('thead', null, React.createElement('tr', null,
+                        React.createElement('th', null, 'Category'), React.createElement('th', null, 'Services'),
+                        React.createElement('th', null, 'Requested'), React.createElement('th', null, 'Completed'))),
+                    React.createElement('tbody', null, glydeCounts.by_category.map((row) => React.createElement('tr', { key: row.category },
+                        React.createElement('td', null, row.category), React.createElement('td', null, row.services),
+                        React.createElement('td', null, row.bookings_requested), React.createElement('td', null, row.bookings_completed))))
+                ),
+                Array.isArray(glydeCounts.recent_reports) && glydeCounts.recent_reports.length > 0 && React.createElement('div', { className: 'admin-glyde-reports' },
+                    React.createElement('h4', null, 'Open reports'),
+                    glydeCounts.recent_reports.map((report) => React.createElement('p', { key: report.id },
+                        `🚩 ${report.reason} — ${report.target_type} ${String(report.target_id).slice(0, 8)}… ${report.details ? `— "${report.details}"` : ''}`))
+                )
+            ),
             React.createElement('div', { className: 'stats-grid' },
                 React.createElement('div', { className: 'stat-card' },
                     React.createElement('div', { className: 'stat-icon', style: { background: '#e3f2fd' } },
