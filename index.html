@@ -78,7 +78,14 @@
         .hero h1 span { color: #fdba74; }
         .hero p { font-size: 1.1rem; opacity: 0.94; margin: 0 0 24px; max-width: 520px; }
         .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-        .hero-note { margin-top: 14px; font-size: 0.85rem; opacity: 0.85; }
+        .hero-facts { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; max-width: 520px; }
+        .hero-facts li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9rem; line-height: 1.35; opacity: 0.95; }
+        .hero-facts li > span:first-child { font-size: 1.05rem; line-height: 1.3; }
+        .hero-facts strong { font-weight: 800; }
+        .scroll-cue { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; min-height: 44px; color: #fff; font-weight: 700; font-size: 0.9rem; text-decoration: none; opacity: 0.9; }
+        .scroll-cue span { display: inline-block; animation: cue-bounce 1.6s ease-in-out infinite; }
+        @keyframes cue-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+        @media (prefers-reduced-motion: reduce) { .scroll-cue span { animation: none; } }
         .hero-art { display: flex; justify-content: center; }
         .hero-art img { width: min(100%, 460px); height: auto; filter: drop-shadow(0 12px 30px rgba(0,0,0,0.25)); }
 
@@ -168,7 +175,12 @@
                     <a class="btn btn-white" href="app.html?auth=signup">Sign up with your school email</a>
                     <a class="btn btn-outline-white" href="#how">See how it works</a>
                 </div>
-                <p class="hero-note">Free to use. DormGlide never handles money — you pay each other directly at pickup.</p>
+                <ul class="hero-facts" aria-label="Three things to know">
+                    <li><span aria-hidden="true">🏫</span><span><strong>Your campus only</strong> — you see, and are seen by, your own school.</span></li>
+                    <li><span aria-hidden="true">🎓</span><span><strong>Verified students</strong> — school email required, confirmed by email.</span></li>
+                    <li><span aria-hidden="true">💵</span><span><strong>You pay each other</strong> — never through the app. Free to use.</span></li>
+                </ul>
+                <a class="scroll-cue" href="#halves">See how it works <span aria-hidden="true">↓</span></a>
             </div>
             <div class="hero-art">
                 <img src="brand/otter-hero-white.png" alt="DormGlide otter mascot floating on its back" width="782" height="398">
