@@ -67,3 +67,9 @@ Running log of UX problems found while working through the student-feedback phas
 | G5 | Request-board responses have no notification to the requester beyond the chat thread itself; requesters must check Messages | If boards go quiet, add "a provider responded" notifications (founder chose no notifications for v1) |
 | G6 | Admin Glyde panel shows counts but reports are read-only there (no resolve button) | Add a "mark resolved" action once report volume justifies it; today: `update public.reports set status='resolved' where id=...` |
 | D | Logged-in flows (post service, book, board respond) are code-verified only — sandbox can't log in | Founder phone test with the +test account |
+
+## Fixed (bug report, 2026-09-24)
+
+| # | Issue | Fix |
+|---|---|---|
+| G7 | Switching Glyde → DormGlide showed a blank Browse page (reported by a student tester). Root cause: the scroll-reveal IntersectionObserver in HomePage ran once on mount (`[]` deps); the goods sections remount on switch-back and stayed at opacity 0 | Observer effect keyed to `mode`; on any re-run the sections are shown immediately (no animation), plus a no-IntersectionObserver fallback. Verified: all four sections visible after two round-trips |

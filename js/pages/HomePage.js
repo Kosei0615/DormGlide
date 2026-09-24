@@ -201,7 +201,25 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
         }));
     }, [initialCategory]);
 
+    const hasRevealedOnceRef = React.useRef(false);
+
     React.useEffect(() => {
+        const sections = document.querySelectorAll('.reveal-on-scroll');
+
+        // After a storefront switch the goods sections remount. Show them
+        // immediately (no scroll animation) — the animation is a first-visit
+        // flourish, not worth a blank page on switch-back.
+        if (hasRevealedOnceRef.current) {
+            sections.forEach((section) => section.classList.add('is-visible'));
+            return undefined;
+        }
+        hasRevealedOnceRef.current = true;
+
+        if (!('IntersectionObserver' in window)) {
+            sections.forEach((section) => section.classList.add('is-visible'));
+            return undefined;
+        }
+
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
@@ -210,11 +228,9 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
             });
         }, { threshold: 0.12 });
 
-        const sections = document.querySelectorAll('.reveal-on-scroll');
         sections.forEach((section) => observer.observe(section));
-
         return () => observer.disconnect();
-    }, []);
+    }, [mode]);
 
     const handleStartSelling = () => {
         if (currentUser) {
