@@ -19,6 +19,10 @@
         // Returning, logged-in students skip the landing page. Add ?stay to view it anyway.
         (function () {
             try {
+                // Mark this device as having seen the concept page (app.html
+                // sends first-time, logged-out visitors here once).
+                localStorage.setItem('dormglide_about_seen', '1');
+                sessionStorage.setItem('dormglide_about_seen', '1');
                 if (new URLSearchParams(location.search).has('stay')) return;
                 var loggedIn = Object.keys(localStorage).some(function (k) { return k.indexOf('sb-') === 0 && k.indexOf('auth-token') !== -1; });
                 if (loggedIn) location.replace('app.html');

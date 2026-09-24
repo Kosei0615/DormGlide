@@ -15,6 +15,28 @@
     <meta property="og:url" content="https://dormglide.com/">
     <meta name="twitter:card" content="summary">
 
+    <script>
+        // First visit on this device + not logged in + arrived directly (not
+        // from our landing page, not via an auth/confirmation link) -> show
+        // the "About DormGlide & Glyde" page first, exactly once.
+        (function () {
+            try {
+                var qs = new URLSearchParams(location.search);
+                var hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+                var isAuthLink = qs.has('code') || qs.has('token_hash') || qs.has('type') || qs.has('auth') ||
+                                 hash.has('access_token') || hash.has('refresh_token') || hash.has('type');
+                if (isAuthLink) return;
+                var seen = localStorage.getItem('dormglide_about_seen') || sessionStorage.getItem('dormglide_about_seen');
+                if (seen) return;
+                var loggedIn = Object.keys(localStorage).some(function (k) { return k.indexOf('sb-') === 0 && k.indexOf('auth-token') !== -1; });
+                if (loggedIn) return;
+                var fromOurSite = document.referrer && document.referrer.indexOf(location.host) !== -1;
+                if (fromOurSite) { sessionStorage.setItem('dormglide_about_seen', '1'); return; }
+                location.replace('index.html');
+            } catch (e) { /* storage unavailable: never block the app */ }
+        })();
+    </script>
+
     <!-- React and Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
