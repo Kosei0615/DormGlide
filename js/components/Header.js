@@ -495,6 +495,13 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout, mo
             // bar on phones — the menu holds only secondary destinations.
             React.createElement('p', { className: 'mobile-nav-hint' }, 'More'),
             React.createElement('button', {
+                className: 'nav-btn',
+                onClick: () => { window.location.href = 'index.html?stay'; }
+            },
+                navGlyph('🦦'),
+                React.createElement('span', null, 'About DormGlide & Glyde')
+            ),
+            React.createElement('button', {
                 className: `nav-btn ${currentPage === 'how-it-works' ? 'active' : ''}`,
                 onClick: () => handleNavigation('how-it-works')
             },

@@ -42,6 +42,9 @@ const Footer = ({ onNavigate }) => {
                 React.createElement('h4', null, 'Quick Links'),
                 React.createElement('ul', null,
                     React.createElement('li', null, React.createElement('a', {
+                        href: 'index.html?stay'
+                    }, '🦦 About DormGlide & Glyde')),
+                    React.createElement('li', null, React.createElement('a', {
                         href: '#',
                         onClick: (event) => handleNavClick(event, 'how-it-works')
                     }, '🧭 How It Works')),
