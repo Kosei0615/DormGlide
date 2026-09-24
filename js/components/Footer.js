@@ -32,7 +32,8 @@ const Footer = ({ onNavigate }) => {
         React.createElement('div', { className: 'footer-container' },
             React.createElement('div', { className: 'footer-section footer-brand' },
                 React.createElement('h3', null,
-                    React.createElement('span', { className: 'footer-logo-mark', 'aria-hidden': 'true' }, '🏠'),
+                    React.createElement('span', { className: 'footer-logo-mark', 'aria-hidden': 'true' },
+                        React.createElement('img', { src: 'brand/otter-blue.png', alt: '', width: 28, height: 28 })),
                     'DormGlide'
                 ),
                 React.createElement('p', null, 'Move in lighter, live smarter: trusted student-to-student buying and selling on campus.')

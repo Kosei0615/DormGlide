@@ -179,6 +179,17 @@ const App = () => {
     const switchMode = (next) => setModeState(window.DormGlideGlyde?.setMode(next) || (next === 'glyde' ? 'glyde' : 'goods'));
     const [sellInitialType, setSellInitialType] = useState(null);
 
+    // Browser-tab / home-screen icon follows the storefront color.
+    useEffect(() => {
+        const color = mode === 'glyde' ? 'orange' : 'blue';
+        const icon = document.querySelector('link[rel="icon"]');
+        const touch = document.querySelector('link[rel="apple-touch-icon"]');
+        const shortcut = document.querySelector('link[rel="shortcut icon"]');
+        if (icon) icon.href = `brand/otter-${color}-32.png`;
+        if (shortcut) shortcut.href = `brand/otter-${color}-32.png`;
+        if (touch) touch.href = `brand/otter-${color}-180.png`;
+    }, [mode]);
+
     const maybeStartOnboarding = (user) => {
         if (!user?.id || user.onboardedAt) return;
         try {

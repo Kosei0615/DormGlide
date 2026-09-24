@@ -7128,3 +7128,34 @@ button, input, select, textarea {
 @media (max-width: 767px) {
     .glyde-sort select { min-height: 44px; padding: 0.55rem 0.6rem; }
 }
+
+/* ============================================================
+   Design pass v12 — otter brand mark in the app
+   Solid mode-colored square with the white otter; the token swap under
+   [data-mode="glyde"] makes the header box orange automatically.
+   ============================================================ */
+.brand-mark {
+    background: var(--dg-primary);
+    overflow: hidden;
+    padding: 0;
+}
+
+.brand-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: inherit;
+}
+
+.app[data-mode="glyde"] .brand-mark {
+    box-shadow: 0 8px 18px rgba(234, 88, 12, 0.35);
+}
+
+.footer-logo-mark img {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    vertical-align: middle;
+    margin-right: 6px;
+}

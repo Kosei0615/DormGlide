@@ -225,8 +225,14 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout, mo
                 className: 'header-brand',
                 onClick: () => handleNavigation('home')
             },
+                // Otter mark: blue square in DormGlide mode, orange in Glyde mode.
                 React.createElement('span', { className: 'brand-mark', 'aria-hidden': 'true' },
-                    navGlyph('🏠')
+                    React.createElement('img', {
+                        src: mode === 'glyde' ? 'brand/otter-orange.png' : 'brand/otter-blue.png',
+                        alt: '',
+                        width: 36,
+                        height: 36
+                    })
                 ),
                 React.createElement('span', { className: 'brand-copy' },
                     React.createElement('strong', null, 'DormGlide',
