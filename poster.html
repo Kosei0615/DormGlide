@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DormGlide — Tabling Poster</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@700;800;900&display=swap">
+<style>
+  /* Print: US Letter portrait, edge-to-edge. Cmd+P -> Save as PDF -> "Background graphics" ON. */
+  @page { size: 8.5in 11in; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #e5e9f2; font-family: "Nunito Sans", "Avenir Next", "Segoe UI", Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .sheet {
+    width: 8.5in; height: 11in; margin: 24px auto; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 58%, #2563eb 100%);
+    color: #fff; display: flex; flex-direction: column;
+  }
+  @media print { html, body { background: #fff; } .sheet { margin: 0; box-shadow: none; } .no-print { display: none; } }
+  .top { padding: 0.4in 0.6in 0; display: flex; align-items: center; gap: 0.18in; }
+  .top img { width: 0.9in; height: 0.9in; border-radius: 0.22in; }
+  .wordmark { font-size: 0.5in; font-weight: 900; letter-spacing: -0.02em; line-height: 1; }
+  .wordmark em { font-style: normal; color: #fdba74; }
+  .tag { font-size: 0.17in; font-weight: 700; opacity: 0.85; margin-top: 0.06in; }
+  .hero { padding: 0.3in 0.6in 0; position: relative; }
+  .hero h1 { margin: 0; font-size: 0.68in; line-height: 0.98; font-weight: 900; letter-spacing: -0.03em; }
+  .hero h1 span { color: #fdba74; }
+  .hero p { margin: 0.16in 0 0; font-size: 0.2in; line-height: 1.35; font-weight: 700; max-width: 5.6in; opacity: 0.95; }
+  .otter { position: absolute; right: 0.15in; top: -0.3in; width: 2.7in; opacity: 0.95; filter: drop-shadow(0 8px 20px rgba(0,0,0,0.25)); }
+  .halves { display: grid; grid-template-columns: 1fr 1fr; gap: 0.2in; padding: 0.28in 0.6in 0; }
+  .half { border-radius: 0.2in; padding: 0.18in 0.22in; color: #fff; }
+  .half.blue { background: rgba(255,255,255,0.14); border: 2px solid rgba(255,255,255,0.35); }
+  .half.orange { background: linear-gradient(135deg, #c2410c, #ea580c 60%, #fb923c); }
+  .half h3 { margin: 0 0 0.08in; font-size: 0.3in; font-weight: 900; }
+  .half p { margin: 0; font-size: 0.165in; line-height: 1.35; font-weight: 700; opacity: 0.95; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.16in; padding: 0.24in 0.6in 0.28in; }
+  .fact { background: #fff; color: #1f2937; border-radius: 0.16in; padding: 0.14in 0.16in; }
+  .fact .g { font-size: 0.32in; line-height: 1; margin-bottom: 0.08in; }
+  .fact strong { display: block; font-size: 0.19in; font-weight: 900; color: #1e3a8a; margin-bottom: 0.03in; }
+  .fact span { font-size: 0.15in; line-height: 1.3; font-weight: 700; color: #475569; }
+  .bottom { margin-top: auto; background: #fff; color: #1f2937; padding: 0.28in 0.6in 0.32in; display: flex; align-items: center; gap: 0.4in; }
+  .qr { width: 1.7in; height: 1.7in; flex-shrink: 0; border-radius: 0.14in; border: 4px solid #1e3a8a; }
+  .cta h2 { margin: 0 0 0.06in; font-size: 0.36in; font-weight: 900; color: #1e3a8a; letter-spacing: -0.02em; line-height: 1.05; }
+  .cta .url { font-size: 0.34in; font-weight: 900; color: #ea580c; letter-spacing: -0.01em; }
+  .cta p { margin: 0.1in 0 0; font-size: 0.17in; font-weight: 700; color: #475569; line-height: 1.35; }
+  .rule { margin-top: 0.12in; display: inline-block; background: #fef3c7; border: 2px solid #fcd34d; border-radius: 0.12in; padding: 0.08in 0.14in; font-size: 0.15in; font-weight: 800; color: #92400e; }
+  .no-print { text-align: center; color: #475569; font-family: inherit; font-size: 14px; padding: 8px 16px 32px; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="top">
+    <img src="brand/otter-mark.png" alt="">
+    <div>
+      <div class="wordmark">Dorm<em>Glide</em></div>
+      <div class="tag">The marketplace for Denison students · Live now</div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <img class="otter" src="brand/otter-hero-white.png" alt="">
+    <h1>Your campus.<br>Your stuff.<br><span>Your skills.</span></h1>
+    <p>Buy &amp; sell dorm stuff. Book skills like tutoring, haircuts, and moving help — from students at Denison.</p>
+  </div>
+
+  <div class="halves">
+    <div class="half blue">
+      <h3>🏠 DormGlide</h3>
+      <p>Mini fridges, desk chairs, textbooks, lamps — move in lighter, move out easier. Reserve items ahead for end-of-semester.</p>
+    </div>
+    <div class="half orange">
+      <h3>✨ Glyde</h3>
+      <p>Tutoring · Hair &amp; beauty · Tech help · Photography · Dog walking · Moving muscle. Offer your skill, or book one.</p>
+    </div>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><div class="g">🎓</div><strong>Verified students</strong><span>Sign up with your @denison.edu email.</span></div>
+    <div class="fact"><div class="g">🏫</div><strong>Denison only</strong><span>You see, and are seen by, your own campus.</span></div>
+    <div class="fact"><div class="g">💵</div><strong>Free to use</strong><span>Pay each other at pickup — never through the app.</span></div>
+  </div>
+
+  <div class="bottom">
+    <img class="qr" src="brand/qr-dormglide.png" alt="QR code to dormglide.com">
+    <div class="cta">
+      <h2>Scan to sign up</h2>
+      <div class="url">dormglide.com</div>
+      <p>Takes one minute. Post your first listing today — someone on campus is looking for it.</p>
+      <div class="rule">💡 Pay at pickup, after you've seen it, never before.</div>
+    </div>
+  </div>
+</div>
+<p class="no-print">To print or save as PDF: <strong>Cmd+P</strong> → Destination "Save as PDF" → Paper "US Letter" → Margins "None" → turn on <strong>Background graphics</strong>. For an 11×17 tabling poster, choose "Tabloid" and Scale "Fit to page".</p>
+</body>
+</html>
