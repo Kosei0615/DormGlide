@@ -35,8 +35,9 @@
     // DB check constraint on service_category.
     const EXCLUDED_SERVICES_NOTICE =
         'Not allowed on Glyde: childcare or anything involving minors, medical or mental-health services, ' +
-        'anything that requires a professional license, driving people anywhere, and doing academic work ' +
-        'that someone else will submit as their own (tutoring is welcome — ghostwriting is not).';
+        'anything that requires a professional license, and doing academic work ' +
+        'that someone else will submit as their own (tutoring is welcome — ghostwriting is not). ' +
+        'Rides are allowed only if you have a valid license and an insured, registered vehicle.';
 
     const getMode = () => {
         try {
