@@ -7187,3 +7187,9 @@ button, input, select, textarea {
     .chat-deal-tools { max-height: 38dvh; }
     .chat-input-bar { padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* Modals must sit above the phone bottom nav (z-index 1100). The chat overlay
+   was 1050, so the nav covered the message box and send button. */
+.chat-modal-overlay, .auth-modal-overlay, .terms-gate-overlay, .report-modal-overlay, .deal-panel-overlay {
+    z-index: 1200;
+}
