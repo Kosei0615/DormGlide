@@ -12,6 +12,7 @@
         { name: 'Tech help', glyph: '💻' },
         { name: 'Photography & video', glyph: '📸' },
         { name: 'Moving & carrying help', glyph: '🚚' },
+        { name: 'Rides & errands', glyph: '🚗' },
         { name: 'Pet sitting & dog walking', glyph: '🐶' },
         { name: 'Fitness & sports coaching', glyph: '🏋️' },
         { name: 'Music lessons', glyph: '🎸' },
