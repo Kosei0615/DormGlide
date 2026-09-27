@@ -92,7 +92,7 @@ const ProductCard = ({ product, onProductClick, currentUser }) => {
         : '';
 
     return React.createElement('div', {
-        className: 'product-card',
+        className: `product-card${isSold ? ' is-sold' : ''}`,
         onClick: () => onProductClick(product.id)
     },
         React.createElement('div', { className: 'product-image' },

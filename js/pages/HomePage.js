@@ -90,16 +90,12 @@ const HomePage = ({ products, productsLoading = false, onProductClick, onNavigat
         let results = [...decoratedProducts];
         const normalizedSearch = searchTerm.trim().toLowerCase();
 
-        // Keep browse inventory limited to listings that can still be transacted.
+        // Sold listings stay visible (social proof for a young market) but are
+        // sorted to the end and can't be bought — the card and detail page handle that.
         results = results.filter((product) => {
             const statusRaw = String(product.status || 'available').toLowerCase();
             const status = statusRaw === 'active' ? 'available' : statusRaw;
-            const hasSoldTimestamp = Boolean(product?.soldAt);
-
-            if (status === 'sold') return false;
-            if (statusRaw === 'active' && hasSoldTimestamp) return false;
-
-            return status === 'available' || status === 'pending';
+            return status === 'available' || status === 'pending' || status === 'sold';
         });
 
         if (normalizedSearch) {
@@ -153,7 +149,11 @@ const HomePage = ({ products, productsLoading = false, onProductClick, onNavigat
     }, [decoratedProducts, searchTerm, filters]);
 
     const sortedProducts = React.useMemo(() => {
+        const isSoldListing = (product) => String(product.status || '').toLowerCase() === 'sold' || Boolean(product?.soldAt);
         return [...filteredProducts].sort((a, b) => {
+            if (isSoldListing(a) !== isSoldListing(b)) {
+                return isSoldListing(a) ? 1 : -1;
+            }
             if (a.isNearby !== b.isNearby) {
                 return a.isNearby ? -1 : 1;
             }
@@ -171,10 +171,14 @@ const HomePage = ({ products, productsLoading = false, onProductClick, onNavigat
     ), [sortedProducts]);
 
     const studentCount = React.useMemo(() => (
-        sortedProducts.filter((product) => !product.isDemo).length
+        sortedProducts.filter((product) => !product.isDemo
+            && String(product.status || '').toLowerCase() !== 'sold' && !product?.soldAt).length
     ), [sortedProducts]);
 
     const demoCount = Math.max(sortedProducts.length - studentCount, 0);
+    const soldCount = React.useMemo(() => (
+        sortedProducts.filter((product) => String(product.status || '').toLowerCase() === 'sold' || Boolean(product?.soldAt)).length
+    ), [sortedProducts]);
 
     const handleSearch = (term) => {
         setSearchTerm(term);
@@ -264,7 +268,10 @@ const HomePage = ({ products, productsLoading = false, onProductClick, onNavigat
         (filters.priceRange && (filters.priceRange.min || filters.priceRange.max))
     );
 
-    const featuredProducts = decoratedProducts.slice(0, 6);
+    // Featured shows only what can still be bought; sold items live in the main grid.
+    const featuredProducts = decoratedProducts
+        .filter((product) => String(product.status || '').toLowerCase() !== 'sold' && !product?.soldAt)
+        .slice(0, 6);
     const showFeaturedSection = featuredProducts.length > 0 && !hasActiveFilters;
 
     const pickedForYouProducts = React.useMemo(() => {
@@ -436,7 +443,7 @@ const HomePage = ({ products, productsLoading = false, onProductClick, onNavigat
             React.createElement('div', { className: 'section-header' },
                 React.createElement('h2', null, hasActiveFilters ? 'Search Results' : 'All Items'),
                 React.createElement('span', { className: 'product-count' }, 
-                    `${sortedProducts.length} item${sortedProducts.length !== 1 ? 's' : ''} found`
+                    `${sortedProducts.length - soldCount} item${sortedProducts.length - soldCount !== 1 ? 's' : ''} found${soldCount > 0 ? ` · ${soldCount} sold` : ''}`
                 )
             ),
             (productsLoading && decoratedProducts.length === 0) ?

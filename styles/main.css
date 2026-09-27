@@ -7166,3 +7166,7 @@ button, input, select, textarea {
 .listings-spinner { display: inline-block; width: 28px; height: 28px; border-radius: 50%;
   border: 3px solid rgba(37, 99, 235, 0.18); border-top-color: var(--dg-primary, #2563eb);
   animation: spin 0.8s linear infinite; }
+
+/* Sold listings stay in Browse as social proof: dimmed, sorted last, not buyable */
+.product-card.is-sold .product-image img { filter: grayscale(0.35); opacity: 0.85; }
+.product-card.is-sold .product-price { color: #94a3b8; text-decoration: line-through; }
