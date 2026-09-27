@@ -7170,3 +7170,20 @@ button, input, select, textarea {
 /* Sold listings stay in Browse as social proof: dimmed, sorted last, not buyable */
 .product-card.is-sold .product-image img { filter: grayscale(0.35); opacity: 0.85; }
 .product-card.is-sold .product-price { color: #94a3b8; text-decoration: line-through; }
+
+/* Chat modal: keep the composer on screen on phones.
+   Real phones lose 60-120px to browser toolbars and `vh` ignores that, so the
+   modal overflowed and `overflow: hidden` clipped the input bar. Size to the
+   dynamic viewport, let the deal-tools panel scroll instead of the whole modal,
+   and never let the composer shrink or hide. */
+.chat-modal { max-height: min(88dvh, 760px); }
+.chat-deal-tools { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+.chat-message-list { flex: 1 1 140px; min-height: 140px; }
+.chat-quick-replies, .chat-input-bar { flex-shrink: 0; }
+.chat-input-bar { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
+@media (max-width: 520px) {
+    .chat-modal-overlay { padding: 0; align-items: flex-end; }
+    .chat-modal { max-height: 100dvh; height: 100dvh; border-radius: 0; }
+    .chat-deal-tools { max-height: 38dvh; }
+    .chat-input-bar { padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px)); }
+}

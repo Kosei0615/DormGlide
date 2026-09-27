@@ -24,7 +24,11 @@ const ChatModal = ({
     const [isLoading, setIsLoading] = React.useState(true);
     const [isConfirming, setIsConfirming] = React.useState(false);
     const [isChecklistConfirmed, setIsChecklistConfirmed] = React.useState(false);
-    const [isDealToolsOpen, setIsDealToolsOpen] = React.useState(true);
+    // Collapsed by default on phones: the open panel is ~330px tall and pushed
+    // the composer off-screen. Desktop keeps it open.
+    const [isDealToolsOpen, setIsDealToolsOpen] = React.useState(() => {
+        try { return !window.matchMedia('(max-width: 520px)').matches; } catch (_e) { return true; }
+    });
     const listRef = React.useRef(null);
 
     const numericPrice = React.useMemo(() => {
