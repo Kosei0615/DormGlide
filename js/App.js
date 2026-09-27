@@ -172,6 +172,40 @@ const App = () => {
     }, [currentPage, selectedProduct?.id]);
     const [currentUser, setCurrentUser] = useState(null);
     const [products, setProducts] = useState([]);
+    const [productsLoading, setProductsLoading] = useState(true);
+    const productsFetchRef = React.useRef(null);
+
+    // Listings are campus-scoped by RLS, so a logged-out fetch returns nothing.
+    // Re-run this after every login/logout so the market reflects the session.
+    const loadProducts = React.useCallback(() => {
+        if (productsFetchRef.current) return productsFetchRef.current;
+        if (typeof getProductsFromStorage === 'undefined') return Promise.resolve([]);
+        setProductsLoading(true);
+        const run = (async () => {
+            try {
+                const storedProducts = await getProductsFromStorage();
+                const { keptListings, removedIds } = sanitizePlaceholderListings(storedProducts || []);
+                if (removedIds.length > 0 && window.DormGlideStorage?.deleteProduct) {
+                    Promise.allSettled(
+                        removedIds.map((listingId) => window.DormGlideStorage.deleteProduct(listingId))
+                    ).catch((error) => {
+                        console.warn('[DormGlide] Could not fully remove placeholder listings from storage:', error);
+                    });
+                }
+                setProducts(keptListings);
+                console.log('Loaded products:', keptListings.length);
+                return keptListings;
+            } catch (error) {
+                console.warn('[DormGlide] Failed to load products:', error);
+                return [];
+            } finally {
+                setProductsLoading(false);
+                productsFetchRef.current = null;
+            }
+        })();
+        productsFetchRef.current = run;
+        return run;
+    }, []);
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [authModalMode, setAuthModalMode] = useState('login');
@@ -273,21 +307,7 @@ const App = () => {
                 }
 
                 if (typeof getProductsFromStorage !== 'undefined') {
-                    const storedProducts = await getProductsFromStorage();
-                    const { keptListings, removedIds } = sanitizePlaceholderListings(storedProducts || []);
-
-                    if (removedIds.length > 0 && window.DormGlideStorage?.deleteProduct) {
-                        Promise.allSettled(
-                            removedIds.map((listingId) => window.DormGlideStorage.deleteProduct(listingId))
-                        ).catch((error) => {
-                            console.warn('[DormGlide] Could not fully remove placeholder listings from storage:', error);
-                        });
-                    }
-
-                    if (isMounted) {
-                        setProducts(keptListings);
-                        console.log('Loaded products:', keptListings.length);
-                    }
+                    await loadProducts();
                 } else if (isMounted) {
                     console.warn('getProductsFromStorage not available; using fallback data.');
                     setProducts([
@@ -345,8 +365,10 @@ const App = () => {
             const { data } = window.SupabaseClient.auth.onAuthStateChange((event, session) => {
                 if (event === 'SIGNED_OUT') {
                     if (isMounted) setCurrentUser(null);
+                    loadProducts();
                     return;
                 }
+                if (event === 'SIGNED_IN') loadProducts();
                 if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') && session?.user) {
                     window.DormGlideAuth?.getCurrentUser?.()
                         .then((user) => {
@@ -451,6 +473,7 @@ const App = () => {
 
     const handleAuthSuccess = (user) => {
         setCurrentUser(user);
+        loadProducts();
         checkTermsGate(user);
         maybeStartOnboarding(user);
         console.log('User logged in:', user);
@@ -585,6 +608,7 @@ const App = () => {
                     mode: mode,
                     onSwitchMode: switchMode,
                     products: products,
+                    productsLoading: productsLoading,
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
                     onNavigate: navigateToPage,
                     currentUser: currentUser,
@@ -655,6 +679,7 @@ const App = () => {
                     mode: mode,
                     onSwitchMode: switchMode,
                     products: products,
+                    productsLoading: productsLoading,
                     onProductClick: (productId) => navigateToPage('product-detail', productId),
                     onNavigate: navigateToPage,
                     currentUser: currentUser,

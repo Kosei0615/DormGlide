@@ -7159,3 +7159,10 @@ button, input, select, textarea {
     vertical-align: middle;
     margin-right: 6px;
 }
+
+/* Listings loading state (shown while the campus-scoped fetch is in flight) */
+.listings-loading .empty-content { padding: 40px 16px; }
+.listings-loading p { color: #64748b; font-weight: 600; margin: 12px 0 0; }
+.listings-spinner { display: inline-block; width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid rgba(37, 99, 235, 0.18); border-top-color: var(--dg-primary, #2563eb);
+  animation: spin 0.8s linear infinite; }

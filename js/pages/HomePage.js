@@ -1,4 +1,4 @@
-const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAuth, initialCategory = '', mode = 'goods', onSwitchMode }) => {
+const HomePage = ({ products, productsLoading = false, onProductClick, onNavigate, currentUser, onShowAuth, initialCategory = '', mode = 'goods', onSwitchMode }) => {
     const [searchTerm, setSearchTerm] = React.useState('');
     const [filters, setFilters] = React.useState({
         category: '',
@@ -303,7 +303,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
             role: 'tab',
             'aria-selected': mode !== 'glyde',
             onClick: () => onSwitchMode && onSwitchMode('goods')
-        }, '🏠 DormGlide', React.createElement('small', null, 'stuff')),
+        }, '🏠 Dorm', React.createElement('small', null, 'stuff')),
         React.createElement('button', {
             className: `mode-switch-btn mode-switch-glyde ${mode === 'glyde' ? 'active' : ''}`,
             role: 'tab',
@@ -317,6 +317,7 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
             modeSwitch,
             React.createElement(window.DormGlideGlydeBrowse, {
                 products,
+                productsLoading,
                 currentUser,
                 onProductClick,
                 onNavigate,
@@ -438,7 +439,14 @@ const HomePage = ({ products, onProductClick, onNavigate, currentUser, onShowAut
                     `${sortedProducts.length} item${sortedProducts.length !== 1 ? 's' : ''} found`
                 )
             ),
-            decoratedProducts.length === 0 ? 
+            (productsLoading && decoratedProducts.length === 0) ?
+                React.createElement('div', { className: 'empty-marketplace listings-loading', 'aria-live': 'polite' },
+                    React.createElement('div', { className: 'empty-content' },
+                        React.createElement('span', { className: 'listings-spinner', 'aria-hidden': 'true' }),
+                        React.createElement('p', null, 'Loading listings…')
+                    )
+                )
+            : decoratedProducts.length === 0 ? 
                 // Empty marketplace - encourage first listings
                 React.createElement('div', { className: 'empty-marketplace' },
                     React.createElement('div', { className: 'empty-content' },

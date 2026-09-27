@@ -3,7 +3,7 @@
 // by RLS) and shows only listingType === 'service'. Phase 3 adds category
 // landing tiles, a "How Glyde works" explainer, batched provider ratings,
 // and the "Looking for..." request board.
-const GlydeBrowse = ({ products, currentUser, onProductClick, onNavigate, onShowAuth }) => {
+const GlydeBrowse = ({ products, productsLoading = false, currentUser, onProductClick, onNavigate, onShowAuth }) => {
     const glyde = window.DormGlideGlyde;
     const toast = window.DormGlideToast || { success: () => {}, error: () => {}, warning: () => {}, info: () => {} };
     const [category, setCategory] = React.useState('');
@@ -171,7 +171,14 @@ const GlydeBrowse = ({ products, currentUser, onProductClick, onNavigate, onShow
             )
         ),
 
-        services.length === 0
+        (productsLoading && services.length === 0)
+            ? React.createElement('div', { className: 'empty-marketplace glyde-empty listings-loading', 'aria-live': 'polite' },
+                React.createElement('div', { className: 'empty-content' },
+                    React.createElement('span', { className: 'listings-spinner', 'aria-hidden': true }),
+                    React.createElement('p', null, 'Loading services…')
+                )
+            )
+        : services.length === 0
             ? React.createElement('div', { className: 'empty-marketplace glyde-empty' },
                 React.createElement('div', { className: 'empty-content' },
                     React.createElement('span', { className: 'empty-icon', 'aria-hidden': true }, '✨'),
