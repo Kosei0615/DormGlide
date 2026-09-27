@@ -159,6 +159,17 @@ const App = () => {
     console.log('App component initializing...');
     const [currentPage, setCurrentPage] = useState('home');
     const [selectedProduct, setSelectedProduct] = useState(null);
+
+    // Every page change starts at the top. Without this, a phone user who taps a
+    // bottom-nav item while scrolled down lands at the footer of the next page,
+    // because the browser keeps the old scroll offset and clamps it to the new height.
+    React.useLayoutEffect(() => {
+        const html = document.documentElement;
+        const prev = html.style.scrollBehavior;
+        html.style.scrollBehavior = 'auto';
+        window.scrollTo(0, 0);
+        html.style.scrollBehavior = prev;
+    }, [currentPage, selectedProduct?.id]);
     const [currentUser, setCurrentUser] = useState(null);
     const [products, setProducts] = useState([]);
     const [showAdminPanel, setShowAdminPanel] = useState(false);
