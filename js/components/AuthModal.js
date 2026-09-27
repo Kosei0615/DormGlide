@@ -10,6 +10,27 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
         campusLocation: ''
     });
     const [errorMessage, setErrorMessage] = React.useState('');
+    const [unconfirmedEmail, setUnconfirmedEmail] = React.useState('');
+    const [isResending, setIsResending] = React.useState(false);
+
+    const handleResendConfirmation = async () => {
+        if (!unconfirmedEmail || !window.DormGlideAuth?.resendConfirmationEmail) return;
+        setIsResending(true);
+        try {
+            const result = await window.DormGlideAuth.resendConfirmationEmail(unconfirmedEmail);
+            if (result?.success) {
+                setErrorMessage('');
+                setSuccessMessage(`Confirmation email sent to ${unconfirmedEmail}. Open the link inside, then log in.`);
+                setUnconfirmedEmail('');
+            } else {
+                setErrorMessage(result?.message || 'Unable to resend right now.');
+            }
+        } catch (error) {
+            setErrorMessage('Unable to resend right now. Please try again in a minute.');
+        } finally {
+            setIsResending(false);
+        }
+    };
     const [successMessage, setSuccessMessage] = React.useState('');
     const [loading, setLoading] = React.useState(false);
     const [failedAttempts, setFailedAttempts] = React.useState(0);
@@ -137,6 +158,10 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
                 setFailedAttempts(0);
                 onAuthSuccess(result.user);
                 onClose();
+            } else if (result.needsConfirmation) {
+                // Not a wrong password: don't count it toward the lockout warning.
+                setUnconfirmedEmail(result.email || String(formData.email || '').trim());
+                setErrorMessage("Almost there — your email isn't confirmed yet. Open the confirmation email we sent you (check spam too), then log in.");
             } else {
                 const nextFailedAttempts = failedAttempts + 1;
                 setFailedAttempts(nextFailedAttempts);
@@ -361,6 +386,15 @@ const AuthModal = ({ onClose, onAuthSuccess, initialMode = 'login' }) => {
             errorMessage && React.createElement('div', { className: 'auth-error' },
                 React.createElement('i', { className: 'fas fa-exclamation-circle' }),
                 errorMessage
+            ),
+
+            unconfirmedEmail && React.createElement('div', { className: 'auth-resend-row' },
+                React.createElement('button', {
+                    type: 'button',
+                    className: 'btn btn-outline auth-resend-btn',
+                    disabled: isResending,
+                    onClick: handleResendConfirmation
+                }, isResending ? 'Sending…' : "Didn't get it? Resend confirmation email")
             ),
 
             successMessage && React.createElement('div', { className: 'auth-success' },

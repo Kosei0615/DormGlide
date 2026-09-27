@@ -613,7 +613,9 @@ const loginUser = async (emailOrName, password) => {
                         success: false,
                         message: normalizeAuthMessage(error, 'login'),
                         rateLimited: isRateLimitAuthError(error),
-                        retryAfterSeconds: getRetryAfterSeconds(error)
+                        retryAfterSeconds: getRetryAfterSeconds(error),
+                        needsConfirmation: /email not confirmed/i.test(extractAuthErrorMessage(error)),
+                        email: resolvedEmail
                     };
                 }
             }
@@ -1320,9 +1322,29 @@ const seedLocalDemoUsersIfEmpty = () => {
 };
 
 // Export all functions
+// Re-send the signup confirmation email (students often try to log in before
+// opening it). Uses the public auth endpoint; Supabase rate-limits it per email.
+const resendConfirmationEmail = async (email) => {
+    const client = getSupabaseClient();
+    const trimmed = String(email || '').trim().toLowerCase();
+    if (!client || !trimmed) return { success: false, message: 'Enter your email first.' };
+    const { error } = await client.auth.resend({
+        type: 'signup',
+        email: trimmed,
+        options: { emailRedirectTo: EMAIL_REDIRECT_URL }
+    });
+    if (error) {
+        return { success: false, message: isRateLimitAuthError(error)
+            ? 'We just sent one — give it a minute, then check your inbox and spam folder.'
+            : (error.message || 'Unable to resend right now.') };
+    }
+    return { success: true };
+};
+
 window.DormGlideAuth = {
     registerUser,
     loginUser,
+    resendConfirmationEmail,
     getSchoolForEmail,
     fetchSchoolForUser,
     markOnboarded,

@@ -7197,3 +7197,7 @@ button, input, select, textarea {
 .chat-modal-overlay, .auth-modal-overlay, .terms-gate-overlay, .report-modal-overlay, .deal-panel-overlay {
     z-index: 1200;
 }
+
+/* Login: resend-confirmation button shown when the account isn't confirmed yet */
+.auth-resend-row { margin: -4px 0 12px; }
+.auth-resend-btn { width: 100%; font-size: 0.9rem; }
