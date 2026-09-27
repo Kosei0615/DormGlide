@@ -134,6 +134,21 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout, mo
         refreshNotifications();
     }, [currentUser?.id, refreshNotifications]);
 
+    // Fallback to realtime: re-check every 45s and whenever the tab comes back
+    // to the foreground (phones suspend websockets while the screen is off).
+    React.useEffect(() => {
+        if (!currentUser?.id) return undefined;
+        const timer = setInterval(refreshNotifications, 45000);
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') refreshNotifications();
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => {
+            clearInterval(timer);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
+    }, [currentUser?.id, refreshNotifications]);
+
     React.useEffect(() => {
         if (!currentUser?.id || !window.SupabaseClient?.channel) {
             return;

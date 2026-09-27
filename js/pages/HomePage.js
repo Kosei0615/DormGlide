@@ -92,11 +92,20 @@ const HomePage = ({ products, productsLoading = false, onProductClick, onNavigat
 
         // Sold listings stay visible (social proof for a young market) but are
         // sorted to the end and can't be bought — the card and detail page handle that.
+        const isSoldListing = (product) => String(product.status || '').toLowerCase() === 'sold' || Boolean(product?.soldAt);
         results = results.filter((product) => {
             const statusRaw = String(product.status || 'available').toLowerCase();
             const status = statusRaw === 'active' ? 'available' : statusRaw;
             return status === 'available' || status === 'pending' || status === 'sold';
         });
+        // Cap sold listings to the 6 most recent so they never crowd out live stock.
+        const recentSoldIds = new Set(
+            results.filter(isSoldListing)
+                .sort((a, b) => new Date(b.soldAt || b.createdAt || 0) - new Date(a.soldAt || a.createdAt || 0))
+                .slice(0, 6)
+                .map((product) => product.id)
+        );
+        results = results.filter((product) => !isSoldListing(product) || recentSoldIds.has(product.id));
 
         if (normalizedSearch) {
             results = results.filter((product) => {
