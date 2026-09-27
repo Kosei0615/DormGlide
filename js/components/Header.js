@@ -226,6 +226,10 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout, mo
         }
 
         setShowNotificationMenu(false);
+        if (/^New message from /.test(String(item?.message || ''))) {
+            onNavigate('messages');
+            return;
+        }
         if (item?.listing_id) {
             onNavigate('product-detail', item.listing_id);
             return;

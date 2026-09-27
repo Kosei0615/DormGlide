@@ -5218,9 +5218,13 @@ i[class*="fa-"] {
     line-height: 1;
 }
 
-i[class*="fa-"]::before {
+:where(i[class*="fa-"])::before {
+    /* zero specificity so every .fa-*::before mapping below wins */
     content: "•";
 }
+.fa-circle-dollar-to-slot::before { content: "💵"; }
+.fa-circle-info::before { content: "ℹ️"; }
+.fa-location-dot::before { content: "📍"; }
 
 .fa-arrow-left::before { content: "←"; }
 .fa-bag-shopping::before, .fa-shopping-bag::before { content: "🛍️"; }
