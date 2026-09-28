@@ -1,5 +1,5 @@
 // User Dashboard Component - Shows user activity and history
-const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview', onListingDeleted }) => {
+const UserDashboard = ({ currentUser, onNavigate, initialTab = 'overview', onListingDeleted, profileTick = 0 }) => {
     const [activeTab, setActiveTab] = React.useState(initialTab);
     const [activity, setActivity] = React.useState(null);
     const [products, setProducts] = React.useState([]);

@@ -173,6 +173,13 @@ const App = () => {
     const [currentUser, setCurrentUser] = useState(null);
     const [products, setProducts] = useState([]);
     const [productsLoading, setProductsLoading] = useState(true);
+    // Bumps when the profile directory learns new names (see auth.js getUserById).
+    const [profileTick, setProfileTick] = useState(0);
+    useEffect(() => {
+        const onProfiles = () => setProfileTick((t) => t + 1);
+        window.addEventListener('dormglide:profiles-updated', onProfiles);
+        return () => window.removeEventListener('dormglide:profiles-updated', onProfiles);
+    }, []);
     const productsFetchRef = React.useRef(null);
 
     // Listings are campus-scoped by RLS, so a logged-out fetch returns nothing.
@@ -617,6 +624,7 @@ const App = () => {
                 });
             case 'product-detail':
                 return React.createElement(ProductDetailPage, {
+                    profileTick: profileTick,
                     product: selectedProduct,
                     onNavigate: navigateToPage,
                     currentUser: currentUser,
@@ -643,6 +651,7 @@ const App = () => {
                 });
             case 'dashboard':
                 return React.createElement(UserDashboard, {
+                    profileTick: profileTick,
                     currentUser: currentUser,
                     onNavigate: navigateToPage,
                     initialTab: dashboardInitialTab,
@@ -650,6 +659,7 @@ const App = () => {
                 });
             case 'messages':
                 return React.createElement(MessagesPage, {
+                    profileTick: profileTick,
                     currentUser: currentUser,
                     onNavigate: navigateToPage
                 });

@@ -1,4 +1,4 @@
-const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onProductUpdate, allProducts = [] }) => {
+const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onProductUpdate, allProducts = [], profileTick = 0 }) => {
     const [isImageModalOpen, setIsImageModalOpen] = React.useState(false);
     const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
     const [isSaved, setIsSaved] = React.useState(false);
@@ -121,7 +121,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
         }
         const seller = window.DormGlideAuth.getUserById(product.sellerId);
         setSellerProfile(seller);
-    }, [product?.sellerId]);
+    }, [product?.sellerId, profileTick]);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -191,7 +191,7 @@ const ProductDetailPage = ({ product, onNavigate, currentUser, onShowAuth, onPro
             name: product?.sellerName,
             phone: product?.contactInfo
         };
-    }, [chatBuyerId, sellerProfile, product]);
+    }, [chatBuyerId, sellerProfile, product, profileTick]);
 
     const ensureAuthenticated = (message) => {
         if (currentUser) return true;

@@ -825,10 +825,65 @@ const updateUserProfile = async (userId, updates) => {
     return { success: false, message: 'User not found' };
 };
 
+// Campus profile directory. getUserById stays synchronous (it reads the local
+// cache), but any id it can't resolve is fetched from `profiles` in a batched
+// background request (migration 19 allows same-campus reads). When rows land,
+// they're cached and a 'dormglide:profiles-updated' event asks the app to
+// re-render, so "Buyer"/"DormGlide user" placeholders become real names.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const profileFetchQueue = new Set();
+const profileFetchAttempted = new Set();
+let profileFetchTimer = null;
+
+const flushProfileFetch = async () => {
+    profileFetchTimer = null;
+    const ids = Array.from(profileFetchQueue);
+    profileFetchQueue.clear();
+    ids.forEach((id) => profileFetchAttempted.add(id));
+    const client = getSupabaseClient();
+    if (!client || ids.length === 0) return;
+    try {
+        const { data, error } = await client
+            .from('profiles')
+            .select('id, name, campus_location, bio')
+            .in('id', ids);
+        if (error) throw error;
+        (data || []).forEach((row) => upsertCachedUser({
+            id: row.id,
+            name: row.name || 'DormGlide user',
+            campus: row.campus_location || '',
+            bio: row.bio || ''
+        }));
+        if ((data || []).length > 0) {
+            window.dispatchEvent(new CustomEvent('dormglide:profiles-updated', { detail: { ids } }));
+        }
+    } catch (error) {
+        console.warn('[DormGlide] Profile directory fetch failed:', error);
+        // Allow a retry later (e.g. after login) by forgetting the attempt.
+        ids.forEach((id) => profileFetchAttempted.delete(id));
+    }
+};
+
+const requestProfileFetch = (userId) => {
+    if (!UUID_RE.test(String(userId))) return;
+    if (profileFetchAttempted.has(userId) || profileFetchQueue.has(userId)) return;
+    profileFetchQueue.add(userId);
+    if (profileFetchTimer) clearTimeout(profileFetchTimer);
+    profileFetchTimer = setTimeout(flushProfileFetch, 60);
+};
+
+const ensureProfiles = async (userIds = []) => {
+    (userIds || []).forEach(requestProfileFetch);
+    if (profileFetchTimer) { clearTimeout(profileFetchTimer); profileFetchTimer = null; }
+    await flushProfileFetch();
+};
+
 const getUserById = (userId) => {
     if (!userId) return null;
     const users = getAllUsers();
-    return users.find((user) => user.id === userId) || null;
+    const found = users.find((user) => user.id === userId) || null;
+    if (!found || !found.name) requestProfileFetch(userId);
+    return found;
 };
 
 const getConversationMessages = (userId, otherUserId, productId) => {
@@ -1345,6 +1400,7 @@ window.DormGlideAuth = {
     registerUser,
     loginUser,
     resendConfirmationEmail,
+    ensureProfiles,
     getSchoolForEmail,
     fetchSchoolForUser,
     markOnboarded,

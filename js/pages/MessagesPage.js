@@ -1,4 +1,4 @@
-const MessagesPage = ({ currentUser, onNavigate }) => {
+const MessagesPage = ({ currentUser, onNavigate, profileTick = 0 }) => {
     const [chatContext, setChatContext] = React.useState(null);
     const [chatConversations, setChatConversations] = React.useState([]);
     const [allProducts, setAllProducts] = React.useState([]);
@@ -181,7 +181,7 @@ const MessagesPage = ({ currentUser, onNavigate }) => {
             const preview = String(thread.message || '').toLowerCase();
             return name.includes(keyword) || productTitle.includes(keyword) || preview.includes(keyword);
         });
-    }, [threadsByUser, searchQuery]);
+    }, [threadsByUser, searchQuery, profileTick]);
 
     const incomingRequests = React.useMemo(() => {
         return (purchaseRequests || [])
