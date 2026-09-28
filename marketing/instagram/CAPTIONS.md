@@ -7,6 +7,7 @@ editable source (open in Chrome → change text → screenshot at 1080×1080).
 Always include in the caption: **dormglide.com** and the rule line.
 Hashtags (pick 5–8): #Denison #DenisonUniversity #DenisonStudents #Granville
 #CollegeLife #DormLife #CampusMarketplace #DormGlide #Glyde #MoveOut #MoveIn
+#Denison2027 #Denison2028 #Denison2029 #Denison2030 (class-year tags — students search these)
 
 ---
 
