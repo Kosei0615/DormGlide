@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>DormGlide</title>
+<link rel="icon" href="../favicon.ico?v=2">
+<script>
+  // Short link for Instagram (bio + stories): dormglide.com/ig
+  // Records where the visitor came from, then opens the sign-up form.
+  try { if (!localStorage.getItem('dormglide_ref')) localStorage.setItem('dormglide_ref', 'instagram'); } catch (e) {}
+  try { sessionStorage.setItem('dormglide_about_seen', '1'); } catch (e) {}
+  location.replace('../app.html?auth=signup&ref=instagram');
+</script>
+<meta http-equiv="refresh" content="0; url=../app.html?auth=signup&ref=instagram">
+</head>
+<body style="font-family:Arial,sans-serif;padding:24px;text-align:center">
+  <p>Opening DormGlide… <a href="../app.html?auth=signup&ref=instagram">Continue</a></p>
+</body>
+</html>

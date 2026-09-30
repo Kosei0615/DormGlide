@@ -477,6 +477,7 @@ const registerUser = async (userData) => {
                     data: {
                         name: userData.name,
                         phone: sanitizedPhone,
+                        signup_source: (() => { try { return localStorage.getItem('dormglide_ref') || 'direct'; } catch (_e) { return 'direct'; } })(),
                         university: userData.university || '',
                         campusLocation: userData.campusLocation || '',
                         role: resolvedRole,

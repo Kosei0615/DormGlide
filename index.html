@@ -24,6 +24,10 @@
                 // Mark this device as having seen the concept page (app.html
                 // sends first-time, logged-out visitors here once).
                 localStorage.setItem('dormglide_about_seen', '1');
+                try {
+                    var refParam = new URLSearchParams(location.search).get('ref') || new URLSearchParams(location.search).get('utm_source');
+                    if (refParam && !localStorage.getItem('dormglide_ref')) localStorage.setItem('dormglide_ref', String(refParam).toLowerCase().slice(0, 40));
+                } catch (e) {}
                 sessionStorage.setItem('dormglide_about_seen', '1');
                 if (new URLSearchParams(location.search).has('stay')) return;
                 var loggedIn = Object.keys(localStorage).some(function (k) { return k.indexOf('sb-') === 0 && k.indexOf('auth-token') !== -1; });

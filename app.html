@@ -25,6 +25,12 @@
             try {
                 var qs = new URLSearchParams(location.search);
                 var hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+                // Attribution: ?ref=instagram or ?utm_source=... is remembered (first touch)
+                // and written to the profile at sign-up as signup_source.
+                var ref = qs.get('ref') || qs.get('utm_source');
+                if (ref && !localStorage.getItem('dormglide_ref')) {
+                    localStorage.setItem('dormglide_ref', String(ref).toLowerCase().slice(0, 40));
+                }
                 var isAuthLink = qs.has('code') || qs.has('token_hash') || qs.has('type') || qs.has('auth') ||
                                  hash.has('access_token') || hash.has('refresh_token') || hash.has('type');
                 if (isAuthLink) return;
@@ -85,7 +91,7 @@
     <script src="js/utils/supabaseClient.js?v=1"></script>
     <script src="js/utils/toast.js?v=1"></script>
     <script src="js/utils/storage.js?v=12"></script>
-    <script src="js/utils/auth.js?v=13"></script>
+    <script src="js/utils/auth.js?v=14"></script>
     <script src="js/utils/personalization.js?v=5"></script>
     <script src="js/utils/chat.js?v=1"></script>
     <script src="js/utils/payments.js?v=1"></script>
