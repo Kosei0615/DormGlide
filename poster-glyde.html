@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>DormGlide — Glyde poster</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@700;800;900&display=swap">
+<style>
+  @page { size: 8.5in 11in; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #e5e9f2; font-family: "Nunito Sans", "Avenir Next", "Segoe UI", Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .sheet { width: 8.5in; height: 11in; margin: 24px auto; position: relative; overflow: hidden; color: #fff; display: flex; flex-direction: column;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 58%, #2563eb 100%); }
+  .sheet.orange { background: linear-gradient(135deg, #9a3412 0%, #ea580c 55%, #fb923c 100%); }
+  @media print { html, body { background: #fff; } .sheet { margin: 0; } .no-print { display: none; } }
+  .top { padding: 0.32in 0.6in 0; display: flex; align-items: center; gap: 0.18in; }
+  .top img { width: 0.78in; height: 0.78in; border-radius: 0.2in; }
+  .wordmark { font-size: 0.46in; font-weight: 900; letter-spacing: -0.02em; line-height: 1; }
+  .wordmark em { font-style: normal; color: #fdba74; } .orange .wordmark em { color: #ffedd5; }
+  .tag { font-size: 0.165in; font-weight: 700; opacity: 0.88; margin-top: 0.06in; }
+  .hero { padding: 0.22in 0.6in 0; position: relative; }
+  .hero h1 { margin: 0; font-size: 0.64in; line-height: 0.98; font-weight: 900; letter-spacing: -0.03em; }
+  .hero h1 span { color: #fdba74; } .orange .hero h1 span { color: #ffedd5; }
+  .hero p { margin: 0.12in 0 0; font-size: 0.185in; line-height: 1.35; font-weight: 700; max-width: 5.5in; opacity: 0.96; }
+  .otter { position: absolute; right: 0.2in; top: -0.2in; width: 2.3in; opacity: 0.95; filter: drop-shadow(0 8px 20px rgba(0,0,0,0.25)); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.11in; padding: 0.18in 0.6in 0; }
+  .chip { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.38); border-radius: 0.14in; padding: 0.08in 0.06in; text-align: center; }
+  .chip .g { font-size: 0.28in; line-height: 1; } .chip .t { font-size: 0.145in; font-weight: 800; margin-top: 0.06in; line-height: 1.15; }
+  .row { display: grid; grid-template-columns: 1.15fr 1fr; gap: 0.16in; padding: 0.16in 0.6in 0; }
+  .card { background: #fff; color: #1f2937; border-radius: 0.16in; padding: 0.13in 0.16in; }
+  .card h3 { margin: 0 0 0.08in; font-size: 0.2in; font-weight: 900; color: #1e3a8a; } .orange .card h3 { color: #9a3412; }
+  .steps { margin: 0; padding: 0; list-style: none; }
+  .steps li { display: flex; align-items: center; gap: 0.1in; font-size: 0.155in; font-weight: 700; color: #334155; padding: 0.045in 0; line-height: 1.25; }
+  .steps .n { width: 0.28in; height: 0.28in; border-radius: 50%; background: #1d4ed8; color: #fff; font-weight: 900; font-size: 0.15in; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .orange .steps .n { background: #ea580c; }
+  .proof { position: relative; padding: 0.12in; }
+  .proof img { width: 100%; height: 1.05in; object-fit: cover; border-radius: 0.12in; display: block; }
+  .proof .badge { position: absolute; top: 0.2in; left: 0.2in; background: #dc2626; color: #fff; font-weight: 900; font-size: 0.14in; letter-spacing: 0.08em; padding: 0.04in 0.12in; border-radius: 0.08in; }
+  .proof .cap { font-size: 0.145in; font-weight: 800; color: #334155; margin-top: 0.08in; line-height: 1.25; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.12in; padding: 0.15in 0.6in 0.18in; }
+  .fact { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.38); border-radius: 0.14in; padding: 0.1in 0.12in; text-align: center; font-size: 0.15in; font-weight: 800; line-height: 1.2; }
+  .bottom { margin-top: auto; background: #fff; color: #1f2937; padding: 0.2in 0.6in 0.24in; display: flex; align-items: center; gap: 0.34in; }
+  .qr { width: 1.6in; height: 1.6in; flex-shrink: 0; border-radius: 0.14in; border: 4px solid #1e3a8a; } .orange .qr { border-color: #9a3412; }
+  .cta h2 { margin: 0 0 0.04in; font-size: 0.33in; font-weight: 900; color: #1e3a8a; letter-spacing: -0.02em; line-height: 1.05; } .orange .cta h2 { color: #9a3412; }
+  .cta .url { font-size: 0.3in; font-weight: 900; color: #ea580c; } .orange .cta .url { color: #1d4ed8; }
+  .cta p { margin: 0.08in 0 0; font-size: 0.165in; font-weight: 700; color: #475569; line-height: 1.35; }
+  .rule { margin-top: 0.1in; display: inline-block; background: #fef3c7; border: 2px solid #fcd34d; border-radius: 0.12in; padding: 0.07in 0.14in; font-size: 0.15in; font-weight: 800; color: #92400e; }
+  .no-print { text-align: center; color: #475569; font-size: 14px; padding: 8px 16px 32px; }
+</style></head><body>
+<div class="sheet orange">
+  <div class="top"><img src="brand/otter-mark.png" alt=""><div><div class="wordmark">Glyde <em>by DormGlide</em></div><div class="tag">Skills &amp; services, by Denison students</div></div></div>
+  <div class="hero">
+    <img class="otter" src="brand/otter-hero-white.png" alt="">
+    <h1>Need a hand?<br><span>Book a student.</span></h1>
+    <p>Students helping students. Find someone on campus for the job, or offer your own skill and get paid.</p>
+  </div>
+  <div class="grid">
+    <div class="chip"><div class="g">🚚</div><div class="t">Move-in &amp; move-out help</div></div>
+    <div class="chip"><div class="g">🚗</div><div class="t">Rides &amp; errands</div></div>
+    <div class="chip"><div class="g">🍜</div><div class="t">Food &amp; drink</div></div>
+    <div class="chip"><div class="g">📚</div><div class="t">Tutoring</div></div>
+    <div class="chip"><div class="g">💇</div><div class="t">Hair &amp; beauty</div></div>
+    <div class="chip"><div class="g">📸</div><div class="t">Photography</div></div>
+    <div class="chip"><div class="g">🐶</div><div class="t">Dog walking</div></div>
+    <div class="chip"><div class="g">✨</div><div class="t">Your skill here</div></div>
+  </div>
+  <div class="row">
+    <div class="card"><h3>Need something done?</h3>
+      <ul class="steps">
+        <li><span class="n">1</span>Browse services from Denison students</li>
+        <li><span class="n">2</span>Book, then agree on a time in chat</li>
+        <li><span class="n">3</span>Meet up and pay at the session</li>
+      </ul></div>
+    <div class="card"><h3>Got a skill?</h3>
+      <ul class="steps">
+        <li><span class="n">1</span>List it in a minute and set your rate</li>
+        <li><span class="n">2</span>Students book you through the app</li>
+        <li><span class="n">3</span>You keep 100%. No fees.</li>
+      </ul></div>
+  </div>
+  <div class="facts"><div class="fact">🎓 Verified @denison.edu students only</div><div class="fact">⭐ Ratings after every session</div><div class="fact">💵 Free. No commission.</div></div>
+  <div class="bottom">
+    <img class="qr" src="brand/qr-poster-glyde.png" alt="QR code to dormglide.com/g">
+    <div class="cta"><h2>Scan to book or offer</h2><div class="url">dormglide.com/g</div>
+      <p>Opens DormGlide in Glyde mode. Sign up takes one minute.</p>
+      <div class="rule">💡 Pay at the session, in person, never before.</div></div>
+  </div>
+</div><p class="no-print">Print: Cmd+P → Save as PDF → US Letter → Margins None → Background graphics ON. Prebuilt PDFs are in brand/.</p></body></html>
