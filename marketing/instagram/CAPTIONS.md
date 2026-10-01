@@ -4,7 +4,7 @@ Post 3x per week (Mon / Wed / Fri, ~7pm ET when students are back in dorms).
 Images are 1080×1080 PNGs in this folder; the HTML next to each one is the
 editable source (open in Chrome → change text → screenshot at 1080×1080).
 
-Always put the short link **dormglide.com/ig** in the caption AND on the image. Never say "link in bio": every extra tap loses people. (Instagram does not make caption links clickable, so the address must be short enough to type.)
+Show plain **dormglide.com** as the address on the image and in the caption, plus the QR code (which encodes dormglide.com/ig for sign-up tracking). Founder preference: never print "/ig". Never say "link in bio": every extra tap loses people. (Instagram does not make caption links clickable, so the address must be short enough to type.)
 Hashtags (pick 5–8): #Denison #DenisonUniversity #DenisonStudents #Granville
 #CollegeLife #DormLife #CampusMarketplace #DormGlide #Glyde #MoveOut #MoveIn
 #Denison2027 #Denison2028 #Denison2029 #Denison2030 (class-year tags — students search these)
