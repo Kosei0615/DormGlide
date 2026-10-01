@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex"><title>DormGlide</title><link rel="icon" href="/favicon.ico?v=2">
+<script>
+  // Typed addresses are messy: /IG, /Ig/, /ig. , /lg ... Send them where they meant to go.
+  (function () {
+    var p = (location.pathname || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    var map = { ig: 'instagram', lg: 'instagram', insta: 'instagram', instagram: 'instagram', p: 'poster-dorm', g: 'poster-glyde', glyde: 'poster-glyde', signup: 'direct', join: 'direct' };
+    var ref = map[p] || 'typed-url';
+    try { if (!localStorage.getItem('dormglide_ref')) localStorage.setItem('dormglide_ref', ref); } catch (e) {}
+    try { sessionStorage.setItem('dormglide_about_seen', '1'); } catch (e) {}
+    try { if (ref === 'poster-glyde') localStorage.setItem('dormglide_mode', 'glyde'); } catch (e) {}
+    location.replace('/app.html?auth=signup&ref=' + ref);
+  })();
+</script></head>
+<body style="font-family:Arial,sans-serif;padding:24px;text-align:center"><p>Opening DormGlide… <a href="/app.html?auth=signup">Continue</a></p></body></html>
