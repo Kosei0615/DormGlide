@@ -4,7 +4,7 @@ Post 3x per week (Mon / Wed / Fri, ~7pm ET when students are back in dorms).
 Images are 1080×1080 PNGs in this folder; the HTML next to each one is the
 editable source (open in Chrome → change text → screenshot at 1080×1080).
 
-Always include in the caption: **dormglide.com** and the rule line.
+Always put the short link **dormglide.com/ig** in the caption AND on the image. Never say "link in bio": every extra tap loses people. (Instagram does not make caption links clickable, so the address must be short enough to type.)
 Hashtags (pick 5–8): #Denison #DenisonUniversity #DenisonStudents #Granville
 #CollegeLife #DormLife #CampusMarketplace #DormGlide #Glyde #MoveOut #MoveIn
 #Denison2027 #Denison2028 #Denison2029 #Denison2030 (class-year tags — students search these)
@@ -14,7 +14,7 @@ Hashtags (pick 5–8): #Denison #DenisonUniversity #DenisonStudents #Granville
 ## Week 1
 
 **Mon — 01-how-it-works.png**
-43 Denison students joined DormGlide at one tabling event. Here's the whole thing in three steps: sign up with your @denison.edu email, post what you're done with (or set a Wishlist alert for what you need), then chat, meet on campus, and pay at pickup. No fees, no strangers, no shipping. 🦦 dormglide.com — link in bio.
+43 Denison students joined DormGlide at one tabling event. Here's the whole thing in three steps: sign up with your @denison.edu email, post what you're done with (or set a Wishlist alert for what you need), then chat, meet on campus, and pay at pickup. No fees, no strangers, no shipping. 🦦 Sign up → dormglide.com/ig
 💡 Pay at pickup, after you've seen it, never before.
 
 **Wed — 02-sold-ac.png**
