@@ -66,6 +66,24 @@ version before telling the founder it's done:
 curl -s "https://dormglide.com/app.html?cb=$RANDOM" | grep -o 'js/App.js?v=[0-9]*'
 ```
 
+**Push once per batch, and trust the files, not the email.** Each push starts a
+GitHub Pages run, and a newer push cancels the runs still in flight. Two or
+three pushes within a few minutes produce a "Run failed: pages build and
+deployment" email to the founder (a cancelled `report-build-status` step counts
+as a failure) even though the surviving run deployed the branch tip. So gather
+related changes into one push where possible. If the email arrives anyway,
+check reality by checksum before changing anything:
+
+```bash
+for f in $(git diff --name-only HEAD~1 HEAD); do
+  [ "$(git show "HEAD:$f" | shasum)" = "$(curl -s "https://dormglide.com/$f?cb=$RANDOM" | shasum)" ] && echo "MATCH $f" || echo "STALE $f"
+done
+```
+
+All MATCH means the site is current and the email is noise. Any STALE that
+persists past five minutes is a real failed deploy: push an empty commit
+(`git commit --allow-empty -m "Rebuild Pages"`) to trigger a fresh run.
+
 ## 6. Update the records
 
 - `../HANDOFF.md` (project root, outside git): what changed, why, and any gotcha a future session would otherwise rediscover.
