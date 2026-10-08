@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
+<title>DormGlide · Delivery</title><link rel="icon" href="../favicon.ico?v=2">
+<style>body{margin:0;font-family:"Nunito Sans",-apple-system,Segoe UI,Arial,sans-serif;background:#f8fafc;color:#1f2937} .box{max-width:520px;margin:48px auto;padding:28px 24px;background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.08);text-align:center} h1{font-size:1.5rem;margin:0 0 10px} p{color:#475569;line-height:1.5} .ok h1{color:#16a34a} .no h1{color:#dc2626} a.btn{display:inline-block;margin-top:14px;background:#1d4ed8;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:800}</style></head>
+<body><div class="box" id="box"><h1>One moment…</h1><p>Recording your answer.</p></div>
+<script>
+(async function () {
+  var box = document.getElementById('box');
+  var q = new URLSearchParams(location.search); var t = q.get('t'); var a = (q.get('a') || '').toLowerCase();
+  function show(cls, title, text) { box.className = 'box ' + cls; box.innerHTML = '<h1>' + title + '</h1><p>' + text + '</p><a class="btn" href="/app.html">Open Campus Delivery</a>'; }
+  if (!t || (a !== 'accept' && a !== 'decline')) { show('no', 'Invalid link', 'This link is missing its order code. Open DormGlide to manage orders.'); return; }
+  try {
+    var r = await fetch('https://tmyjkucirpfquxostdhb.supabase.co/rest/v1/rpc/delivery_decide', { method: 'POST', headers: { 'apikey': 'sb_publishable_8toJ2LmXCAbuxpn5AkOLTQ_S-CKZ355', 'Authorization': 'Bearer sb_publishable_8toJ2LmXCAbuxpn5AkOLTQ_S-CKZ355', 'Content-Type': 'application/json' }, body: JSON.stringify({ p_token: t, p_action: a }) });
+    var d = await r.json();
+    if (d && d.result === 'ok') show('ok', a === 'accept' ? 'Accepted ✓' : 'Declined', (d.summary || 'The order') + (a === 'accept' ? ' — the customer has been told you are on it. Mark it picked up and on the way from your console.' : ' — the customer has been told. Nothing else to do.'));
+    else if (d && d.result === 'expired') show('no', 'Too late', 'This order expired before you answered. The customer has been told.');
+    else if (d && d.result === 'already') show('no', 'Already answered', 'This order is already ' + (d.status || 'handled') + '.');
+    else show('no', 'Link not recognized', 'This link is invalid or was already used. Open DormGlide to see your orders.');
+  } catch (e) { show('no', 'Could not reach DormGlide', 'Check your connection and try again, or open DormGlide to answer there.'); }
+})();
+</script></body></html>

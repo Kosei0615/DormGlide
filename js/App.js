@@ -679,6 +679,12 @@ const App = () => {
                     onNavigate: navigateToPage,
                     currentUser: currentUser
                 });
+            case 'delivery':
+                return React.createElement(DeliveryPage, {
+                    currentUser: currentUser,
+                    onNavigate: navigateToPage,
+                    onShowAuth: (mode) => openAuthModal(mode)
+                });
             case 'admin':
                 return React.createElement(AdminDashboard, {
                     currentUser: currentUser,

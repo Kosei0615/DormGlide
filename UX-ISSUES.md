@@ -79,3 +79,8 @@ Running log of UX problems found while working through the student-feedback phas
 | # | Issue | Fix |
 |---|---|---|
 | Brand | Google/tab icon was the old green house; the otter design was blocked on a file + Glide/Glyde decision | Naming settled: **DormGlide** (company/app) → **Glyde** (services mode). Otter mark recovered from Alec's mock, favicon/apple-touch/OG image generated from it; public landing page at index.html |
+
+## Campus Delivery (2026-10-08)
+- D1 (open): phone retest by founder — place a test order as a customer, accept from the courier's Gmail link, walk statuses; confirm bells + emails.
+- D2 (open): courier enrolment needs the courier's DormGlide email (admin insert). Consider an admin UI later.
+- D3 (idea): live courier map (phase 2). D4 (idea): ratings on deliveries. D5 (idea): daily summary email for the courier.

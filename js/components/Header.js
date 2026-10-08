@@ -230,6 +230,10 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout, mo
             onNavigate('messages');
             return;
         }
+        if (/^Delivery:/.test(String(item?.message || ''))) {
+            onNavigate('delivery');
+            return;
+        }
         if (item?.listing_id) {
             onNavigate('product-detail', item.listing_id);
             return;
@@ -326,6 +330,9 @@ const Header = ({ currentPage, onNavigate, currentUser, onShowAuth, onLogout, mo
                             navGlyph('📊'),
                             'Dashboard'
                         ),
+                        currentUser && React.createElement('button', {
+                            onClick: () => handleNavigation('delivery')
+                        }, '🛼 Campus Delivery'),
                         React.createElement('button', {
                             onClick: handleWishlistOpen
                         },

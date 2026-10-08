@@ -7201,3 +7201,56 @@ button, input, select, textarea {
 /* Login: resend-confirmation button shown when the account isn't confirmed yet */
 .auth-resend-row { margin: -4px 0 12px; }
 .auth-resend-btn { width: 100%; font-size: 0.9rem; }
+
+/* ---------------- Campus Delivery (Glyde) ---------------- */
+.delivery-page { max-width: 860px; margin: 0 auto; padding: 16px 16px 90px; }
+.delivery-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 12px; }
+.delivery-head h1 { margin: 0; font-size: 1.5rem; }
+.delivery-back { padding: 6px 12px; }
+.delivery-viewswitch { display: flex; gap: 6px; width: 100%; }
+.delivery-viewswitch .tab { flex: 1; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--dg-border, #e2e8f0); background: #fff; font-weight: 700; cursor: pointer; }
+.delivery-viewswitch .tab.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+.delivery-card { background: #fff; border: 1px solid var(--dg-border, #e2e8f0); border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05); }
+.delivery-card h2 { margin: 0 0 4px; font-size: 1.25rem; } .delivery-card h3 { margin: 0 0 10px; font-size: 1.05rem; }
+.delivery-muted { color: #64748b; font-size: 0.92rem; margin: 6px 0; }
+.delivery-empty { text-align: center; padding: 40px 16px; color: #475569; }
+.delivery-provider-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.delivery-hours { margin: 6px 0 0; font-size: 0.92rem; color: #334155; }
+.delivery-pill { display: inline-block; border-radius: 999px; padding: 4px 11px; font-size: 0.8rem; font-weight: 800; background: #f1f5f9; color: #334155; white-space: nowrap; }
+.delivery-pill.is-open { background: #dcfce7; color: #166534; } .delivery-pill.is-preorder { background: #fef3c7; color: #92400e; }
+.delivery-pill.is-offline, .delivery-pill.is-closed { background: #f1f5f9; color: #475569; }
+.delivery-pill.is-status-pending { background: #fef3c7; color: #92400e; } .delivery-pill.is-status-accepted, .delivery-pill.is-status-picked_up, .delivery-pill.is-status-on_the_way { background: #dbeafe; color: #1e40af; }
+.delivery-pill.is-status-delivered { background: #dcfce7; color: #166534; } .delivery-pill.is-status-declined, .delivery-pill.is-status-expired, .delivery-pill.is-status-cancelled { background: #fee2e2; color: #991b1b; }
+.delivery-form { display: grid; gap: 10px; }
+.delivery-form label { display: grid; gap: 4px; font-size: 0.85rem; font-weight: 700; color: #334155; }
+.delivery-form input, .delivery-form select, .delivery-settings input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 16px; font-family: inherit; }
+.delivery-form input:disabled, .delivery-form select:disabled { background: #f8fafc; color: #94a3b8; }
+.delivery-terms { font-size: 0.85rem; color: #475569; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 10px; padding: 10px 12px; }
+.delivery-submit { width: 100%; padding: 12px; font-size: 1rem; }
+.delivery-order { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+.delivery-order.is-pending { border-color: #fcd34d; background: #fffbeb; }
+.delivery-order-main { flex: 1 1 260px; }
+.delivery-order-title { font-weight: 800; font-size: 1rem; } .delivery-order-meta { color: #475569; font-size: 0.88rem; margin-top: 2px; }
+.delivery-order-notes { font-size: 0.86rem; color: #334155; margin-top: 4px; }
+.delivery-order-status { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.delivery-countdown { font-weight: 800; color: #b45309; font-size: 0.85rem; }
+.delivery-order-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.delivery-order-actions .btn { padding: 8px 12px; font-size: 0.9rem; }
+.delivery-timeline { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.delivery-step { font-size: 0.74rem; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: #f1f5f9; color: #94a3b8; }
+.delivery-step.done { background: #1d4ed8; color: #fff; }
+.delivery-toggle-card { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.delivery-toggle { display: inline-flex; align-items: center; gap: 10px; border: none; background: #e2e8f0; border-radius: 999px; padding: 6px 14px 6px 6px; cursor: pointer; font-weight: 900; color: #475569; font-size: 1rem; min-height: 48px; }
+.delivery-toggle-knob { width: 36px; height: 36px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.2s; }
+.delivery-toggle.on { background: #16a34a; color: #fff; } .delivery-toggle.on .delivery-toggle-knob { transform: translateX(6px); }
+.delivery-settings-toggle { background: none; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; color: #1e3a8a; padding: 0; }
+.delivery-settings { display: grid; gap: 10px; margin-top: 12px; }
+.delivery-settings label { display: grid; gap: 4px; font-size: 0.85rem; font-weight: 700; color: #334155; }
+.delivery-settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.delivery-hours-grid { display: grid; gap: 6px; } .delivery-hours-head { font-weight: 800; font-size: 0.9rem; }
+.delivery-hours-row { display: grid; grid-template-columns: 70px 1fr auto 1fr; align-items: center; gap: 8px; } .delivery-hours-row.off { opacity: 0.55; }
+.delivery-hours-row input[type=time] { padding: 6px 8px; min-width: 0; }
+.delivery-day { display: flex; align-items: center; gap: 4px; font-weight: 800; }
+.delivery-promo { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin: 14px 0; padding: 16px 18px; border-radius: 16px; background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 2px solid #fdba74; }
+.delivery-promo h2 { margin: 0 0 4px; font-size: 1.2rem; color: #9a3412; } .delivery-promo p { margin: 0 0 8px; color: #7c2d12; font-size: 0.95rem; }
+@media (max-width: 520px) { .delivery-settings-row { grid-template-columns: 1fr; } .delivery-hours-row { grid-template-columns: 64px 1fr auto 1fr; } .delivery-promo .btn { width: 100%; } }
