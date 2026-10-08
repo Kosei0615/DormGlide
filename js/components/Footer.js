@@ -36,7 +36,12 @@ const Footer = ({ onNavigate }) => {
                         React.createElement('img', { src: 'brand/otter-blue.png', alt: '', width: 28, height: 28 })),
                     'DormGlide'
                 ),
-                React.createElement('p', null, 'Move in lighter, live smarter: trusted student-to-student buying and selling on campus.')
+                React.createElement('p', null, 'Move in lighter, live smarter: trusted student-to-student buying and selling on campus.'),
+                React.createElement('div', { className: 'footer-team' },
+                    React.createElement('img', { src: 'brand/team-photo.jpg', alt: 'The DormGlide team', loading: 'lazy' }),
+                    React.createElement('div', null,
+                        React.createElement('strong', null, 'Made and run by Denisonians.'),
+                        React.createElement('a', { href: 'https://instagram.com/dormglide', target: '_blank', rel: 'noopener' }, '@dormglide on Instagram')))
             ),
             React.createElement('div', { className: 'footer-section' },
                 React.createElement('h4', null, 'Quick Links'),
@@ -91,7 +96,7 @@ const Footer = ({ onNavigate }) => {
             React.createElement('div', { className: 'footer-section' },
                 React.createElement('h4', null, 'Connect'),
                 React.createElement('div', { className: 'social-links' },
-                    React.createElement('a', { href: '#', 'aria-label': 'Instagram' }, 
+                    React.createElement('a', { href: 'https://instagram.com/dormglide', target: '_blank', rel: 'noopener', 'aria-label': 'Instagram' }, 
                         socialIcon('instagram')
                     ),
                     React.createElement('a', { href: '#', 'aria-label': 'X' }, 

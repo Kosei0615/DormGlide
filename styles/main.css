@@ -7273,3 +7273,9 @@ button, input, select, textarea {
 .delivery-choice { display: flex; align-items: center; gap: 8px; border: 2px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 6px 12px 6px 6px; cursor: pointer; white-space: nowrap; font-weight: 800; color: #334155; }
 .delivery-choice img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; } .delivery-choice.active { border-color: #1d4ed8; background: #eff6ff; }
 @media (max-width: 640px) { .delivery-feature-grid.two { grid-template-columns: 1fr; } .delivery-feature-body .btn { align-self: stretch; } }
+
+/* Footer: team badge + Instagram */
+.footer-team { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.footer-team img { width: 72px; height: 48px; object-fit: cover; border-radius: 10px; border: 2px solid rgba(255,255,255,0.6); }
+.footer-team strong { display: block; font-size: 0.9rem; }
+.footer-team a { font-size: 0.85rem; font-weight: 700; }
