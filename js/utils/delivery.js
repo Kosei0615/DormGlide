@@ -31,6 +31,7 @@
         confirmMinutes: Number(row.confirm_minutes ?? 10),
         pickupSpots: Array.isArray(row.pickup_spots) ? row.pickup_spots : [],
         timezone: row.timezone || 'America/New_York',
+        photoUrl: row.photo_url || '', videoUrl: row.video_url || '', sortOrder: Number(row.sort_order || 0),
         updatedAt: row.updated_at
     });
     const normalizeOrder = (row) => row && ({
@@ -96,7 +97,7 @@
     // ---- queries ------------------------------------------------------------
     const fetchProviders = async () => {
         const c = client(); if (!c) return [];
-        const { data, error } = await c.from('delivery_providers').select('*').eq('is_active', true).order('created_at');
+        const { data, error } = await c.from('delivery_providers').select('*').eq('is_active', true).order('sort_order').order('created_at');
         if (error) { console.warn('[DormGlide] delivery providers fetch failed:', error); return []; }
         return (data || []).map(normalizeProvider);
     };
@@ -115,6 +116,8 @@
         if ('feeCents' in patch) payload.fee_cents = Math.max(0, Math.min(5000, Math.round(Number(patch.feeCents) || 0)));
         if ('schedule' in patch) payload.schedule = patch.schedule;
         if ('preorderMinutes' in patch) payload.preorder_minutes = Math.max(0, Math.min(240, Number(patch.preorderMinutes) || 0));
+        if ('photoUrl' in patch) payload.photo_url = String(patch.photoUrl || '').trim().slice(0, 400) || null;
+        if ('videoUrl' in patch) payload.video_url = String(patch.videoUrl || '').trim().slice(0, 400) || null;
         if ('pickupSpots' in patch) payload.pickup_spots = patch.pickupSpots.map((s) => String(s).trim().slice(0, 60)).filter(Boolean).slice(0, 12);
         const { data, error } = await c.from('delivery_providers').update(payload).eq('id', providerId).select('*').single();
         if (error) { console.error('[DormGlide] provider update failed:', error); return { success: false, message: error.message }; }

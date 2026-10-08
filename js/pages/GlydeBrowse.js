@@ -118,18 +118,29 @@ const GlydeBrowse = ({ products, productsLoading = false, currentUser, onProduct
             )
         ),
 
-        // Campus Delivery (student courier) — shown when a courier exists on this campus
-        !category && couriers.length > 0 && React.createElement('section', { className: 'delivery-promo' },
-            (() => {
-                const c = couriers[0]; const a = window.DormGlideDelivery.getAvailability(c);
-                return React.createElement(React.Fragment, null,
-                    React.createElement('div', { className: 'delivery-promo-text' },
-                        React.createElement('h2', null, '🛼 Campus Delivery'),
-                        React.createElement('p', null, `${c.displayName}${c.blurb ? ' — ' + c.blurb : ''}. Fee ${window.DormGlideDelivery.formatFee(c.feeCents)}, paid at delivery.`),
-                        React.createElement('span', { className: `delivery-pill is-${a.state}` }, a.label)),
-                    React.createElement('button', { className: 'btn btn-primary', onClick: () => onNavigate('delivery') },
-                        a.state === 'open' ? 'Order a delivery' : a.state === 'preorder' ? 'Preorder a delivery' : 'See hours & preorder'));
-            })()),
+        // Campus Delivery — featured courier(s) with photo/video, live status, one-tap order
+        !category && couriers.length > 0 && React.createElement('section', { className: 'delivery-feature' },
+            React.createElement('div', { className: 'delivery-feature-head' },
+                React.createElement('h2', null, '🛼 Campus Delivery'),
+                React.createElement('p', null, couriers.length > 1 ? 'Student couriers bring your order across campus. Pay at delivery, in person.' : 'A student courier brings your order across campus. Pay at delivery, in person.')),
+            React.createElement('div', { className: `delivery-feature-grid ${couriers.length > 1 ? 'two' : ''}` },
+                couriers.slice(0, 2).map((c) => {
+                    const a = window.DormGlideDelivery.getAvailability(c);
+                    return React.createElement('article', { key: c.id, className: 'delivery-feature-card' },
+                        (c.videoUrl || c.photoUrl) && React.createElement('div', { className: 'delivery-feature-media' },
+                            c.videoUrl
+                                ? React.createElement('video', { src: c.videoUrl, poster: c.photoUrl || undefined, muted: true, loop: true, autoPlay: true, playsInline: true })
+                                : React.createElement('img', { src: c.photoUrl, alt: c.displayName, loading: 'lazy' })),
+                        React.createElement('div', { className: 'delivery-feature-body' },
+                            React.createElement('div', { className: 'delivery-feature-title' },
+                                React.createElement('h3', null, c.displayName),
+                                React.createElement('span', { className: `delivery-pill is-${a.state}` }, a.label)),
+                            c.blurb && React.createElement('p', null, c.blurb),
+                            React.createElement('p', { className: 'delivery-feature-meta' }, `🕒 ${window.DormGlideDelivery.scheduleSummary(c) || 'Hours coming soon'}`),
+                            React.createElement('p', { className: 'delivery-feature-meta' }, `💵 ${window.DormGlideDelivery.formatFee(c.feeCents)} per delivery, paid at the door`),
+                            React.createElement('button', { className: 'btn btn-primary', onClick: () => onNavigate('delivery') },
+                                a.state === 'open' ? 'Order a delivery' : a.state === 'preorder' ? 'Preorder a delivery' : 'See hours & preorder')));
+                }))),
 
         // Category landing tiles (only when no category is selected)
         !category && React.createElement('section', { className: 'glyde-tiles' },

@@ -57,7 +57,8 @@ const DeliveryPage = ({ currentUser, onNavigate, onShowAuth }) => {
 const DeliveryCustomer = ({ providers, orders, currentUser, reload, tick }) => {
     const D = window.DormGlideDelivery;
     const toast = window.DormGlideToast || { success: () => {}, error: () => {}, info: () => {} };
-    const provider = providers[0] || null;
+    const [chosenId, setChosenId] = React.useState(null);
+    const provider = providers.find((p) => p.id === chosenId) || providers[0] || null;
     const avail = provider ? D.getAvailability(provider) : null;
     const [form, setForm] = React.useState({ pickupSpot: '', orderRef: '', items: '', deliverTo: '', notes: '' });
     const [submitting, setSubmitting] = React.useState(false);
@@ -93,7 +94,17 @@ const DeliveryCustomer = ({ providers, orders, currentUser, reload, tick }) => {
     };
 
     return React.createElement(React.Fragment, null,
+        providers.length > 1 && React.createElement('div', { className: 'delivery-chooser' },
+            providers.map((p) => { const a = D.getAvailability(p); return React.createElement('button', {
+                key: p.id, className: `delivery-choice ${p.id === provider.id ? 'active' : ''}`, onClick: () => setChosenId(p.id)
+            }, p.photoUrl && React.createElement('img', { src: p.photoUrl, alt: '' }),
+               React.createElement('span', { className: 'delivery-choice-name' }, p.displayName),
+               React.createElement('span', { className: `delivery-pill is-${a.state}` }, a.label)); })),
         React.createElement('section', { className: 'delivery-card delivery-provider' },
+            (provider.videoUrl || provider.photoUrl) && React.createElement('div', { className: 'delivery-media' },
+                provider.videoUrl
+                    ? React.createElement('video', { src: provider.videoUrl, poster: provider.photoUrl || undefined, controls: true, playsInline: true, muted: true, loop: true, autoPlay: true })
+                    : React.createElement('img', { src: provider.photoUrl, alt: provider.displayName })),
             React.createElement('div', { className: 'delivery-provider-head' },
                 React.createElement('div', null,
                     React.createElement('h2', null, provider.displayName),
@@ -147,6 +158,7 @@ const DeliveryConsole = ({ provider, orders, onProviderChange, reload, tick }) =
     const [settings, setSettings] = React.useState(() => ({
         displayName: provider.displayName, blurb: provider.blurb, fee: (provider.feeCents / 100).toFixed(2),
         preorderMinutes: provider.preorderMinutes, pickupSpots: provider.pickupSpots.join(', '),
+        photoUrl: provider.photoUrl || '', videoUrl: provider.videoUrl || '',
         days: D.DAYS.map((_, i) => { const w = provider.schedule.find((x) => x.dow === i); return { on: Boolean(w), start: w?.start || '11:00', end: w?.end || '20:00' }; })
     }));
 
@@ -160,7 +172,8 @@ const DeliveryConsole = ({ provider, orders, onProviderChange, reload, tick }) =
         const schedule = settings.days.map((d, i) => d.on ? { dow: i, start: d.start, end: d.end } : null).filter(Boolean).filter((w) => w.start < w.end);
         const r = await D.updateProvider(provider.id, {
             displayName: settings.displayName, blurb: settings.blurb, feeCents: Math.round(parseFloat(settings.fee || '0') * 100),
-            preorderMinutes: settings.preorderMinutes, pickupSpots: settings.pickupSpots.split(',').map((s) => s.trim()).filter(Boolean), schedule
+            preorderMinutes: settings.preorderMinutes, pickupSpots: settings.pickupSpots.split(',').map((s) => s.trim()).filter(Boolean), schedule,
+            photoUrl: settings.photoUrl, videoUrl: settings.videoUrl
         });
         setSaving(false);
         if (!r.success) { toast.error(r.message || 'Could not save.'); return; }
@@ -207,6 +220,9 @@ const DeliveryConsole = ({ provider, orders, onProviderChange, reload, tick }) =
                     React.createElement('label', null, 'Fee per delivery ($)', React.createElement('input', { type: 'number', min: 0, max: 50, step: 0.5, value: settings.fee, onChange: (e) => setSettings({ ...settings, fee: e.target.value }) })),
                     React.createElement('label', null, 'Preorders open (minutes before a window)', React.createElement('input', { type: 'number', min: 0, max: 240, step: 15, value: settings.preorderMinutes, onChange: (e) => setSettings({ ...settings, preorderMinutes: e.target.value }) }))),
                 React.createElement('label', null, 'Pickup spots (comma separated)', React.createElement('input', { type: 'text', value: settings.pickupSpots, onChange: (e) => setSettings({ ...settings, pickupSpots: e.target.value }) })),
+                React.createElement('div', { className: 'delivery-settings-row' },
+                    React.createElement('label', null, 'Photo URL (shown on Glyde)', React.createElement('input', { type: 'url', value: settings.photoUrl, placeholder: 'https://…/photo.jpg', onChange: (e) => setSettings({ ...settings, photoUrl: e.target.value }) })),
+                    React.createElement('label', null, 'Video URL (optional, mp4)', React.createElement('input', { type: 'url', value: settings.videoUrl, placeholder: 'https://…/clip.mp4', onChange: (e) => setSettings({ ...settings, videoUrl: e.target.value }) }))),
                 React.createElement('div', { className: 'delivery-hours-grid' },
                     React.createElement('div', { className: 'delivery-hours-head' }, 'Working hours (campus time)'),
                     settings.days.map((d, i) => React.createElement('div', { key: i, className: `delivery-hours-row ${d.on ? '' : 'off'}` },

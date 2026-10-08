@@ -7254,3 +7254,22 @@ button, input, select, textarea {
 .delivery-promo { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin: 14px 0; padding: 16px 18px; border-radius: 16px; background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 2px solid #fdba74; }
 .delivery-promo h2 { margin: 0 0 4px; font-size: 1.2rem; color: #9a3412; } .delivery-promo p { margin: 0 0 8px; color: #7c2d12; font-size: 0.95rem; }
 @media (max-width: 520px) { .delivery-settings-row { grid-template-columns: 1fr; } .delivery-hours-row { grid-template-columns: 64px 1fr auto 1fr; } .delivery-promo .btn { width: 100%; } }
+
+/* Campus Delivery — featured courier section on Glyde */
+.delivery-feature { margin: 16px 0 6px; padding: 18px; border-radius: 20px; background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 2px solid #fdba74; }
+.delivery-feature-head h2 { margin: 0 0 4px; color: #9a3412; font-size: 1.3rem; } .delivery-feature-head p { margin: 0 0 14px; color: #7c2d12; }
+.delivery-feature-grid { display: grid; gap: 14px; } .delivery-feature-grid.two { grid-template-columns: 1fr 1fr; }
+.delivery-feature-card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 26px rgba(154, 52, 18, 0.12); display: flex; flex-direction: column; }
+.delivery-feature-media { aspect-ratio: 16 / 10; background: #1f2937; }
+.delivery-feature-media img, .delivery-feature-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.delivery-feature-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; }
+.delivery-feature-title { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.delivery-feature-title h3 { margin: 0; font-size: 1.15rem; color: #1f2937; }
+.delivery-feature-body p { margin: 0; color: #475569; font-size: 0.93rem; } .delivery-feature-meta { font-size: 0.86rem !important; }
+.delivery-feature-body .btn { margin-top: 8px; align-self: flex-start; }
+.delivery-media { margin: -16px -16px 12px; border-radius: 16px 16px 0 0; overflow: hidden; aspect-ratio: 16 / 9; background: #1f2937; }
+.delivery-media img, .delivery-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.delivery-chooser { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; }
+.delivery-choice { display: flex; align-items: center; gap: 8px; border: 2px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 6px 12px 6px 6px; cursor: pointer; white-space: nowrap; font-weight: 800; color: #334155; }
+.delivery-choice img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; } .delivery-choice.active { border-color: #1d4ed8; background: #eff6ff; }
+@media (max-width: 640px) { .delivery-feature-grid.two { grid-template-columns: 1fr; } .delivery-feature-body .btn { align-self: stretch; } }
