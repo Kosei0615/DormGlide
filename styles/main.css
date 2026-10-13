@@ -7279,3 +7279,7 @@ button, input, select, textarea {
 .footer-team img { width: 72px; height: 48px; object-fit: cover; border-radius: 10px; border: 2px solid rgba(255,255,255,0.6); }
 .footer-team strong { display: block; font-size: 0.9rem; }
 .footer-team a { font-size: 0.85rem; font-weight: 700; }
+
+.delivery-saved { flex-basis: 100%; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+.delivery-saved p { margin: 4px 0; font-size: 0.9rem; color: #334155; }
+.delivery-settings textarea { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 16px; font-family: inherit; resize: vertical; }

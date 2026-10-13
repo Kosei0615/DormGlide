@@ -155,12 +155,16 @@ const DeliveryConsole = ({ provider, orders, onProviderChange, reload, tick }) =
     const avail = D.getAvailability(provider);
     const [saving, setSaving] = React.useState(false);
     const [showSettings, setShowSettings] = React.useState(provider.schedule.length === 0);
-    const [settings, setSettings] = React.useState(() => ({
-        displayName: provider.displayName, blurb: provider.blurb, fee: (provider.feeCents / 100).toFixed(2),
-        preorderMinutes: provider.preorderMinutes, pickupSpots: provider.pickupSpots.join(', '),
-        photoUrl: provider.photoUrl || '', videoUrl: provider.videoUrl || '',
-        days: D.DAYS.map((_, i) => { const w = provider.schedule.find((x) => x.dow === i); return { on: Boolean(w), start: w?.start || '11:00', end: w?.end || '20:00' }; })
-    }));
+    const fromProvider = (p) => ({
+        displayName: p.displayName, blurb: p.blurb, fee: (p.feeCents / 100).toFixed(2),
+        preorderMinutes: p.preorderMinutes, pickupSpots: p.pickupSpots.join('\n'),
+        photoUrl: p.photoUrl || '', videoUrl: p.videoUrl || '',
+        days: D.DAYS.map((_, i) => { const w = p.schedule.find((x) => x.dow === i); return { on: Boolean(w), start: w?.start || '11:00', end: w?.end || '20:00' }; })
+    });
+    const [settings, setSettings] = React.useState(() => fromProvider(provider));
+    const [dirty, setDirty] = React.useState(false);
+    React.useEffect(() => { if (!dirty) setSettings(fromProvider(provider)); }, [provider.updatedAt]);
+    const patch = (next) => { setDirty(true); setSettings(next); };
 
     const toggleOnline = async () => {
         const r = await D.updateProvider(provider.id, { isOnline: !provider.isOnline });
@@ -168,16 +172,26 @@ const DeliveryConsole = ({ provider, orders, onProviderChange, reload, tick }) =
         onProviderChange(r.provider); toast.info(r.provider.isOnline ? 'You are online. Orders can come in.' : 'You are offline. Only preorders for your next window are possible.');
     };
     const saveSettings = async () => {
+        const schedule = [];
+        for (let i = 0; i < settings.days.length; i += 1) {
+            const d = settings.days[i];
+            if (!d.on) continue;
+            const end = d.end === '00:00' ? '23:59' : d.end;   // "to midnight" means the end of that day
+            if (!d.start || !end) { toast.error(`${D.DAYS[i]}: set both a start and an end time.`); return; }
+            if (end <= d.start) { toast.error(`${D.DAYS[i]}: the end time must be after the start time.`); return; }
+            schedule.push({ dow: i, start: d.start, end });
+        }
         setSaving(true);
-        const schedule = settings.days.map((d, i) => d.on ? { dow: i, start: d.start, end: d.end } : null).filter(Boolean).filter((w) => w.start < w.end);
         const r = await D.updateProvider(provider.id, {
             displayName: settings.displayName, blurb: settings.blurb, feeCents: Math.round(parseFloat(settings.fee || '0') * 100),
-            preorderMinutes: settings.preorderMinutes, pickupSpots: settings.pickupSpots.split(',').map((s) => s.trim()).filter(Boolean), schedule,
+            preorderMinutes: settings.preorderMinutes,
+            pickupSpots: settings.pickupSpots.split(/\n|;/).map((s) => s.trim()).filter(Boolean), schedule,
             photoUrl: settings.photoUrl, videoUrl: settings.videoUrl
         });
         setSaving(false);
         if (!r.success) { toast.error(r.message || 'Could not save.'); return; }
-        onProviderChange(r.provider); toast.success('Settings saved.'); setShowSettings(false);
+        onProviderChange(r.provider); setDirty(false); setSettings(fromProvider(r.provider));
+        toast.success(schedule.length ? `Saved: ${D.scheduleSummary(r.provider)}` : 'Saved, but no working hours are set yet.');
     };
     const act = async (order, status) => {
         const r = await D.updateOrderStatus(order.id, status);
@@ -195,7 +209,10 @@ const DeliveryConsole = ({ provider, orders, onProviderChange, reload, tick }) =
                 React.createElement('span', { className: `delivery-pill is-${avail.state}` }, avail.label)),
             React.createElement('button', { className: `delivery-toggle ${provider.isOnline ? 'on' : ''}`, onClick: toggleOnline, 'aria-pressed': provider.isOnline },
                 React.createElement('span', { className: 'delivery-toggle-knob' }),
-                React.createElement('span', { className: 'delivery-toggle-label' }, provider.isOnline ? 'Online' : 'Offline'))),
+                React.createElement('span', { className: 'delivery-toggle-label' }, provider.isOnline ? 'Online' : 'Offline')),
+            React.createElement('div', { className: 'delivery-saved' },
+                React.createElement('p', null, '🕒 ', provider.schedule.length ? D.scheduleSummary(provider) : React.createElement('strong', null, 'No working hours yet — set them below so customers can order.')),
+                React.createElement('p', null, `💵 ${D.formatFee(provider.feeCents)} per delivery · 📍 ${provider.pickupSpots.join(', ') || 'no pickup spots yet'}`))),
 
         React.createElement('section', { className: 'delivery-card' },
             React.createElement('h3', null, `New orders (${pending.length})`),
@@ -214,23 +231,23 @@ const DeliveryConsole = ({ provider, orders, onProviderChange, reload, tick }) =
         React.createElement('section', { className: 'delivery-card' },
             React.createElement('button', { className: 'delivery-settings-toggle', onClick: () => setShowSettings((s) => !s) }, showSettings ? '▾ Hours, fee & pickup spots' : '▸ Hours, fee & pickup spots'),
             showSettings && React.createElement('div', { className: 'delivery-settings' },
-                React.createElement('label', null, 'Display name', React.createElement('input', { type: 'text', value: settings.displayName, maxLength: 60, onChange: (e) => setSettings({ ...settings, displayName: e.target.value }) })),
-                React.createElement('label', null, 'One-line description', React.createElement('input', { type: 'text', value: settings.blurb, maxLength: 200, placeholder: 'e.g. Campus delivery on roller skates', onChange: (e) => setSettings({ ...settings, blurb: e.target.value }) })),
+                React.createElement('label', null, 'Display name', React.createElement('input', { type: 'text', value: settings.displayName, maxLength: 60, onChange: (e) => patch({ ...settings, displayName: e.target.value }) })),
+                React.createElement('label', null, 'One-line description', React.createElement('input', { type: 'text', value: settings.blurb, maxLength: 200, placeholder: 'e.g. Campus delivery on roller skates', onChange: (e) => patch({ ...settings, blurb: e.target.value }) })),
                 React.createElement('div', { className: 'delivery-settings-row' },
-                    React.createElement('label', null, 'Fee per delivery ($)', React.createElement('input', { type: 'number', min: 0, max: 50, step: 0.5, value: settings.fee, onChange: (e) => setSettings({ ...settings, fee: e.target.value }) })),
-                    React.createElement('label', null, 'Preorders open (minutes before a window)', React.createElement('input', { type: 'number', min: 0, max: 240, step: 15, value: settings.preorderMinutes, onChange: (e) => setSettings({ ...settings, preorderMinutes: e.target.value }) }))),
-                React.createElement('label', null, 'Pickup spots (comma separated)', React.createElement('input', { type: 'text', value: settings.pickupSpots, onChange: (e) => setSettings({ ...settings, pickupSpots: e.target.value }) })),
+                    React.createElement('label', null, 'Fee per delivery ($)', React.createElement('input', { type: 'number', min: 0, max: 50, step: 0.5, value: settings.fee, onChange: (e) => patch({ ...settings, fee: e.target.value }) })),
+                    React.createElement('label', null, 'Preorders open (minutes before a window)', React.createElement('input', { type: 'number', min: 0, max: 240, step: 15, value: settings.preorderMinutes, onChange: (e) => patch({ ...settings, preorderMinutes: e.target.value }) }))),
+                React.createElement('label', null, 'Pickup spots (one per line)', React.createElement('textarea', { rows: 4, value: settings.pickupSpots, placeholder: 'Slayter\nSips\nDowntown (Dragon, Elms, etc)', onChange: (e) => patch({ ...settings, pickupSpots: e.target.value }) })),
                 React.createElement('div', { className: 'delivery-settings-row' },
-                    React.createElement('label', null, 'Photo URL (shown on Glyde)', React.createElement('input', { type: 'url', value: settings.photoUrl, placeholder: 'https://…/photo.jpg', onChange: (e) => setSettings({ ...settings, photoUrl: e.target.value }) })),
-                    React.createElement('label', null, 'Video URL (optional, mp4)', React.createElement('input', { type: 'url', value: settings.videoUrl, placeholder: 'https://…/clip.mp4', onChange: (e) => setSettings({ ...settings, videoUrl: e.target.value }) }))),
+                    React.createElement('label', null, 'Photo URL (shown on Glyde)', React.createElement('input', { type: 'url', value: settings.photoUrl, placeholder: 'https://…/photo.jpg', onChange: (e) => patch({ ...settings, photoUrl: e.target.value }) })),
+                    React.createElement('label', null, 'Video URL (optional, mp4)', React.createElement('input', { type: 'url', value: settings.videoUrl, placeholder: 'https://…/clip.mp4', onChange: (e) => patch({ ...settings, videoUrl: e.target.value }) }))),
                 React.createElement('div', { className: 'delivery-hours-grid' },
                     React.createElement('div', { className: 'delivery-hours-head' }, 'Working hours (campus time)'),
                     settings.days.map((d, i) => React.createElement('div', { key: i, className: `delivery-hours-row ${d.on ? '' : 'off'}` },
-                        React.createElement('label', { className: 'delivery-day' }, React.createElement('input', { type: 'checkbox', checked: d.on, onChange: (e) => { const days = settings.days.slice(); days[i] = { ...d, on: e.target.checked }; setSettings({ ...settings, days }); } }), ' ', D.DAYS[i]),
-                        React.createElement('input', { type: 'time', value: d.start, disabled: !d.on, onChange: (e) => { const days = settings.days.slice(); days[i] = { ...d, start: e.target.value }; setSettings({ ...settings, days }); } }),
+                        React.createElement('label', { className: 'delivery-day' }, React.createElement('input', { type: 'checkbox', checked: d.on, onChange: (e) => { const days = settings.days.slice(); days[i] = { ...d, on: e.target.checked }; patch({ ...settings, days }); } }), ' ', D.DAYS[i]),
+                        React.createElement('input', { type: 'time', value: d.start, disabled: !d.on, onChange: (e) => { const days = settings.days.slice(); days[i] = { ...d, start: e.target.value }; patch({ ...settings, days }); } }),
                         React.createElement('span', null, 'to'),
-                        React.createElement('input', { type: 'time', value: d.end, disabled: !d.on, onChange: (e) => { const days = settings.days.slice(); days[i] = { ...d, end: e.target.value }; setSettings({ ...settings, days }); } })))),
-                React.createElement('p', { className: 'delivery-muted' }, 'Customers can order while you are Online inside these hours, and preorder before a window opens. Flip Offline any time to pause.'),
+                        React.createElement('input', { type: 'time', value: d.end, disabled: !d.on, onChange: (e) => { const days = settings.days.slice(); days[i] = { ...d, end: e.target.value }; patch({ ...settings, days }); } })))),
+                React.createElement('p', { className: 'delivery-muted' }, 'Tick a day, then set its start and end. Use 12:00 AM as the end for "until midnight". Customers can order while you are Online inside these hours, and preorder before a window opens.'),
                 React.createElement('button', { className: 'btn btn-primary', disabled: saving, onClick: saveSettings }, saving ? 'Saving…' : 'Save settings'))),
 
         history.length > 0 && React.createElement('section', { className: 'delivery-card' },
