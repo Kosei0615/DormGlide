@@ -110,7 +110,8 @@ const DeliveryCustomer = ({ providers, orders, currentUser, reload, tick }) => {
                     React.createElement('h2', null, provider.displayName),
                     provider.blurb && React.createElement('p', { className: 'delivery-muted' }, provider.blurb)),
                 React.createElement('span', { className: `delivery-pill is-${avail.state}` }, avail.label)),
-            React.createElement('p', { className: 'delivery-hours' }, '🕒 ', D.scheduleSummary(provider) || 'Hours not set yet'),
+            React.createElement('p', { className: 'delivery-hours' }, '📅 Today: ', avail.today.length ? avail.today.join(', ') : 'no scheduled hours'),
+            React.createElement('p', { className: 'delivery-hours' }, '🕒 Usual hours: ', D.scheduleSummary(provider) || 'not set yet', ' · Orders are accepted whenever the courier is Online.'),
             React.createElement('p', { className: 'delivery-hours' }, '💵 Delivery fee ', React.createElement('strong', null, D.formatFee(provider.feeCents)), ', paid in person at delivery')),
 
         active.length > 0 && React.createElement('section', { className: 'delivery-card' },
@@ -119,9 +120,7 @@ const DeliveryCustomer = ({ providers, orders, currentUser, reload, tick }) => {
 
         React.createElement('section', { className: 'delivery-card' },
             React.createElement('h3', null, canOrder ? (avail.state === 'preorder' ? `Preorder for ${D.fmtTime(avail.nextStart, provider.timezone)}` : 'Order a delivery') : 'Ordering is closed right now'),
-            !canOrder && React.createElement('p', { className: 'delivery-muted' }, avail.state === 'offline'
-                ? `${provider.displayName} is off right now. Preordering opens ${provider.preorderMinutes} minutes before the next window.`
-                : `${avail.label}. Preordering opens ${provider.preorderMinutes} minutes before each window.`),
+            !canOrder && React.createElement('p', { className: 'delivery-muted' }, `${provider.displayName} is offline. ${avail.nextStart ? `Preordering opens ${provider.preorderMinutes} minutes before the next scheduled window.` : 'Check back when they are Online.'}`),
             React.createElement('form', { className: 'delivery-form', onSubmit: submit },
                 React.createElement('label', null, 'Pick up from',
                     React.createElement('select', { value: form.pickupSpot, onChange: (e) => setForm({ ...form, pickupSpot: e.target.value }), disabled: !canOrder },
@@ -176,10 +175,8 @@ const DeliveryConsole = ({ provider, orders, onProviderChange, reload, tick }) =
         for (let i = 0; i < settings.days.length; i += 1) {
             const d = settings.days[i];
             if (!d.on) continue;
-            const end = d.end === '00:00' ? '23:59' : d.end;   // "to midnight" means the end of that day
-            if (!d.start || !end) { toast.error(`${D.DAYS[i]}: set both a start and an end time.`); return; }
-            if (end <= d.start) { toast.error(`${D.DAYS[i]}: the end time must be after the start time.`); return; }
-            schedule.push({ dow: i, start: d.start, end });
+            if (!d.start || !d.end) { toast.error(`${D.DAYS[i]}: set both a start and an end time.`); return; }
+            schedule.push({ dow: i, start: d.start, end: d.end });   // overnight (e.g. 9 PM–1 AM) is fine: hours are a description
         }
         setSaving(true);
         const r = await D.updateProvider(provider.id, {
@@ -211,7 +208,7 @@ const DeliveryConsole = ({ provider, orders, onProviderChange, reload, tick }) =
                 React.createElement('span', { className: 'delivery-toggle-knob' }),
                 React.createElement('span', { className: 'delivery-toggle-label' }, provider.isOnline ? 'Online' : 'Offline')),
             React.createElement('div', { className: 'delivery-saved' },
-                React.createElement('p', null, '🕒 ', provider.schedule.length ? D.scheduleSummary(provider) : React.createElement('strong', null, 'No working hours yet — set them below so customers can order.')),
+                React.createElement('p', null, '🕒 ', provider.schedule.length ? D.scheduleSummary(provider) : 'No usual hours listed yet (optional — customers can order whenever you are Online).'),
                 React.createElement('p', null, `💵 ${D.formatFee(provider.feeCents)} per delivery · 📍 ${provider.pickupSpots.join(', ') || 'no pickup spots yet'}`))),
 
         React.createElement('section', { className: 'delivery-card' },
@@ -247,7 +244,7 @@ const DeliveryConsole = ({ provider, orders, onProviderChange, reload, tick }) =
                         React.createElement('input', { type: 'time', value: d.start, disabled: !d.on, onChange: (e) => { const days = settings.days.slice(); days[i] = { ...d, start: e.target.value }; patch({ ...settings, days }); } }),
                         React.createElement('span', null, 'to'),
                         React.createElement('input', { type: 'time', value: d.end, disabled: !d.on, onChange: (e) => { const days = settings.days.slice(); days[i] = { ...d, end: e.target.value }; patch({ ...settings, days }); } })))),
-                React.createElement('p', { className: 'delivery-muted' }, 'Tick a day, then set its start and end. Use 12:00 AM as the end for "until midnight". Customers can order while you are Online inside these hours, and preorder before a window opens.'),
+                React.createElement('p', { className: 'delivery-muted' }, 'Hours are shown to customers as information ("Today: 12:00–5:30 PM"). Orders are accepted whenever your switch is Online, at any hour. Tick as many days as you like; overnight hours are fine.'),
                 React.createElement('button', { className: 'btn btn-primary', disabled: saving, onClick: saveSettings }, saving ? 'Saving…' : 'Save settings'))),
 
         history.length > 0 && React.createElement('section', { className: 'delivery-card' },

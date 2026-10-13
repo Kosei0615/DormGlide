@@ -61,36 +61,46 @@
     const fmtTime = (date, tz) => new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(date);
     const fmtDay = (date, tz) => new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(date);
 
-    // Returns the courier's availability right now:
-    //  { state: 'open' | 'preorder' | 'offline' | 'closed', windowEnd?, nextStart?, label }
-    const getAvailability = (provider, now = new Date()) => {
-        if (!provider || !provider.isActive) return { state: 'closed', label: 'Not taking orders' };
+    const fmt12 = (hhmm) => { const [h, m] = String(hhmm || '').split(':').map(Number); if (Number.isNaN(h)) return hhmm; const ap = h >= 12 ? 'PM' : 'AM'; const hh = ((h + 11) % 12) + 1; return `${hh}:${String(m || 0).padStart(2, '0')} ${ap}`; };
+    const windowLabel = (w) => `${fmt12(w.start)}–${fmt12(w.end)}`;
+
+    // Hours are a description for customers; the Online switch decides whether
+    // orders are accepted. "Today" follows the campus date.
+    const todayHours = (provider, now = new Date()) => {
+        const p = partsInTz(now, provider.timezone);
+        return provider.schedule.filter((w) => w && w.dow === p.dow).map(windowLabel);
+    };
+    const nextWindowStart = (provider, now = new Date()) => {
         const tz = provider.timezone; const p = partsInTz(now, tz); const nowMin = p.h * 60 + p.mi;
         const windows = provider.schedule.filter((w) => w && typeof w.dow === 'number');
-        const today = windows.filter((w) => w.dow === p.dow && hm(w.start) <= nowMin && nowMin < hm(w.end));
-        if (today.length) {
-            const w = today[0]; const end = zonedToUtc(p.y, p.m, p.d, Math.floor(hm(w.end) / 60), hm(w.end) % 60, tz);
-            if (provider.isOnline) return { state: 'open', windowEnd: end, label: `Open now · until ${fmtTime(end, tz)}` };
-            return { state: 'offline', windowEnd: end, label: 'Off right now · back soon' };
-        }
-        // next window within 7 days
         for (let off = 0; off < 8; off += 1) {
-            const dayDate = new Date(now.getTime() + off * 86400000); const dp = partsInTz(dayDate, tz);
+            const dp = partsInTz(new Date(now.getTime() + off * 86400000), tz);
             const cands = windows.filter((w) => w.dow === dp.dow && (off > 0 || hm(w.start) > nowMin)).sort((a, b) => hm(a.start) - hm(b.start));
-            if (cands.length) {
-                const w = cands[0]; const start = zonedToUtc(dp.y, dp.m, dp.d, Math.floor(hm(w.start) / 60), hm(w.start) % 60, tz);
-                const minsUntil = (start - now) / 60000;
-                const when = (off === 0 ? '' : `${fmtDay(start, tz)} `) + fmtTime(start, tz);
-                if (minsUntil <= provider.preorderMinutes) return { state: 'preorder', nextStart: start, label: `Opens ${when} · preorder now` };
-                return { state: 'closed', nextStart: start, label: `Closed · opens ${when}` };
-            }
+            if (cands.length) return zonedToUtc(dp.y, dp.m, dp.d, Math.floor(hm(cands[0].start) / 60), hm(cands[0].start) % 60, tz);
         }
-        return { state: 'closed', label: 'No hours set yet' };
+        return null;
+    };
+    // { state: 'open' | 'preorder' | 'closed', label, nextStart?, today: [] }
+    const getAvailability = (provider, now = new Date()) => {
+        if (!provider || !provider.isActive) return { state: 'closed', label: 'Not taking orders', today: [] };
+        const tz = provider.timezone; const today = todayHours(provider, now);
+        if (provider.isOnline) {
+            return { state: 'open', today, label: today.length ? `Online now · today ${today.join(', ')}` : 'Online now · taking orders' };
+        }
+        const nextStart = nextWindowStart(provider, now);
+        if (nextStart) {
+            const minsUntil = (nextStart - now) / 60000;
+            const sameDay = partsInTz(nextStart, tz).d === partsInTz(now, tz).d;
+            const when = (sameDay ? '' : `${fmtDay(nextStart, tz)} `) + fmtTime(nextStart, tz);
+            if (minsUntil <= provider.preorderMinutes) return { state: 'preorder', nextStart, today, label: `Offline · opens ${when} · preorder now` };
+            return { state: 'closed', nextStart, today, label: `Offline · usually back ${when}` };
+        }
+        return { state: 'closed', today, label: 'Offline right now' };
     };
 
     const scheduleSummary = (provider) => {
         const byDay = {};
-        provider.schedule.forEach((w) => { (byDay[w.dow] = byDay[w.dow] || []).push(`${w.start}–${w.end}`); });
+        provider.schedule.forEach((w) => { (byDay[w.dow] = byDay[w.dow] || []).push(windowLabel(w)); });
         return DAYS.map((d, i) => byDay[i] ? `${d} ${byDay[i].join(', ')}` : null).filter(Boolean).join(' · ');
     };
 
@@ -162,7 +172,7 @@
 
     window.DormGlideDelivery = {
         STATUS_LABELS, ACTIVE_STATUSES, DAYS,
-        formatFee, getAvailability, scheduleSummary, fmtTime, fmtDay,
+        formatFee, getAvailability, scheduleSummary, todayHours, fmt12, fmtTime, fmtDay,
         fetchProviders, fetchMyProvider, updateProvider,
         createOrder, fetchMyOrders, fetchProviderOrders, updateOrderStatus, subscribe
     };
