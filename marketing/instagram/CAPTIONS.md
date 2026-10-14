@@ -44,14 +44,24 @@ Meet Glyde: the skills side of DormGlide. 🧡 Need move-in/move-out muscle, a t
 - Safety reminder posts: meet in public campus spots, daytime, pay at pickup.
 
 ## Reel — Taran campus delivery (marketing/video/taran-delivery-reel.mp4)
-Format: 1080×1920, 9.4s, muted (add trending audio in-app). Still: marketing/video/taran-delivery-still.jpg
+Format: 1080×1920, 8.7s, muted (add trending audio in-app). Still: marketing/video/taran-delivery-still.jpg
+End card: "Skip the walk. Delivery by Taran." (Patrick's wording)
 
-**Instagram caption**
-Campus delivery. On roller skates. 🛼
-Taran picks up from Slayter, Sips, the Nest or downtown and skates it to your door for $4, paid when it arrives.
-Order in two taps: dormglide.com → Glyde → Campus Delivery.
+**Instagram caption (feed/reel)**
+Skip the walk. Delivery by Taran. 🛼
+
+DormGlide now has on-campus delivery for Denison students. Taran (a Denison student on roller skates) picks up your order from Slayter, Sips, the Nest, Bandersnatch or downtown Granville and brings it to your dorm door.
+
+How it works:
+1. Go to dormglide.com → Glyde → Campus Delivery
+2. Tell him what you want and where you are
+3. He accepts in minutes and you get updates until it's at your door
+4. $4 flat fee, paid when it arrives
+
 Denison students only. Made and run by Denison students.
-#denison #denisonuniversity #granville #dormglide #campusdelivery
+#denison #denisonuniversity #granville #dormglide #campusdelivery #collegelife
+
+**Story**: video as is, no caption needed.
 
 **YikYak**
 Campus delivery on roller skates is real now 🛼 Taran grabs Slayter / Sips / Nest / downtown and brings it to your door for $4. dormglide.com → Glyde → Campus Delivery
