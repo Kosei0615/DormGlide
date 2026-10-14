@@ -42,3 +42,16 @@ Meet Glyde: the skills side of DormGlide. 🧡 Need move-in/move-out muscle, a t
 - Countdown posts before winter break and end of spring semester: "Reserve-ahead listings are open."
 - Student takeover: a seller shows their listing and the pickup spot.
 - Safety reminder posts: meet in public campus spots, daytime, pay at pickup.
+
+## Reel — Taran campus delivery (marketing/video/taran-delivery-reel.mp4)
+Format: 1080×1920, 9.4s, muted (add trending audio in-app). Still: marketing/video/taran-delivery-still.jpg
+
+**Instagram caption**
+Campus delivery. On roller skates. 🛼
+Taran picks up from Slayter, Sips, the Nest or downtown and skates it to your door for $4, paid when it arrives.
+Order in two taps: dormglide.com → Glyde → Campus Delivery.
+Denison students only. Made and run by Denison students.
+#denison #denisonuniversity #granville #dormglide #campusdelivery
+
+**YikYak**
+Campus delivery on roller skates is real now 🛼 Taran grabs Slayter / Sips / Nest / downtown and brings it to your door for $4. dormglide.com → Glyde → Campus Delivery
