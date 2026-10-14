@@ -44,7 +44,7 @@ Meet Glyde: the skills side of DormGlide. 🧡 Need move-in/move-out muscle, a t
 - Safety reminder posts: meet in public campus spots, daytime, pay at pickup.
 
 ## Reel — Taran campus delivery (marketing/video/taran-delivery-reel.mp4)
-Format: 1080×1920, 8.3s, muted (add trending audio in-app). Still: marketing/video/taran-delivery-still.jpg
+Format: 1080×1920, 8.9s, muted (add trending audio in-app). Chosen version: taran-delivery-reel-playful.mp4 (tease line while far, "Skip the walk" pops as he arrives, holds through the stop). Still: marketing/video/taran-delivery-still.jpg
 End card: "Skip the walk. Delivery by Taran." (Patrick's wording)
 
 **Instagram caption (feed/reel)**
