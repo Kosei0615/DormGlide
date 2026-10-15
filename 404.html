@@ -5,7 +5,7 @@
   // Typed addresses are messy: /IG, /Ig/, /ig. , /lg ... Send them where they meant to go.
   (function () {
     var p = (location.pathname || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    var map = { ig: 'instagram', lg: 'instagram', insta: 'instagram', instagram: 'instagram', p: 'poster-dorm', g: 'poster-glyde', glyde: 'poster-glyde', signup: 'direct', join: 'direct' };
+    var map = { ig: 'instagram', lg: 'instagram', insta: 'instagram', instagram: 'instagram', p: 'poster-dorm', t: 'tshirt', shirt: 'tshirt', g: 'poster-glyde', glyde: 'poster-glyde', signup: 'direct', join: 'direct' };
     var ref = map[p] || 'typed-url';
     try { if (!localStorage.getItem('dormglide_ref')) localStorage.setItem('dormglide_ref', ref); } catch (e) {}
     try { sessionStorage.setItem('dormglide_about_seen', '1'); } catch (e) {}

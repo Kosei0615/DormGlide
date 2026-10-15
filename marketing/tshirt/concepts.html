@@ -1,0 +1,37 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@800;900&family=Archivo+Black&display=swap">
+<style>
+body{margin:0;background:#f3f4f6;font-family:"Nunito Sans",Arial,sans-serif;width:1800px}
+.row{display:flex;gap:30px;padding:30px 30px 0}
+.card{flex:1;background:#fff;border-radius:24px;padding:22px 22px 18px;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+.card h2{margin:0 0 4px;font-size:30px;font-weight:900;color:#0f172a}
+.card p{margin:0 0 14px;font-size:17px;color:#475569}
+.pair{display:flex;gap:14px}
+.tee{position:relative;width:260px;height:300px}
+.tee svg{position:absolute;inset:0;width:100%;height:100%}
+.art{position:absolute;left:0;right:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.lbl{font-size:13px;font-weight:800;color:#94a3b8;text-align:center;margin-top:6px;letter-spacing:.08em}
+.w{color:#fff}.o{color:#f75c12}.n{color:#003998}
+</style></head><body>
+<script>
+function tee(color){return `<svg viewBox="0 0 260 300"><path d="M78 18 L108 8 Q130 30 152 8 L182 18 L240 48 L222 100 L196 90 L196 288 L64 288 L64 90 L38 100 L20 48 Z" fill="${color}" stroke="rgba(0,0,0,.18)" stroke-width="2" stroke-linejoin="round"/><path d="M108 8 Q130 40 152 8" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2"/></svg>`}
+function card(title,desc,frontColor,frontArt,backColor,backArt){return `<div class="card"><h2>${title}</h2><p>${desc}</p><div class="pair">
+<div><div class="tee">${tee(frontColor)}${frontArt}</div><div class="lbl">FRONT</div></div>
+<div><div class="tee">${tee(backColor)}${backArt}</div><div class="lbl">BACK</div></div></div></div>`}
+document.write('<div class="row">'+
+card('A · The Mark','Quiet front, big otter back. Looks like merch, not an ad.','#003998',
+ `<div class="art" style="top:78px;left:80px;right:auto;width:60px"><img src="otter-white-hires.png" style="width:34px"></div>`,
+ '#003998',
+ `<div class="art" style="top:70px;height:190px"><img src="otter-white-hires.png" style="width:120px"><div class="w" style="font-weight:900;font-size:21px;margin-top:8px;letter-spacing:-.02em">Dorm<span class="o">Glide</span></div><div class="w" style="font-size:8px;font-weight:800;opacity:.75;margin-top:4px;letter-spacing:.1em">DENISON UNIVERSITY</div></div>`)
++card('B · Skip the walk.','Slogan tee. Works for Taran and for everyone else.','#ffffff',
+ `<div class="art" style="top:78px;left:80px;right:auto;width:60px"><img src="otter-navy-hires.png" style="width:34px"></div>`,
+ '#ffffff',
+ `<div class="art" style="top:70px;height:190px;font-family:'Archivo Black',Impact,sans-serif"><div class="n" style="font-size:34px;line-height:.95">SKIP<br>THE<br><span class="o">WALK.</span></div><div style="font-family:'Nunito Sans';font-weight:800;font-size:9px;color:#003998;margin-top:12px;letter-spacing:.12em">DORMGLIDE.COM</div></div>`)
++card('C · Varsity','Collegiate arch + class-year style number. Reads as a campus thing first.','#f75c12',
+ `<div class="art" style="top:70px;height:190px;font-family:'Archivo Black',Impact,sans-serif"><svg viewBox="0 0 260 70" style="width:190px;height:51px;display:block;overflow:visible"><path id="arc" d="M30 62 Q130 10 230 62" fill="none"/><text font-family="Archivo Black" font-size="19" fill="#fff" letter-spacing="1"><textPath href="#arc" startOffset="50%" text-anchor="middle">DORMGLIDE</textPath></text></svg><img src="otter-white-hires.png" style="width:64px;margin-top:2px;display:block"><div class="w" style="font-size:34px;line-height:1;margin-top:4px">26</div></div>`,
+ '#f75c12',
+ `<div class="art" style="top:60px;height:30px"><div class="w" style="font-family:'Archivo Black';font-size:13px;letter-spacing:.2em">MADE AND RUN BY STUDENTS</div></div><div class="art" style="top:150px;height:40px"><div class="w" style="font-weight:800;font-size:10px;letter-spacing:.14em;opacity:.85">DORMGLIDE.COM</div></div>`)
++'</div>');
+</script>
+<div style="padding:18px 30px 28px;font-size:15px;color:#64748b">Mockups only — not to scale. Colors: navy #003998, orange #f75c12, white. Otter mark = existing brand asset.</div>
+</body></html>
