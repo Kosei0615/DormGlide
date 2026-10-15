@@ -35,7 +35,10 @@
   .proof .cap { font-size: 0.145in; font-weight: 800; color: #334155; margin-top: 0.08in; line-height: 1.25; }
   .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.12in; padding: 0.15in 0.6in 0.18in; }
   .fact { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.38); border-radius: 0.14in; padding: 0.1in 0.12in; text-align: center; font-size: 0.15in; font-weight: 800; line-height: 1.2; }
-  .proof img { object-position: 50% 22%; }
+  .proof.courier { display: flex; gap: 0.14in; align-items: center; }
+  .proof.courier img { width: 1.16in; height: 1.45in; object-fit: cover; object-position: center; flex-shrink: 0; }
+  .proof.courier .cap { margin-top: 0; }
+  .proof.courier .badge { top: 0.2in; left: 0.2in; }
   .bottom { margin-top: auto; background: #fff; color: #1f2937; padding: 0.2in 0.6in 0.24in; display: flex; align-items: center; gap: 0.34in; }
   .qr { width: 1.6in; height: 1.6in; flex-shrink: 0; border-radius: 0.14in; border: 4px solid #1e3a8a; } .orange .qr { border-color: #9a3412; }
   .cta h2 { margin: 0 0 0.04in; font-size: 0.33in; font-weight: 900; color: #1e3a8a; letter-spacing: -0.02em; line-height: 1.05; } .orange .cta h2 { color: #9a3412; }
@@ -68,8 +71,8 @@
         <li><span class="n">2</span>Book, then agree on a time in chat</li>
         <li><span class="n">3</span>Meet up and pay at the session</li>
       </ul></div>
-    <div class="card proof"><img src="brand/courier-taran.jpg" alt=""><span class="badge">LIVE NOW</span>
-      <div class="cap">Campus delivery on roller skates: Taran brings Slayter, Sips or downtown to your door for $4. Got a skill? List yours and keep 100%.</div></div>
+    <div class="card proof courier"><img src="brand/courier-taran.jpg" alt=""><span class="badge">LIVE NOW</span>
+      <div class="cap">Campus delivery on roller skates. Taran brings Slayter, Sips or downtown to your door for $4.<br><br>Got a skill? List yours and keep 100%.</div></div>
   </div>
   <div class="facts"><div class="fact">🎓 Verified @denison.edu students only</div><div class="fact">⭐ Ratings after every session</div><div class="fact">💵 Free. No commission.</div></div>
   <div class="bottom">
