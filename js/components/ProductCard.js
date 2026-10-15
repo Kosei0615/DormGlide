@@ -109,6 +109,7 @@ const ProductCard = ({ product, onProductClick, currentUser }) => {
                 iconGlyph(isWishlisted ? '❤️' : '🤍', 'heart-glyph')
             ),
             isSold && React.createElement('span', { className: 'sold-ribbon' }, 'SOLD'),
+            product.policyFlag && React.createElement('span', { className: 'policy-ribbon', title: 'Hidden: prohibited in Denison housing' }, 'HIDDEN · POLICY'),
             (isDemo || isNearby) && React.createElement('div', { className: 'product-tags' },
                 isNearby && React.createElement('span', { className: 'product-tag nearby' },
                     iconGlyph('📍', 'tag-glyph'),

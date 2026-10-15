@@ -67,6 +67,8 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth, initialLi
         });
     };
     const [isSubmitting, setIsSubmitting] = React.useState(false);
+    // Housing-policy popups (see js/utils/policy.js). 'items' blocks; 'spaces' is acknowledged once per session.
+    const [policyModal, setPolicyModal] = React.useState(null);
 
     const categories = [
         'Electronics', 'Textbooks', 'Furniture', 'Clothing', 'Sports', 
@@ -212,6 +214,39 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth, initialLi
             return;
         }
 
+        // Denison housing policy: items students may not keep in the halls
+        // can't be listed; services get a one-time shared-spaces notice.
+        const policy = window.DormGlidePolicy;
+        if (policy) {
+            if (!isService) {
+                const hit = policy.findProhibited(formData.title, formData.description);
+                if (hit) {
+                    setPolicyModal({ kind: 'items', matched: hit });
+                    setIsSubmitting(false);
+                    return;
+                }
+            } else {
+                let acknowledged = false;
+                try { acknowledged = sessionStorage.getItem('dormglide_policy_spaces_ack') === '1'; } catch (_e) { /* ignore */ }
+                if (!acknowledged) {
+                    setPolicyModal({ kind: 'spaces' });
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+        }
+
+        await doSubmit();
+    };
+
+    const acknowledgeSpacesPolicy = async () => {
+        try { sessionStorage.setItem('dormglide_policy_spaces_ack', '1'); } catch (_e) { /* ignore */ }
+        setPolicyModal(null);
+        setIsSubmitting(true);
+        await doSubmit();
+    };
+
+    const doSubmit = async () => {
         // Upload compressed photos to Storage first; a listing is only created
         // once every photo made it (no half-broken listings).
         let imageUrls = [];
@@ -343,6 +378,10 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth, initialLi
                     React.createElement('span', null, 'Tutoring, haircuts, tech help, photos, moving help — skills you offer.')
                 )
             ) : React.createElement('form', { className: 'sell-form', onSubmit: handleSubmit },
+                !isService && React.createElement('div', { className: 'policy-notice' },
+                    React.createElement('span', { 'aria-hidden': true }, '🏠'),
+                    React.createElement('span', null, 'DormGlide follows Denison\'s housing policy. Items prohibited in the residence halls (AC units, microwaves, candles, space heaters, mattresses and more) can\'t be listed. ',
+                        React.createElement('button', { type: 'button', className: 'policy-link', onClick: () => setPolicyModal({ kind: 'items', matched: null }) }, 'See the list'))),
                 React.createElement('button', {
                     type: 'button',
                     className: 'listing-type-back',
@@ -644,6 +683,12 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth, initialLi
                     )
                 )
             )
-        )
+        ),
+        policyModal && window.PolicyModal && React.createElement(window.PolicyModal, {
+            kind: policyModal.kind,
+            matched: policyModal.matched,
+            onClose: () => setPolicyModal(null),
+            onContinue: acknowledgeSpacesPolicy
+        })
     );
 };

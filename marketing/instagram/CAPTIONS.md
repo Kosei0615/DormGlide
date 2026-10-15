@@ -17,8 +17,7 @@ Hashtags (pick 5–8): #Denison #DenisonUniversity #DenisonStudents #Granville
 43 Denison students joined DormGlide at one tabling event. Here's the whole thing in three steps: sign up with your @denison.edu email, post what you're done with (or set a Wishlist alert for what you need), then chat, meet on campus, and pay at pickup. No fees, no strangers, no shipping. 🦦 Sign up → dormglide.com/ig
 💡 Pay at pickup, after you've seen it, never before.
 
-**Wed — 02-sold-ac.png**
-First real sale on DormGlide: a window AC unit. Listed, requested, accepted, picked up on campus, paid in person. That thing was going to sit in a closet until May. Someone on campus is looking for what's sitting in your room right now. Free to list → dormglide.com
+**Wed — 02-sold-ac.png** — RETIRED 2026-10-15: AC units are prohibited in Denison housing (Student Residence Agreement). Do not repost; founder deleted the Oct 1 post. Use 03-sold-fridge instead.
 
 **Fri — 03-sold-fridge.png**
 Mini fridge: posted, gone in a day. 🧊 The buyer sent a request, the seller accepted, they met at the student center, done. That's the whole flow, and it's built into the app so nobody has to chase anyone over text. List yours in 60 seconds → dormglide.com
@@ -65,3 +64,7 @@ Denison students only. Made and run by Denison students.
 
 **YikYak**
 Campus delivery on roller skates is real now 🛼 Taran grabs Slayter / Sips / Nest / downtown and brings it to your door for $4. dormglide.com → Glyde → Campus Delivery
+
+
+## Housing policy (2026-10-15)
+Never feature items prohibited in Denison residence halls: AC units, microwaves, hot plates, toasters, grills, rice/pressure cookers, space heaters, candles, incense, lava lamps, extension cords, weapons, animals, lofts, mattresses/bed frames/dressers/sleeper sofas. Safe heroes: mini fridge, textbooks, desk lamp, chairs, electronics, clothes, bikes.

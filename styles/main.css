@@ -7289,3 +7289,22 @@ button, input, select, textarea {
 .delivery-saved { flex-basis: 100%; border-top: 1px solid #e2e8f0; padding-top: 10px; }
 .delivery-saved p { margin: 4px 0; font-size: 0.9rem; color: #334155; }
 .delivery-settings textarea { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 16px; font-family: inherit; resize: vertical; }
+
+/* Housing policy (Denison Student Residence Agreement) */
+.policy-notice { display: flex; gap: 10px; align-items: flex-start; background: #fffbeb; border: 1.5px solid #fcd34d; color: #78350f; border-radius: 12px; padding: 10px 12px; font-size: 0.88rem; line-height: 1.4; margin-bottom: 14px; }
+.policy-link { background: none; border: none; padding: 0; color: #1d4ed8; font-weight: 800; cursor: pointer; text-decoration: underline; font-size: inherit; }
+.policy-overlay { position: fixed; inset: 0; z-index: 1200; background: rgba(15, 23, 42, 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.policy-modal { position: relative; background: #fff; color: #1f2937; border-radius: 18px; width: min(560px, 100%); max-height: min(92dvh, 92vh); overflow: auto; padding: 22px 20px 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.3); }
+.policy-close { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border-radius: 50%; border: none; background: #f1f5f9; font-size: 1rem; cursor: pointer; }
+.policy-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding-right: 40px; }
+.policy-head h2 { margin: 0; font-size: 1.2rem; }
+.policy-glyph { font-size: 1.6rem; }
+.policy-lead { margin: 0 0 12px; font-size: 0.95rem; line-height: 1.45; }
+.policy-excerpt { background: #f8fafc; border-left: 4px solid #1d4ed8; border-radius: 10px; padding: 10px 12px; font-size: 0.83rem; line-height: 1.45; color: #334155; max-height: 36dvh; overflow: auto; }
+.policy-excerpt p { margin: 0 0 8px; font-style: italic; } .policy-excerpt p:last-child { margin-bottom: 0; }
+.policy-source { font-style: normal; font-weight: 800; color: #1e3a8a; margin-bottom: 8px; } .policy-source span { font-weight: 600; color: #64748b; font-size: 0.78rem; }
+.policy-listwrap { margin-top: 10px; font-size: 0.88rem; }
+.policy-list { margin: 8px 0 0; padding-left: 18px; font-size: 0.85rem; line-height: 1.45; }
+.policy-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+.policy-actions .btn { min-width: 140px; }
+.policy-ribbon { position: absolute; top: 10px; left: 10px; background: #b91c1c; color: #fff; font-weight: 900; font-size: 0.7rem; letter-spacing: 0.06em; padding: 4px 8px; border-radius: 6px; z-index: 2; }
