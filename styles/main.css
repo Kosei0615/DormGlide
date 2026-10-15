@@ -7260,7 +7260,7 @@ button, input, select, textarea {
 .delivery-feature-head h2 { margin: 0 0 4px; color: #9a3412; font-size: 1.3rem; } .delivery-feature-head p { margin: 0 0 14px; color: #7c2d12; }
 .delivery-feature-grid { display: grid; gap: 14px; } .delivery-feature-grid.two { grid-template-columns: 1fr 1fr; }
 .delivery-feature-card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 26px rgba(154, 52, 18, 0.12); display: flex; flex-direction: column; }
-.delivery-feature-media { aspect-ratio: 16 / 10; background: #1f2937; }
+.delivery-feature-media { aspect-ratio: 4 / 5; background: #1f2937; }
 .delivery-feature-media img, .delivery-feature-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .delivery-feature-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; }
 .delivery-feature-title { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
