@@ -108,7 +108,7 @@ const GlydeBrowse = ({ products, productsLoading = false, currentUser, onProduct
     return React.createElement('div', { className: 'glyde-browse' },
         React.createElement('section', { className: 'glyde-hero' },
             React.createElement('h1', null, 'Skills from students on your campus'),
-            React.createElement('p', null, 'Tutoring, haircuts, tech help, photos, moving muscle — book a fellow student. Pay them directly at the session.'),
+            React.createElement('p', null, 'Tutoring, moving help, food runs, photos, campus delivery — book a fellow student, or post what you\'re good at. Pay them directly at the session.'),
             React.createElement('div', { className: 'glyde-hero-actions' },
                 React.createElement('button', { className: 'btn btn-primary', onClick: handlePostService }, '➕ Offer a service'),
                 React.createElement('button', { className: 'btn glyde-hero-secondary', onClick: () => {

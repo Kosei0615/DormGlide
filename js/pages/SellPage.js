@@ -375,7 +375,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth, initialLi
                 },
                     React.createElement('span', { className: 'listing-type-glyph', 'aria-hidden': true }, '✨'),
                     React.createElement('strong', null, 'Service'),
-                    React.createElement('span', null, 'Tutoring, haircuts, tech help, photos, moving help — skills you offer.')
+                    React.createElement('span', null, 'Tutoring, moving help, photos, food runs — whatever you\'re good at.')
                 )
             ) : React.createElement('form', { className: 'sell-form', onSubmit: handleSubmit },
                 !isService && React.createElement('div', { className: 'policy-notice' },
@@ -452,7 +452,7 @@ const SellPage = ({ onNavigate, onProductAdd, currentUser, onShowAuth, initialLi
                             name: 'title',
                             value: formData.title,
                             onChange: handleInputChange,
-                            placeholder: isService ? 'e.g. CS 173 tutoring, Men\'s haircuts, Laptop repair' : 'What are you selling?',
+                            placeholder: isService ? 'e.g. CS 173 tutoring, Move-out help, Event photos' : 'What are you selling?',
                             required: true
                         })
                     ),

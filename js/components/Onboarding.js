@@ -23,7 +23,7 @@ const OnboardingModal = ({ currentUser, onDone, onNavigate }) => {
         {
             glyph: '✨',
             title: 'DormGlide is for stuff. Glyde is for skills.',
-            body: 'Flip the switch at the top of Browse to Glyde: tutoring, haircuts, tech help, photos, moving muscle — offered by students on your campus. Book a session, pay them directly when you meet.'
+            body: 'Flip the switch at the top of Browse to Glyde: tutoring, moving help, photos, campus delivery — offered by students on your campus, plus whatever you\'re good at. Book a session, pay them directly when you meet.'
         },
         {
             glyph: '➕',
