@@ -84,3 +84,8 @@ Running log of UX problems found while working through the student-feedback phas
 - D1 (open): phone retest by founder — place a test order as a customer, accept from the courier's Gmail link, walk statuses; confirm bells + emails.
 - D2 (open): courier enrolment needs the courier's DormGlide email (admin insert). Consider an admin UI later.
 - D3 (idea): live courier map (phase 2). D4 (idea): ratings on deliveries. D5 (idea): daily summary email for the courier.
+
+## Housing policy (2026-10-15)
+- P1 (done): prohibited-item listings blocked at the form and hidden by DB trigger; seller gets a notification explaining how to fix.
+- P2 (open): matcher is keyword-based; expect a few false positives ("dresser" in a furniture description about a wardrobe). Seller can edit the words out; founder can also clear `policy_flag` manually. Review flags monthly.
+- P3 (open): no admin UI yet to list flagged listings; use SQL `select id,title,policy_flag from products where policy_flag is not null`.
