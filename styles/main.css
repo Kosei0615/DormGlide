@@ -7308,3 +7308,13 @@ button, input, select, textarea {
 .policy-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
 .policy-actions .btn { min-width: 140px; }
 .policy-ribbon { position: absolute; top: 10px; left: 10px; background: #b91c1c; color: #fff; font-weight: 900; font-size: 0.7rem; letter-spacing: 0.06em; padding: 4px 8px; border-radius: 6px; z-index: 2; }
+
+/* Admin: campus delivery panel */
+.admin-delivery-panel { border-color: #fdba74; }
+.admin-courier { background: #fff; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; border: 1px solid #fed7aa; }
+.admin-courier-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.admin-courier-head strong { font-size: 1.05rem; }
+.admin-courier-email { color: #64748b; font-size: 0.85rem; }
+.admin-courier-link { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.admin-courier-link .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+.admin-glyde-table td { vertical-align: top; }

@@ -1,34 +1,10 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
 <title>DormGlide · Delivery</title><link rel="icon" href="../favicon.ico?v=2">
-<style>
-body{margin:0;font-family:"Nunito Sans",-apple-system,"Segoe UI",Arial,sans-serif;background:#f8fafc;color:#1f2937}
-.box{max-width:520px;margin:40px auto;padding:28px 22px;background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.08);text-align:center}
-h1{font-size:1.6rem;margin:0 0 10px} p{color:#475569;line-height:1.5;margin:8px 0} .ok h1{color:#16a34a} .no h1{color:#dc2626}
-.btn{display:inline-block;margin:8px 4px 0;background:#1d4ed8;color:#fff;text-decoration:none;padding:16px 28px;border-radius:999px;font-weight:800;font-size:1.1rem}
-.next{margin:20px 0 0;font-weight:800;color:#1f2937} .small{margin-top:22px;font-size:.9rem} .small a{color:#1d4ed8}
-</style></head>
-<body><div class="box" id="box"><h1>One moment…</h1><p>Recording your answer.</p></div>
 <script>
-(async function () {
-  var box = document.getElementById('box');
-  var q = new URLSearchParams(location.search); var t = q.get('t'); var a = (q.get('a') || '').toLowerCase();
-  var LABELS = { accepted: 'Accepted ✓', declined: 'Declined', picked_up: 'Picked up ✓', on_the_way: 'On the way 🛼', delivered: 'Delivered ✓', cancelled: 'Cancelled', expired: 'Expired', pending: 'Waiting' };
-  var NEXT_TEXT = { accepted: 'The customer has been told you are on it. When you have the order in hand, tap Picked up.', picked_up: 'Tap On the way when you start moving, or Delivered when you hand it over.', on_the_way: 'The customer knows you are coming. Tap Delivered when you hand it over.', delivered: 'All done. The customer has been told. Thanks!', declined: 'The customer has been told. Nothing else to do.', cancelled: 'The customer has been told that you had to cancel.' };
-  function btnFor(n) { var color = n.a === 'delivered' ? '#16a34a' : (n.a === 'cancel' ? '#6b7280' : '#1d4ed8'); return '<a class="btn" style="background:' + color + '" href="/d/?t=' + encodeURIComponent(t) + '&a=' + n.a + '">' + n.label + '</a>'; }
-  function show(cls, title, text, next) {
-    var buttons = (next || []).map(btnFor).join(' ');
-    box.className = 'box ' + cls;
-    box.innerHTML = '<h1>' + title + '</h1><p>' + text + '</p>' + (buttons ? '<p class="next">Next step:</p><div>' + buttons + '</div>' : '') + '<p class="small"><a href="/app.html">Open Campus Delivery</a></p>';
-  }
-  if (!t || !a) { show('no', 'Invalid link', 'This link is missing its order code. Open DormGlide to manage orders.'); return; }
-  try {
-    var r = await fetch('https://tmyjkucirpfquxostdhb.supabase.co/rest/v1/rpc/delivery_decide', { method: 'POST', headers: { 'apikey': 'sb_publishable_8toJ2LmXCAbuxpn5AkOLTQ_S-CKZ355', 'Authorization': 'Bearer sb_publishable_8toJ2LmXCAbuxpn5AkOLTQ_S-CKZ355', 'Content-Type': 'application/json' }, body: JSON.stringify({ p_token: t, p_action: a }) });
-    var d = await r.json();
-    if (d && d.result === 'ok') show((d.status === 'declined' || d.status === 'cancelled') ? 'no' : 'ok', LABELS[d.status] || d.status, (d.summary || 'The order') + '. ' + (NEXT_TEXT[d.status] || ''), d.next);
-    else if (d && d.result === 'expired') show('no', 'Too late', 'This order expired before you answered. The customer has been told.');
-    else if (d && d.result === 'already') show('no', 'Already ' + (LABELS[d.status] || d.status || 'handled').toLowerCase(), (d.summary || 'This order') + ' is already ' + (LABELS[d.status] || d.status || 'handled').toLowerCase() + '. Open DormGlide if you need to change something.');
-    else show('no', 'Link not recognized', 'This link is invalid. Open DormGlide to see your orders.');
-  } catch (e) { show('no', 'Could not reach DormGlide', 'Check your connection and try again, or open DormGlide to answer there.'); }
-})();
-</script></body></html>
+  // Email buttons land here. The courier console applies the action and then
+  // stays open as the control panel (no login; the per-order token is enough).
+  location.replace('../courier/' + location.search);
+</script>
+<meta http-equiv="refresh" content="0; url=../courier/">
+</head><body style="font-family:Arial,sans-serif;padding:24px;text-align:center"><p>Opening your orders… <a href="../courier/">Continue</a></p></body></html>

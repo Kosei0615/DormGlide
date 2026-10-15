@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DormGlide Courier">
+<meta name="theme-color" content="#ea580c">
+<title>DormGlide Courier</title>
+<link rel="icon" href="../favicon.ico?v=2">
+<link rel="apple-touch-icon" href="../brand/otter-orange-180.png">
+<style>
+:root{--o:#ea580c;--b:#1d4ed8;--g:#16a34a;--r:#dc2626;--ink:#1f2937;--mut:#64748b}
+*{box-sizing:border-box} html,body{margin:0;background:#f8fafc;color:var(--ink);font-family:"Nunito Sans",-apple-system,"Segoe UI",Arial,sans-serif;-webkit-text-size-adjust:100%}
+.top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid #e5e7eb;padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;display:flex;align-items:center;gap:12px}
+.top img{width:36px;height:36px;border-radius:10px}.top h1{margin:0;font-size:1.05rem;flex:1}.top h1 small{display:block;font-size:.78rem;color:var(--mut);font-weight:600}
+.sw{display:flex;align-items:center;gap:8px;font-weight:800;font-size:.9rem}
+.sw button{width:62px;height:34px;border-radius:999px;border:none;background:#cbd5e1;position:relative;cursor:pointer;transition:background .2s}
+.sw button::after{content:"";position:absolute;top:3px;left:3px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .2s}
+.sw button.on{background:var(--g)}.sw button.on::after{left:31px}
+.wrap{padding:14px 14px calc(env(safe-area-inset-bottom) + 40px);max-width:640px;margin:0 auto}
+.hint{background:#fff7ed;border:1.5px solid #fdba74;border-radius:12px;padding:10px 12px;font-size:.85rem;margin-bottom:12px;color:#7c2d12}
+.hint b{display:block;margin-bottom:2px}
+.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.tot div{background:#fff;border-radius:12px;padding:10px;text-align:center;box-shadow:0 2px 8px rgba(15,23,42,.05)}
+.tot strong{display:block;font-size:1.3rem;color:var(--o)}.tot span{font-size:.72rem;color:var(--mut);font-weight:700}
+h2{font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:18px 0 8px}
+.card{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 4px 14px rgba(15,23,42,.06);border-left:6px solid #cbd5e1}
+.card.pending{border-left-color:var(--o)}.card.accepted{border-left-color:var(--b)}.card.picked_up,.card.on_the_way{border-left-color:#7c3aed}.card.delivered{border-left-color:var(--g)}.card.declined,.card.cancelled,.card.expired{border-left-color:#94a3b8;opacity:.8}
+.card .h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.card .h b{font-size:1.05rem}.card .h .t{font-size:.78rem;color:var(--mut);font-weight:700;white-space:nowrap}
+.card .items{font-size:1.1rem;font-weight:800;margin:6px 0 2px}.card .meta{font-size:.9rem;color:#334155;line-height:1.45}.card .meta span{display:block}
+.card .notes{font-size:.88rem;color:#7c2d12;background:#fff7ed;border-radius:8px;padding:6px 8px;margin-top:6px}
+.cd{font-weight:900;color:var(--o)}.cd.low{color:var(--r)}
+.acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{flex:1;min-width:120px;border:none;border-radius:999px;padding:14px 10px;font-size:1rem;font-weight:900;color:#fff;cursor:pointer;background:var(--b)}
+.btn.g{background:var(--g)}.btn.r{background:var(--r)}.btn.gr{background:#6b7280;flex:0 0 auto;min-width:0;padding:14px 16px}.btn:disabled{opacity:.5}
+.pill{display:inline-block;font-size:.72rem;font-weight:900;letter-spacing:.06em;padding:3px 8px;border-radius:999px;background:#e2e8f0;color:#334155}
+.empty{color:var(--mut);font-size:.9rem;padding:8px 2px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:999px;font-weight:800;font-size:.95rem;opacity:0;transition:opacity .2s;pointer-events:none;max-width:92vw;text-align:center}
+.toast.show{opacity:1}
+.err{background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;border-radius:12px;padding:14px;margin:20px 0}
+</style></head>
+<body>
+<div class="top"><img src="../brand/otter-orange-180.png" alt=""><h1 id="name">DormGlide Courier<small id="sub">Loading…</small></h1>
+  <div class="sw"><span id="swl">Offline</span><button id="sw" aria-label="Online switch"></button></div></div>
+<div class="wrap">
+  <div id="hint" class="hint" hidden><b>Add this to your home screen</b>Tap the Share button in Safari, then “Add to Home Screen”. It opens like an app, already signed in.</div>
+  <div class="tot"><div><strong id="t1">–</strong><span>today</span></div><div><strong id="t2">–</strong><span>earned today</span></div><div><strong id="t3">–</strong><span>all time</span></div></div>
+  <div id="main"><p class="empty">Loading your orders…</p></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(function () {
+  var SB = 'https://tmyjkucirpfquxostdhb.supabase.co/rest/v1/rpc/';
+  var ANON = 'sb_publishable_8toJ2LmXCAbuxpn5AkOLTQ_S-CKZ355';
+  var q = new URLSearchParams(location.search);
+  var key = q.get('k') || '';
+  try { if (!key) key = localStorage.getItem('dormglide_courier_key') || ''; } catch (e) {}
+  var state = null, timer = null, busy = false;
+  var LABEL = { pending: 'Waiting for you', accepted: 'Accepted', picked_up: 'Picked up', on_the_way: 'On the way', delivered: 'Delivered', declined: 'Declined', cancelled: 'Cancelled', expired: 'Expired' };
+
+  function rpc(name, body) {
+    return fetch(SB + name, { method: 'POST', headers: { apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+  }
+  function toast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(function () { t.classList.remove('show'); }, 2600); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function money(c) { return '$' + (Number(c || 0) / 100).toFixed(2).replace(/\.00$/, ''); }
+  function ago(iso) { var s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000); if (s < 60) return 'just now'; if (s < 3600) return Math.round(s / 60) + ' min ago'; if (s < 86400) return Math.round(s / 3600) + ' h ago'; return Math.round(s / 86400) + ' d ago'; }
+  function clock(iso) { var d = new Date(iso); return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+  function saveKey(k) { key = k; try { localStorage.setItem('dormglide_courier_key', k); } catch (e) {} history.replaceState(null, '', location.pathname + '?k=' + encodeURIComponent(k)); }
+
+  function render() {
+    var p = state.provider, orders = state.orders || [], tot = state.totals || {};
+    document.getElementById('name').firstChild.nodeValue = p.display_name + ' · Courier';
+    document.getElementById('sub').textContent = p.is_online ? 'Online — students can order now' : 'Offline — orders are paused';
+    var sw = document.getElementById('sw'); sw.className = p.is_online ? 'on' : ''; document.getElementById('swl').textContent = p.is_online ? 'Online' : 'Offline';
+    document.getElementById('t1').textContent = tot.delivered_today || 0;
+    document.getElementById('t2').textContent = money(tot.fees_today_cents);
+    document.getElementById('t3').textContent = (tot.delivered_all || 0) + ' · ' + money(tot.fees_all_cents);
+    var pending = orders.filter(function (o) { return o.status === 'pending'; });
+    var active = orders.filter(function (o) { return ['accepted', 'picked_up', 'on_the_way'].indexOf(o.status) >= 0; });
+    var done = orders.filter(function (o) { return ['delivered', 'declined', 'cancelled', 'expired'].indexOf(o.status) >= 0; });
+    var html = '';
+    html += '<h2>New orders (' + pending.length + ')</h2>' + (pending.length ? pending.map(card).join('') : '<p class="empty">' + (p.is_online ? 'Nothing waiting. New orders appear here and by email.' : 'You are offline. Flip the switch to take orders.') + '</p>');
+    html += '<h2>In progress (' + active.length + ')</h2>' + (active.length ? active.map(card).join('') : '<p class="empty">Nothing in progress.</p>');
+    html += '<h2>Recent</h2>' + (done.length ? done.slice(0, 15).map(card).join('') : '<p class="empty">No finished orders in the last day and a half.</p>');
+    document.getElementById('main').innerHTML = html;
+    tickCountdowns();
+  }
+  function card(o) {
+    var acts = '';
+    if (o.status === 'pending') acts = btn(o, 'accept', 'Accept ✓', 'g') + btn(o, 'decline', 'Decline', 'r');
+    else if (o.status === 'accepted') acts = btn(o, 'picked_up', 'Picked up', '') + btn(o, 'cancel', 'Cancel', 'gr');
+    else if (o.status === 'picked_up') acts = btn(o, 'on_the_way', 'On the way 🛼', '') + btn(o, 'delivered', 'Delivered ✓', 'g');
+    else if (o.status === 'on_the_way') acts = btn(o, 'delivered', 'Delivered ✓', 'g');
+    var when = o.status === 'pending' ? '<span class="cd" data-exp="' + esc(o.expires_at) + '"></span>' : (o.status === 'delivered' && o.delivered_at ? 'delivered ' + clock(o.delivered_at) : ago(o.updated_at));
+    var timing = o.requested_for ? '<span>⏰ Wanted at ' + esc(clock(o.requested_for)) + '</span>' : '';
+    return '<div class="card ' + esc(o.status) + '"><div class="h"><b>' + esc(o.customer) + '</b><span class="t">' + when + '</span></div>' +
+      '<div class="items">' + esc(o.items) + '</div>' +
+      '<div class="meta"><span>📍 Pick up: ' + esc(o.pickup_spot) + (o.order_ref ? ' · order ' + esc(o.order_ref) : '') + '</span><span>🏠 Deliver to: ' + esc(o.deliver_to) + '</span>' + timing + '<span>💵 ' + money(o.fee_cents) + ' fee, paid at the door · <span class="pill">' + esc(LABEL[o.status] || o.status) + '</span></span></div>' +
+      (o.notes ? '<div class="notes">📝 ' + esc(o.notes) + '</div>' : '') +
+      (acts ? '<div class="acts">' + acts + '</div>' : '') + '</div>';
+  }
+  function btn(o, a, label, cls) { return '<button class="btn ' + cls + '" data-t="' + esc(o.token) + '" data-a="' + a + '" data-id="' + esc(o.id) + '">' + label + '</button>'; }
+  function tickCountdowns() {
+    var els = document.querySelectorAll('.cd[data-exp]'); var any = false;
+    els.forEach(function (el) { var s = Math.round((new Date(el.getAttribute('data-exp')).getTime() - Date.now()) / 1000); if (s <= 0) { el.textContent = 'expired'; any = true; return; } el.textContent = '⏳ ' + Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2) + ' to answer'; el.className = 'cd' + (s < 120 ? ' low' : ''); });
+    if (any) load();
+  }
+  setInterval(tickCountdowns, 1000);
+
+  function load() {
+    if (!key) { document.getElementById('main').innerHTML = '<div class="err"><b>No courier key.</b> Open this page from the link DormGlide gave you, or from a button in one of your order emails.</div>'; document.getElementById('sub').textContent = 'Not signed in'; return Promise.resolve(); }
+    return rpc('courier_console', { p_key: key }).then(function (d) {
+      if (!d || d.result !== 'ok') { document.getElementById('main').innerHTML = '<div class="err"><b>This link is not valid any more.</b> Ask DormGlide for a new courier link.</div>'; document.getElementById('sub').textContent = 'Not signed in'; return; }
+      state = d; render();
+    }).catch(function () { toast('Could not reach DormGlide. Check your connection.'); });
+  }
+
+  document.getElementById('main').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-a]'); if (!b || busy) return;
+    var a = b.getAttribute('data-a');
+    if ((a === 'decline' || a === 'cancel') && !confirm(a === 'decline' ? 'Decline this order? The customer will be told.' : 'Cancel this order? The customer will be told.')) return;
+    busy = true; b.disabled = true;
+    rpc('delivery_decide', { p_token: b.getAttribute('data-t'), p_action: a }).then(function (d) {
+      if (d && d.result === 'ok') toast(LABEL[d.status] + ' ✓');
+      else if (d && d.result === 'expired') toast('Too late — this order expired.');
+      else if (d && d.result === 'already') toast('Already ' + (LABEL[d.status] || d.status).toLowerCase() + '.');
+      else toast('Could not update this order.');
+    }).catch(function () { toast('Could not reach DormGlide.'); }).then(function () { busy = false; return load(); });
+  });
+  document.getElementById('sw').addEventListener('click', function () {
+    if (!state || busy) return; var next = !state.provider.is_online; busy = true;
+    rpc('courier_console_online', { p_key: key, p_online: next }).then(function (d) {
+      if (d && d.result === 'ok') { state.provider.is_online = d.is_online; render(); toast(d.is_online ? 'You are online. Orders can come in.' : 'You are offline.'); }
+      else toast('Could not change your status.');
+    }).catch(function () { toast('Could not reach DormGlide.'); }).then(function () { busy = false; });
+  });
+
+  // Home-screen hint: Safari on iPhone, not already installed.
+  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent), standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  if (isIOS && !standalone && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|GSA/.test(navigator.userAgent)) document.getElementById('hint').hidden = false;
+
+  // Arrived from an email button: apply the action first, then show the console.
+  var t = q.get('t'), a = (q.get('a') || '').toLowerCase();
+  var start = Promise.resolve();
+  if (t && a) {
+    start = rpc('delivery_decide', { p_token: t, p_action: a }).then(function (d) {
+      if (d && d.console_key) saveKey(d.console_key); else if (key) saveKey(key);
+      if (d && d.result === 'ok') toast(LABEL[d.status] + ' ✓ — ' + (d.summary || ''));
+      else if (d && d.result === 'expired') toast('Too late — this order expired before you answered.');
+      else if (d && d.result === 'already') toast('Already ' + (LABEL[d.status] || d.status || 'handled').toLowerCase() + '.');
+      else toast('That link was not recognized.');
+    }).catch(function () { toast('Could not reach DormGlide.'); });
+  } else if (key) { saveKey(key); }
+  start.then(load);
+  function schedule() { clearInterval(timer); timer = setInterval(function () { if (document.visibilityState === 'visible') load(); }, 15000); }
+  schedule();
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') load(); });
+  window.addEventListener('focus', load);
+})();
+</script></body></html>

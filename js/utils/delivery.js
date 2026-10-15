@@ -170,8 +170,29 @@
         return () => { try { c.removeChannel(ch); } catch (_e) { /* noop */ } };
     };
 
+    // Founder-only (DB-gated by admin_users): per-courier numbers + console links.
+    const fetchAdminSummary = async () => {
+        const c = client(); if (!c) return null;
+        const { data, error } = await c.rpc('delivery_admin_summary');
+        if (error) { console.warn('[DormGlide] delivery_admin_summary:', error.message); return null; }
+        return data || null;
+    };
+    const issueConsoleKey = async (providerId) => {
+        const c = client(); if (!c) return null;
+        const { data, error } = await c.rpc('delivery_console_key_issue', { p_provider: providerId });
+        if (error) { console.warn('[DormGlide] delivery_console_key_issue:', error.message); return null; }
+        return data || null;
+    };
+    const rotateConsoleKey = async (providerId) => {
+        const c = client(); if (!c) return null;
+        const { data, error } = await c.rpc('delivery_console_key_rotate', { p_provider: providerId });
+        if (error) { console.warn('[DormGlide] delivery_console_key_rotate:', error.message); return null; }
+        return data || null;
+    };
+
     window.DormGlideDelivery = {
         STATUS_LABELS, ACTIVE_STATUSES, DAYS,
+        fetchAdminSummary, issueConsoleKey, rotateConsoleKey,
         formatFee, getAvailability, scheduleSummary, todayHours, fmt12, fmtTime, fmtDay,
         fetchProviders, fetchMyProvider, updateProvider,
         createOrder, fetchMyOrders, fetchProviderOrders, updateOrderStatus, subscribe

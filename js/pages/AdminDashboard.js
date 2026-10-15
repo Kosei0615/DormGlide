@@ -2,11 +2,33 @@
 const AdminDashboard = ({ onNavigate, currentUser }) => {
     // Glyde founder counts (DB-gated by admin_users; non-admins get null).
     const [glydeCounts, setGlydeCounts] = React.useState(null);
+    const [delivery, setDelivery] = React.useState(null);
+    const [deliveryTick, setDeliveryTick] = React.useState(0);
     React.useEffect(() => {
         let mounted = true;
         window.DormGlideGlyde?.fetchGlydeAdminCounts?.().then((counts) => { if (mounted) setGlydeCounts(counts); });
+        window.DormGlideDelivery?.fetchAdminSummary?.().then((summary) => { if (mounted) setDelivery(summary); });
         return () => { mounted = false; };
-    }, [currentUser?.id]);
+    }, [currentUser?.id, deliveryTick]);
+    const copyText = async (text) => {
+        try { await navigator.clipboard.writeText(text); toast.success('Copied.'); }
+        catch (_e) { window.prompt('Copy this link:', text); }
+    };
+    const makeConsoleLink = async (provider) => {
+        const key = await window.DormGlideDelivery?.issueConsoleKey?.(provider.id);
+        if (!key) { toast.error('Could not create the link.'); return; }
+        setDeliveryTick((t) => t + 1);
+        await copyText(`https://dormglide.com/courier/?k=${key}`);
+    };
+    const rotateConsoleLink = async (provider) => {
+        if (!window.confirm(`Replace ${provider.display_name}'s courier link? The old link stops working immediately.`)) return;
+        const key = await window.DormGlideDelivery?.rotateConsoleKey?.(provider.id);
+        if (!key) { toast.error('Could not replace the link.'); return; }
+        setDeliveryTick((t) => t + 1);
+        await copyText(`https://dormglide.com/courier/?k=${key}`);
+    };
+    const fee = (cents) => `$${(Number(cents || 0) / 100).toFixed(2).replace(/\.00$/, '')}`;
+    const when = (iso) => iso ? new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
     const toast = window.DormGlideToast || {
         success: () => {},
         error: () => {},
@@ -136,6 +158,41 @@ const AdminDashboard = ({ onNavigate, currentUser }) => {
         const stats = calculatePlatformStats();
         
         return React.createElement('div', { className: 'admin-overview' },
+            delivery && React.createElement('section', { className: 'admin-glyde-panel admin-delivery-panel' },
+                React.createElement('h3', null, '🛼 Campus Delivery'),
+                (delivery.providers || []).length === 0 && React.createElement('p', null, 'No couriers enrolled yet.'),
+                (delivery.providers || []).map((p) => React.createElement('div', { key: p.id, className: 'admin-courier' },
+                    React.createElement('div', { className: 'admin-courier-head' },
+                        React.createElement('strong', null, p.display_name),
+                        React.createElement('span', { className: `delivery-pill ${p.is_online ? 'is-open' : ''}` }, p.is_online ? 'Online' : 'Offline'),
+                        React.createElement('span', { className: 'admin-courier-email' }, p.email || '')),
+                    React.createElement('div', { className: 'admin-glyde-totals' },
+                        React.createElement('div', null, React.createElement('strong', null, p.counts?.delivered ?? 0), ' delivered'),
+                        React.createElement('div', null, React.createElement('strong', null, p.counts?.delivered_7d ?? 0), ' last 7 days'),
+                        React.createElement('div', null, React.createElement('strong', null, fee(p.counts?.fees_delivered_cents)), ' earned'),
+                        React.createElement('div', null, React.createElement('strong', null, p.counts?.active ?? 0), ' in progress'),
+                        React.createElement('div', null, React.createElement('strong', null, p.counts?.pending ?? 0), ' waiting'),
+                        React.createElement('div', null, React.createElement('strong', null, p.counts?.declined ?? 0), ' declined'),
+                        React.createElement('div', null, React.createElement('strong', null, p.counts?.cancelled ?? 0), ' cancelled'),
+                        React.createElement('div', null, React.createElement('strong', null, p.counts?.expired ?? 0), ' expired'),
+                        p.counts?.avg_accept_seconds != null && React.createElement('div', null, React.createElement('strong', null, `${Math.round(p.counts.avg_accept_seconds / 60)} min`), ' avg. to answer'),
+                        p.counts?.avg_delivery_minutes != null && React.createElement('div', null, React.createElement('strong', null, `${p.counts.avg_delivery_minutes} min`), ' avg. delivery')),
+                    React.createElement('div', { className: 'admin-courier-link' },
+                        p.console_url
+                            ? React.createElement(React.Fragment, null,
+                                React.createElement('button', { type: 'button', className: 'btn btn-secondary btn-sm', onClick: () => copyText(p.console_url) }, 'Copy courier link'),
+                                React.createElement('button', { type: 'button', className: 'btn btn-secondary btn-sm', onClick: () => rotateConsoleLink(p) }, 'Replace link'))
+                            : React.createElement('button', { type: 'button', className: 'btn btn-primary btn-sm', onClick: () => makeConsoleLink(p) }, 'Create courier link'))
+                )),
+                Array.isArray(delivery.recent) && delivery.recent.length > 0 && React.createElement('table', { className: 'admin-glyde-table' },
+                    React.createElement('thead', null, React.createElement('tr', null,
+                        React.createElement('th', null, 'When'), React.createElement('th', null, 'Courier'), React.createElement('th', null, 'Customer'),
+                        React.createElement('th', null, 'Order'), React.createElement('th', null, 'Status'), React.createElement('th', null, 'Fee'))),
+                    React.createElement('tbody', null, delivery.recent.map((r) => React.createElement('tr', { key: r.id },
+                        React.createElement('td', null, when(r.created_at)), React.createElement('td', null, r.courier), React.createElement('td', null, r.customer),
+                        React.createElement('td', null, `${r.items} · ${r.pickup_spot} → ${r.deliver_to}`),
+                        React.createElement('td', null, window.DormGlideDelivery?.STATUS_LABELS?.[r.status] || r.status), React.createElement('td', null, fee(r.fee_cents))))))
+            ),
             glydeCounts && React.createElement('section', { className: 'admin-glyde-panel' },
                 React.createElement('h3', null, '✨ Glyde (services)'),
                 React.createElement('div', { className: 'admin-glyde-totals' },
