@@ -30,7 +30,7 @@ const PolicyModal = ({ kind, matched, onClose, onContinue }) => {
                         'Your listing mentions ', React.createElement('strong', null, matched.match),
                         ' (', matched.label, '), which students may not keep in campus housing, so it can\'t be posted here.'))
                 : React.createElement('p', { className: 'policy-lead' },
-                    'DormGlide follows Denison\'s residence policies on shared spaces. Services are arranged in chat and happen in spaces you\'re allowed to use. Don\'t turn a lounge, kitchen, hallway or your room into a storefront, keep common areas clear, and respect quiet hours.'),
+                    'DormGlide follows Denison\'s residence policies on shared spaces. Services are arranged in chat and happen in places you\'re allowed to use. Don\'t turn a lounge, kitchen, hallway or your room into a storefront, keep common areas clear, and be a good neighbor.'),
             React.createElement('div', { className: 'policy-excerpt' },
                 React.createElement('div', { className: 'policy-source' }, P.SOURCE, React.createElement('br'), React.createElement('span', null, sections)),
                 excerpt.map((q, i) => React.createElement('p', { key: i }, q))

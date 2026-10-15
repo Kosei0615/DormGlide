@@ -96,11 +96,9 @@
     const SPACES_EXCERPT = [
         '“To avoid hazards in access areas, such as lobbies, doorways, hallways, stairwells, and other common areas of the residence halls, these must be kept free of obstruction. Items such as trash bags, bicycles, furniture, personal effects, or other items should not be left in places where they might block or hinder egress.”',
         '“Common area furnishings may not be moved into student rooms.”',
-        '“Residence halls maintain quiet hours at the following times during the academic year: Sunday through Thursday, 11:00 pm to 9:00 am; Friday and Saturday, 1:00 am to 10:00 am. During examination periods, strict quiet hours will be maintained twenty-four hours a day.”',
-        '“Students hosting guests are responsible for informing their guests of University expectations and are responsible for the behavior of their guests.”',
         '“Students who reside in areas with community kitchens may use appliances in the community kitchen … University personnel may grant or prohibit access to community spaces, including community kitchens, at any time.”'
     ];
-    const SPACES_SECTIONS = 'Obstruction of Common Areas · Furnishings & Amenities · Noise and Quiet Hours · Visitors and Overnight Guests · Kitchens and Cooking Appliances';
+    const SPACES_SECTIONS = 'Obstruction of Common Areas · Furnishings & Amenities · Kitchens and Cooking Appliances';
 
     // Postgres (ARE) version of the combined pattern, for the migration.
     const sqlPattern = () => RULES.map((r) => '(?:' + r.re.replace(/\\b/g, '\\y') + ')').join('|');
