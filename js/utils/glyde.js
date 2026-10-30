@@ -8,7 +8,6 @@
     // v1 categories — must match the DB check constraint exactly.
     const SERVICE_CATEGORIES = [
         { name: 'Tutoring & academic help', glyph: '📚' },
-        { name: 'Hair & beauty', glyph: '💇' },
         { name: 'Tech help', glyph: '💻' },
         { name: 'Photography & video', glyph: '📸' },
         { name: 'Moving & carrying help', glyph: '🚚' },
@@ -38,7 +37,9 @@
         'Not allowed on Glyde: childcare or anything involving minors, medical or mental-health services, ' +
         'anything that requires a professional license, and doing academic work ' +
         'that someone else will submit as their own (tutoring is welcome — ghostwriting is not). ' +
-        'Rides are allowed only if you have a valid license and an insured, registered vehicle.';
+        'Rides are allowed only if you have a valid license and an insured, registered vehicle. ' +
+        'Denison housing rules also apply: no running a shop out of a residence hall room, so hair, nails, lashes, ' +
+        'tattoos, piercings and cooking-for-sale can\'t be offered here.';
 
     const getMode = () => {
         try {

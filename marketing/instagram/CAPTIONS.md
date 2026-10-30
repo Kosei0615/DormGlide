@@ -32,7 +32,7 @@ Small stuff sells too. ✏️ An Apple Pencil went from one Denison student to a
 Looking for something? Don't scroll every day. Set a Wishlist alert ("mini fridge under $50") and DormGlide emails you the moment a matching item is posted. First come, first served. 🔔 dormglide.com
 
 **Fri — 05-glyde.png**
-Meet Glyde: the skills side of DormGlide. 🧡 Need move-in/move-out muscle, a tutor, a ride, or a haircut? Book a Denison student. Got a skill? Offer it and get paid. Same app, switch at the top of the screen. dormglide.com
+Meet Glyde: the skills side of DormGlide. 🧡 Need move-in/move-out muscle, a tutor, a ride, or a campus delivery? Book a Denison student. Got a skill? Offer it and get paid. Same app, switch at the top of the screen. dormglide.com
 
 ---
 
